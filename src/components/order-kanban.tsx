@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -117,9 +118,9 @@ export function OrderKanban() {
               {groupedOrders[status]?.map((order) => (
                 <Card key={order.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col">
                   <CardHeader>
-                    <CardTitle className="flex justify-between items-center">
+                    <CardTitle className="flex flex-wrap justify-between items-center gap-2">
                       <span>{order.id} - Table {order.tableNumber}</span>
-                      <span className="text-sm font-normal text-muted-foreground">
+                      <span className="text-sm font-normal text-muted-foreground whitespace-nowrap">
                         {formatDistanceToNow(order.createdAt, { addSuffix: true })}
                       </span>
                     </CardTitle>
@@ -128,8 +129,8 @@ export function OrderKanban() {
                     <ul>
                       {order.items.map((item, index) => (
                         <li key={index} className="flex justify-between">
-                          <span>{item.menuItem.name}</span>
-                          <span className="text-muted-foreground">x{item.quantity}</span>
+                          <span className='pr-2'>{item.menuItem.name}</span>
+                          <span className="text-muted-foreground whitespace-nowrap">x{item.quantity}</span>
                         </li>
                       ))}
                     </ul>
@@ -141,7 +142,7 @@ export function OrderKanban() {
                     </div>
                   </CardContent>
                   <CardFooter className="flex flex-col gap-2">
-                     <div className="flex w-full gap-2">
+                     <div className="flex flex-col sm:flex-row w-full gap-2">
                         <Button variant="outline" className="w-full" onClick={() => { setDiscountOrder(order); setDiscountPercentage(order.discount)}}>
                             <Percent className="mr-2 h-4 w-4" />
                             Discount
@@ -214,3 +215,5 @@ export function OrderKanban() {
     </div>
   );
 }
+
+    
