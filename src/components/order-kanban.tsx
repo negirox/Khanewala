@@ -1,12 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { PlusCircle, ArrowRight, Clock, CheckCircle, Utensils, ThumbsUp, Printer, Percent } from "lucide-react";
+import { PlusCircle, ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { OrderForm } from "@/components/order-form";
-import { initialOrders, menuItems as allMenuItems } from "@/lib/data";
+import { initialOrders, menuItems as allMenuItems, initialArchivedOrders } from "@/lib/data";
 import type { Order, OrderStatus } from "@/lib/types";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
@@ -22,12 +22,16 @@ const statusConfig: Record<
 > = {
   received: { title: "Received", icon: Clock, nextStatus: "preparing", color: "bg-blue-500" },
   preparing: { title: "Preparing", icon: Utensils, nextStatus: "ready", color: "bg-yellow-500" },
-  ready: { title: "Ready for Pickup", icon: CheckCircle, nextStatus: "served", color: "bg-green-500" },
-  served: { title: "Served", icon: ThumbsUp, color: "bg-gray-500" },
+  ready: { title: "Ready for Pickup", icon: CheckCircle, nextStatus: "archived", color: "bg-green-500" },
+  served: { title: "Served", icon: Archive, color: "bg-gray-500" }, // This is now effectively the archived state
+  archived: { title: "Archived", icon: Archive, color: "bg-gray-500" },
 };
+
+const KANBAN_STATUSES: OrderStatus[] = ["received", "preparing", "ready"];
 
 export function OrderKanban() {
   const [orders, setOrders] = React.useState<Order[]>(initialOrders);
+  const [archivedOrders, setArchivedOrders] = React.useState<Order[]>(initialArchivedOrders);
   const [isSheetOpen, setSheetOpen] = React.useState(false);
   const [printingOrder, setPrintingOrder] = React.useState<Order | null>(null);
   const [discountOrder, setDiscountOrder] = React.useState<Order | null>(null);
@@ -35,11 +39,19 @@ export function OrderKanban() {
 
 
   const handleUpdateStatus = (orderId: string, newStatus: OrderStatus) => {
-    setOrders((prevOrders) =>
-      prevOrders.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
+    if (newStatus === 'archived') {
+        const orderToArchive = orders.find(o => o.id === orderId);
+        if(orderToArchive) {
+            setArchivedOrders(prev => [{...orderToArchive, status: 'archived'}, ...prev]);
+            setOrders(prev => prev.filter(o => o.id !== orderId));
+        }
+    } else {
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId ? { ...order, status: newStatus } : order
+          )
+        );
+    }
   };
 
   const handleNewOrder = (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
@@ -91,8 +103,8 @@ export function OrderKanban() {
         </Sheet>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
-        {(Object.keys(statusConfig) as OrderStatus[]).map((status) => (
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 items-start">
+        {KANBAN_STATUSES.map((status) => (
           <div key={status} className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
                <span className={`w-3 h-3 rounded-full ${statusConfig[status].color}`}></span>
@@ -140,13 +152,21 @@ export function OrderKanban() {
                         </Button>
                      </div>
                     {statusConfig[status].nextStatus && (
-                        <Button
+                         <Button
                           variant="secondary"
                           className="w-full"
                           onClick={() => handleUpdateStatus(order.id, statusConfig[status].nextStatus!)}
                         >
-                          Move to {statusConfig[statusConfig[status].nextStatus!].title}
-                          <ArrowRight className="ml-2 h-4 w-4" />
+                          {statusConfig[status].nextStatus === 'archived' ? (
+                            <>
+                              Mark as Served & Archive <Archive className="ml-2 h-4 w-4" />
+                            </>
+                          ) : (
+                             <>
+                              Move to {statusConfig[statusConfig[status].nextStatus!].title}
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </>
+                          )}
                         </Button>
                     )}
                   </CardFooter>

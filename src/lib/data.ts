@@ -12,7 +12,7 @@ export const menuItems: MenuItem[] = [
   { id: "9", name: "Masala Chai", price: 2.99, category: "Beverages", description: "Spiced milk tea with a blend of aromatic herbs.", image: "https://placehold.co/600x400.png" },
 ];
 
-export const initialOrders: Order[] = [
+export let initialOrders: Order[] = [
   {
     id: "ORD001",
     tableNumber: 3,
@@ -65,6 +65,9 @@ export const initialOrders: Order[] = [
     total: 19.96,
     createdAt: new Date(Date.now() - 15 * 60000), // 15 minutes ago
   },
+];
+
+export let initialArchivedOrders: Order[] = [
     {
     id: "ORD005",
     tableNumber: 2,
@@ -72,7 +75,7 @@ export const initialOrders: Order[] = [
       { menuItem: menuItems[1], quantity: 1 },
       { menuItem: menuItems[3], quantity: 1 },
     ],
-    status: "served",
+    status: "archived",
     subtotal: 21.98,
     discount: 0,
     total: 21.98,
@@ -80,9 +83,10 @@ export const initialOrders: Order[] = [
   },
 ];
 
+
 export const tables: Table[] = [
   { id: 1, status: "occupied", capacity: 4, orderId: "ORD003" },
-  { id: 2, status: "occupied", capacity: 2, orderId: "ORD005" },
+  { id: 2, status: "available", capacity: 2 },
   { id: 3, status: "occupied", capacity: 4, orderId: "ORD001" },
   { id: 4, status: "available", capacity: 6 },
   { id: 5, status: "occupied", capacity: 2, orderId: "ORD002" },

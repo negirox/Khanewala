@@ -1,4 +1,4 @@
-export type OrderStatus = "received" | "preparing" | "ready" | "served";
+export type OrderStatus = "received" | "preparing" | "ready" | "served" | "archived";
 
 export type MenuItem = {
   id: string;

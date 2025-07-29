@@ -8,6 +8,7 @@ import {
   ClipboardList,
   UtensilsCrossed,
   Users,
+  LayoutDashboard,
 } from "lucide-react";
 
 import {
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/sidebar";
 
 const navItems = [
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/orders", icon: ClipboardList, label: "Orders" },
   { href: "/tables", icon: Users, label: "Tables" },
   { href: "/menu", icon: BookOpen, label: "Menu" },
