@@ -27,10 +27,12 @@ import {
   SidebarMenuSubButton,
   SidebarInset,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "./ui/collapsible";
 import { cn } from "@/lib/utils";
 import { appConfig } from "@/lib/config";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 const operationalNavItems = [
   { href: "/orders", icon: ClipboardList, label: "Orders" },
@@ -45,10 +47,68 @@ const adminNavItems = [
   { href: "/customers", icon: Contact, label: "Customers" },
 ];
 
+function AdminMenu() {
+    const pathname = usePathname();
+    const { state } = useSidebar();
+    const isAnyAdminItemActive = adminNavItems.some(item => pathname.startsWith(item.href));
+
+    if (state === 'collapsed') {
+        return (
+             <>
+                {adminNavItems.map(item => (
+                    <SidebarMenuItem key={item.href}>
+                         <Tooltip>
+                            <TooltipTrigger asChild>
+                                <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)} className="justify-center">
+                                    <Link href={item.href}>
+                                        <item.icon />
+                                    </Link>
+                                </SidebarMenuButton>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" align="center">{item.label}</TooltipContent>
+                        </Tooltip>
+                    </SidebarMenuItem>
+                ))}
+             </>
+        )
+    }
+
+    return (
+        <Collapsible defaultOpen={isAnyAdminItemActive}>
+            <SidebarMenuItem>
+            <CollapsibleTrigger asChild>
+                <SidebarMenuButton
+                className="group/menu-item justify-between"
+                isActive={isAnyAdminItemActive}
+                >
+                    <div className="flex items-center gap-2">
+                    <Shield />
+                    <span>Admin</span>
+                    </div>
+                    <ChevronDown className={cn("transition-transform group-data-[state=open]/menu-item:rotate-180")} />
+                </SidebarMenuButton>
+            </CollapsibleTrigger>
+            </SidebarMenuItem>
+            <CollapsibleContent asChild>
+            <SidebarMenuSub>
+                {adminNavItems.map(item => (
+                        <SidebarMenuItem key={item.href}>
+                        <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)}>
+                            <Link href={item.href}>
+                                <item.icon />
+                                <span>{item.label}</span>
+                            </Link>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuItem>
+                ))}
+            </SidebarMenuSub>
+            </CollapsibleContent>
+        </Collapsible>
+    )
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-
-  const isAnyAdminItemActive = adminNavItems.some(item => pathname.startsWith(item.href));
 
   return (
     <SidebarProvider>
@@ -78,37 +138,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-               <Collapsible defaultOpen={isAnyAdminItemActive}>
-                 <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton
-                        className="group/menu-item justify-between"
-                        isActive={isAnyAdminItemActive}
-                        tooltip="Admin"
-                      >
-                         <div className="flex items-center gap-2">
-                          <Shield />
-                          <span>Admin</span>
-                         </div>
-                         <ChevronDown className={cn("transition-transform group-data-[state=open]/menu-item:rotate-180", isAnyAdminItemActive && "group-data-[state=open]/menu-item:rotate-180")} />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                  </SidebarMenuItem>
-                 <CollapsibleContent asChild>
-                    <SidebarMenuSub>
-                        {adminNavItems.map(item => (
-                             <SidebarMenuItem key={item.href}>
-                                <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)}>
-                                    <Link href={item.href}>
-                                        <item.icon />
-                                        <span>{item.label}</span>
-                                    </Link>
-                                </SidebarMenuSubButton>
-                            </SidebarMenuItem>
-                        ))}
-                    </SidebarMenuSub>
-                 </CollapsibleContent>
-               </Collapsible>
+               <AdminMenu />
             </SidebarMenu>
           </SidebarContent>
         </Sidebar>
