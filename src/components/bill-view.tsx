@@ -4,6 +4,7 @@ import * as React from 'react';
 import type { Order } from '@/lib/types';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
+import { appConfig } from '@/lib/config';
 
 export function BillView({ order }: { order: Order }) {
 
@@ -23,7 +24,7 @@ export function BillView({ order }: { order: Order }) {
     <div>
         <div id="bill-content" className="p-4 bg-white text-black font-mono text-sm">
             <div className="text-center mb-4">
-                <h2 className="text-xl font-bold">KhaneWala Restaurant</h2>
+                <h2 className="text-xl font-bold">{appConfig.title} Restaurant</h2>
                 <p>123 Spice Street, Flavor Town</p>
                 <p>Tel: (123) 456-7890</p>
             </div>

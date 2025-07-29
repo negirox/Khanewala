@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   ClipboardList,
-  UtensilsCrossed,
   Users,
   LayoutDashboard,
   Archive,
@@ -31,6 +30,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "./ui/collapsible";
 import { cn } from "@/lib/utils";
+import { appConfig } from "@/lib/config";
 
 const operationalNavItems = [
   { href: "/orders", icon: ClipboardList, label: "Orders" },
@@ -56,9 +56,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar collapsible="icon" className="border-r bg-sidebar">
           <SidebarHeader>
             <div className="flex h-14 items-center gap-2 p-2 justify-start group-data-[collapsible=icon]:justify-center">
-              <UtensilsCrossed className="h-8 w-8 text-primary shrink-0" />
+              <appConfig.logo className="h-8 w-8 text-primary shrink-0" />
               <h1 className="text-xl font-bold font-headline group-data-[collapsible=icon]:hidden whitespace-nowrap">
-                KhaneWala
+                {appConfig.title}
               </h1>
             </div>
           </SidebarHeader>
