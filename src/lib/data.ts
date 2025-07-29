@@ -21,7 +21,9 @@ export const initialOrders: Order[] = [
       { menuItem: menuItems[7], quantity: 2 },
     ],
     status: "preparing",
-    total: 43.96,
+    subtotal: 43.96,
+    discount: 10,
+    total: 39.56,
     createdAt: new Date(Date.now() - 10 * 60000), // 10 minutes ago
   },
   {
@@ -32,6 +34,8 @@ export const initialOrders: Order[] = [
         { menuItem: menuItems[0], quantity: 1 }
     ],
     status: "received",
+    subtotal: 20.98,
+    discount: 0,
     total: 20.98,
     createdAt: new Date(Date.now() - 5 * 60000), // 5 minutes ago
   },
@@ -44,6 +48,8 @@ export const initialOrders: Order[] = [
       { menuItem: menuItems[8], quantity: 2 },
     ],
     status: "received",
+    subtotal: 31.95,
+    discount: 0,
     total: 31.95,
     createdAt: new Date(Date.now() - 2 * 60000), // 2 minutes ago
   },
@@ -54,6 +60,8 @@ export const initialOrders: Order[] = [
       { menuItem: menuItems[5], quantity: 4 }
     ],
     status: "ready",
+    subtotal: 19.96,
+    discount: 0,
     total: 19.96,
     createdAt: new Date(Date.now() - 15 * 60000), // 15 minutes ago
   },
@@ -65,6 +73,8 @@ export const initialOrders: Order[] = [
       { menuItem: menuItems[3], quantity: 1 },
     ],
     status: "served",
+    subtotal: 21.98,
+    discount: 0,
     total: 21.98,
     createdAt: new Date(Date.now() - 30 * 60000), // 30 minutes ago
   },

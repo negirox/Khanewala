@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PlusCircle, ArrowRight, Clock, CheckCircle, Utensils, ThumbsUp } from "lucide-react";
+import { PlusCircle, ArrowRight, Clock, CheckCircle, Utensils, ThumbsUp, Printer, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
@@ -10,6 +10,11 @@ import { initialOrders, menuItems as allMenuItems } from "@/lib/data";
 import type { Order, OrderStatus } from "@/lib/types";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { BillView } from "./bill-view";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 
 const statusConfig: Record<
   OrderStatus,
@@ -24,6 +29,10 @@ const statusConfig: Record<
 export function OrderKanban() {
   const [orders, setOrders] = React.useState<Order[]>(initialOrders);
   const [isSheetOpen, setSheetOpen] = React.useState(false);
+  const [printingOrder, setPrintingOrder] = React.useState<Order | null>(null);
+  const [discountOrder, setDiscountOrder] = React.useState<Order | null>(null);
+  const [discountPercentage, setDiscountPercentage] = React.useState<number>(0);
+
 
   const handleUpdateStatus = (orderId: string, newStatus: OrderStatus) => {
     setOrders((prevOrders) =>
@@ -43,6 +52,20 @@ export function OrderKanban() {
     setSheetOpen(false);
   }
 
+  const handleApplyDiscount = () => {
+    if (!discountOrder) return;
+    const discountValue = Math.max(0, Math.min(100, discountPercentage));
+    setOrders(orders.map(o => {
+        if (o.id === discountOrder.id) {
+            const newTotal = o.subtotal * (1 - discountValue / 100);
+            return { ...o, discount: discountValue, total: newTotal };
+        }
+        return o;
+    }));
+    setDiscountOrder(null);
+    setDiscountPercentage(0);
+  }
+  
   const groupedOrders = React.useMemo(() => {
     return orders.reduce((acc, order) => {
       (acc[order.status] = acc[order.status] || []).push(order);
@@ -62,7 +85,7 @@ export function OrderKanban() {
               New Order
             </Button>
           </SheetTrigger>
-          <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetContent className="w-full sm:max-w-4xl">
             <OrderForm allMenuItems={allMenuItems} onSubmit={handleNewOrder} />
           </SheetContent>
         </Sheet>
@@ -80,7 +103,7 @@ export function OrderKanban() {
             </div>
             <div className="space-y-4 h-full min-h-[200px] bg-muted/50 rounded-lg p-4">
               {groupedOrders[status]?.map((order) => (
-                <Card key={order.id} className="shadow-md hover:shadow-lg transition-shadow">
+                <Card key={order.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col">
                   <CardHeader>
                     <CardTitle className="flex justify-between items-center">
                       <span>{order.id} - Table {order.tableNumber}</span>
@@ -89,7 +112,7 @@ export function OrderKanban() {
                       </span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="flex-grow">
                     <ul>
                       {order.items.map((item, index) => (
                         <li key={index} className="flex justify-between">
@@ -99,10 +122,24 @@ export function OrderKanban() {
                       ))}
                     </ul>
                     <div className="border-t my-2" />
-                    <p className="font-semibold text-right">Total: ${order.total.toFixed(2)}</p>
+                    <div className="space-y-1 text-sm">
+                        <div className="flex justify-between"><span>Subtotal:</span> <span>${order.subtotal.toFixed(2)}</span></div>
+                        {order.discount > 0 && <div className="flex justify-between text-destructive"><span>Discount:</span> <span>-{order.discount}%</span></div>}
+                        <div className="flex justify-between font-bold text-base"><span>Total:</span> <span>${order.total.toFixed(2)}</span></div>
+                    </div>
                   </CardContent>
-                  {statusConfig[status].nextStatus && (
-                     <CardFooter>
+                  <CardFooter className="flex flex-col gap-2">
+                     <div className="flex w-full gap-2">
+                        <Button variant="outline" className="w-full" onClick={() => { setDiscountOrder(order); setDiscountPercentage(order.discount)}}>
+                            <Percent className="mr-2 h-4 w-4" />
+                            Discount
+                        </Button>
+                        <Button variant="outline" className="w-full" onClick={() => setPrintingOrder(order)}>
+                            <Printer className="mr-2 h-4 w-4" />
+                            Print Bill
+                        </Button>
+                     </div>
+                    {statusConfig[status].nextStatus && (
                         <Button
                           variant="secondary"
                           className="w-full"
@@ -111,14 +148,49 @@ export function OrderKanban() {
                           Move to {statusConfig[statusConfig[status].nextStatus!].title}
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
-                    </CardFooter>
-                  )}
+                    )}
+                  </CardFooter>
                 </Card>
               ))}
             </div>
           </div>
         ))}
       </div>
+      
+       <Dialog open={!!printingOrder} onOpenChange={(open) => !open && setPrintingOrder(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Print Bill</DialogTitle>
+          </DialogHeader>
+          {printingOrder && <BillView order={printingOrder} />}
+        </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={!!discountOrder} onOpenChange={(open) => !open && setDiscountOrder(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Apply Discount</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Enter a discount percentage for order {discountOrder?.id}.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4">
+                <Label htmlFor="discount">Discount (%)</Label>
+                <Input
+                    id="discount"
+                    type="number"
+                    value={discountPercentage}
+                    onChange={(e) => setDiscountPercentage(Number(e.target.value))}
+                    placeholder="e.g. 15"
+                />
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleApplyDiscount}>Apply Discount</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }

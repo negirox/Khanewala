@@ -55,7 +55,7 @@ export function OrderForm({ allMenuItems, onSubmit }: OrderFormProps) {
 
   const { toast } = useToast();
 
-  const total = React.useMemo(
+  const subtotal = React.useMemo(
     () =>
       orderItems.reduce(
         (acc, item) => acc + item.menuItem.price * item.quantity,
@@ -134,7 +134,9 @@ export function OrderForm({ allMenuItems, onSubmit }: OrderFormProps) {
         items: orderItems,
         tableNumber: Number(tableNumber),
         status: "received",
-        total: total,
+        subtotal: subtotal,
+        discount: 0,
+        total: subtotal,
     });
   }
   
@@ -223,7 +225,7 @@ export function OrderForm({ allMenuItems, onSubmit }: OrderFormProps) {
                     <CardFooter className="flex flex-col gap-4 p-6">
                         <div className="flex justify-between w-full font-bold text-lg">
                             <span>Total</span>
-                            <span>${total.toFixed(2)}</span>
+                            <span>${subtotal.toFixed(2)}</span>
                         </div>
                          <Button type="button" variant="outline" className="w-full" onClick={handleGetAiSuggestions} disabled={isAiLoading}>
                             {isAiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}

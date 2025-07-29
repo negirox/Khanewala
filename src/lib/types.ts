@@ -19,6 +19,8 @@ export type Order = {
   tableNumber: number;
   items: OrderItem[];
   status: OrderStatus;
+  subtotal: number;
+  discount: number; // Percentage
   total: number;
   createdAt: Date;
 };
