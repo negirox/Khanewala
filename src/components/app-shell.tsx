@@ -9,6 +9,7 @@ import {
   UtensilsCrossed,
   Users,
   LayoutDashboard,
+  Archive,
 } from "lucide-react";
 
 import {
@@ -26,6 +27,7 @@ import {
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/orders", icon: ClipboardList, label: "Orders" },
+  { href: "/archive", icon: Archive, label: "Archive" },
   { href: "/tables", icon: Users, label: "Tables" },
   { href: "/menu", icon: BookOpen, label: "Menu" },
 ];
