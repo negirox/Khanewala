@@ -3,8 +3,8 @@
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { initialTables } from "@/lib/data";
-import type { Table, Table as TableType } from "@/lib/types";
+import { tables as initialTables } from "@/lib/data";
+import type { Table as TableType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { User, Check, Ban } from "lucide-react";
 
