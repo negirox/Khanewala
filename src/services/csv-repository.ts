@@ -8,7 +8,6 @@
  * You will need to install `papaparse` and `@types/papaparse`.
  * You will also need to add file system access logic using Node.js `fs` module.
  */
-'use server';
 
 import { menuItems, initialOrders, initialArchivedOrders, tables, initialStaff } from '@/lib/data';
 import type { MenuItem, Order, Table, StaffMember } from '@/lib/types';
