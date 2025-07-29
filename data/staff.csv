@@ -1,0 +1,6 @@
+id,name,role,email,phone,shift,avatar
+STAFF01,Alice Johnson,Manager,alice@khanewala.com,123-456-7890,Morning,https://placehold.co/100x100.png
+STAFF02,Bob Williams,Chef,bob@khanewala.com,123-456-7891,Afternoon,https://placehold.co/100x100.png
+STAFF03,Charlie Brown,Waiter,charlie@khanewala.com,123-456-7892,Morning,https://placehold.co/100x100.png
+STAFF04,Diana Prince,Waiter,diana@khanewala.com,123-456-7893,Night,https://placehold.co/100x100.png
+STAFF05,Eve Adams,Busboy,eve@khanewala.com,123-456-7894,Afternoon,https://placehold.co/100x100.png

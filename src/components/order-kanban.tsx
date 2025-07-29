@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { OrderForm } from "@/components/order-form";
-import { initialOrders, menuItems as allMenuItems, initialArchivedOrders } from "@/lib/data";
+import { menuItems as allMenuItems } from "@/lib/data";
 import type { Order, OrderStatus } from "@/lib/types";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
@@ -16,6 +16,7 @@ import { BillView } from "./bill-view";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { csvRepository } from "@/services/csv-repository";
 
 const statusConfig: Record<
   OrderStatus,
@@ -31,27 +32,39 @@ const statusConfig: Record<
 const KANBAN_STATUSES: OrderStatus[] = ["received", "preparing", "ready"];
 
 export function OrderKanban() {
-  const [orders, setOrders] = React.useState<Order[]>(initialOrders);
-  const [archivedOrders, setArchivedOrders] = React.useState<Order[]>(initialArchivedOrders);
+  const [orders, setOrders] = React.useState<Order[]>([]);
+  const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
   const [isSheetOpen, setSheetOpen] = React.useState(false);
   const [printingOrder, setPrintingOrder] = React.useState<Order | null>(null);
   const [discountOrder, setDiscountOrder] = React.useState<Order | null>(null);
   const [discountPercentage, setDiscountPercentage] = React.useState<number>(0);
 
+  React.useEffect(() => {
+    Promise.all([
+      csvRepository.getActiveOrders(),
+      csvRepository.getArchivedOrders()
+    ]).then(([active, archived]) => {
+      setOrders(active);
+      setArchivedOrders(archived);
+    })
+  }, []);
 
   const handleUpdateStatus = (orderId: string, newStatus: OrderStatus) => {
     if (newStatus === 'archived') {
         const orderToArchive = orders.find(o => o.id === orderId);
         if(orderToArchive) {
-            setArchivedOrders(prev => [{...orderToArchive, status: 'archived'}, ...prev]);
-            setOrders(prev => prev.filter(o => o.id !== orderId));
+            const newArchivedOrders = [{...orderToArchive, status: 'archived'}, ...archivedOrders];
+            const newActiveOrders = orders.filter(o => o.id !== orderId);
+            setArchivedOrders(newArchivedOrders);
+            setOrders(newActiveOrders);
+            csvRepository.saveAllOrders(newActiveOrders, newArchivedOrders);
         }
     } else {
-        setOrders((prevOrders) =>
-          prevOrders.map((order) =>
+        const newActiveOrders = orders.map((order) =>
             order.id === orderId ? { ...order, status: newStatus } : order
-          )
         );
+        setOrders(newActiveOrders);
+        csvRepository.saveAllOrders(newActiveOrders, archivedOrders);
     }
   };
 
@@ -61,20 +74,24 @@ export function OrderKanban() {
         id: `ORD${(Math.random() * 1000).toFixed(0).padStart(3, '0')}`,
         createdAt: new Date(),
     };
-    setOrders(prev => [newOrder, ...prev]);
+    const newActiveOrders = [newOrder, ...orders];
+    setOrders(newActiveOrders);
+    csvRepository.saveAllOrders(newActiveOrders, archivedOrders);
     setSheetOpen(false);
   }
 
   const handleApplyDiscount = () => {
     if (!discountOrder) return;
     const discountValue = Math.max(0, Math.min(100, discountPercentage));
-    setOrders(orders.map(o => {
+    const newActiveOrders = orders.map(o => {
         if (o.id === discountOrder.id) {
             const newTotal = o.subtotal * (1 - discountValue / 100);
             return { ...o, discount: discountValue, total: newTotal };
         }
         return o;
-    }));
+    });
+    setOrders(newActiveOrders);
+    csvRepository.saveAllOrders(newActiveOrders, archivedOrders);
     setDiscountOrder(null);
     setDiscountPercentage(0);
   }
@@ -152,6 +169,7 @@ export function OrderKanban() {
                             Print Bill
                         </Button>
                      </div>
+                    <div className="w-full">
                     {statusConfig[status].nextStatus && (
                          <Button
                           variant="secondary"
@@ -170,6 +188,7 @@ export function OrderKanban() {
                           )}
                         </Button>
                     )}
+                    </div>
                   </CardFooter>
                 </Card>
               ))}
@@ -215,5 +234,3 @@ export function OrderKanban() {
     </div>
   );
 }
-
-    

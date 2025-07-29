@@ -4,7 +4,6 @@ import * as React from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { initialStaff } from "@/lib/data";
 import type { StaffMember } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -16,6 +15,7 @@ import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Mail, Phone, Clock, PlusCircle, Edit, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { csvRepository } from "@/services/csv-repository";
 
 const roleColors: Record<StaffMember['role'], string> = {
     Manager: "bg-red-500 text-white",
@@ -27,9 +27,13 @@ const roleColors: Record<StaffMember['role'], string> = {
 const emptyStaffMember: StaffMember = { id: "", name: "", role: "Waiter", email: "", phone: "", shift: "Morning", avatar: "" };
 
 export function StaffManagement() {
-  const [staff, setStaff] = React.useState<StaffMember[]>(initialStaff);
+  const [staff, setStaff] = React.useState<StaffMember[]>([]);
   const [isDialogOpen, setDialogOpen] = React.useState(false);
   const [editingStaff, setEditingStaff] = React.useState<StaffMember | null>(null);
+
+  React.useEffect(() => {
+    csvRepository.getStaff().then(setStaff);
+  }, []);
 
   const handleEdit = (member: StaffMember) => {
     setEditingStaff(member);
@@ -42,15 +46,20 @@ export function StaffManagement() {
   };
   
   const handleDelete = (staffId: string) => {
-    setStaff(staff.filter(member => member.id !== staffId));
+    const updatedStaff = staff.filter(member => member.id !== staffId);
+    setStaff(updatedStaff);
+    csvRepository.saveStaff(updatedStaff);
   }
 
   const handleSave = (staffData: StaffMember) => {
+    let updatedStaff;
     if (editingStaff) {
-      setStaff(staff.map(member => member.id === staffData.id ? staffData : member));
+      updatedStaff = staff.map(member => member.id === staffData.id ? staffData : member);
     } else {
-      setStaff([...staff, { ...staffData, id: `STAFF${staff.length + 1}` }]);
+      updatedStaff = [...staff, { ...staffData, id: `STAFF${staff.length + 1}` }];
     }
+    setStaff(updatedStaff);
+    csvRepository.saveStaff(updatedStaff);
     setDialogOpen(false);
     setEditingStaff(null);
   };

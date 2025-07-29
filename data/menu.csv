@@ -1,0 +1,10 @@
+id,name,price,category,description,image
+1,Samosa,5.99,Appetizers,"Crispy pastry filled with spiced potatoes and peas.",https://placehold.co/600x400.png
+2,Pakora,6.99,Appetizers,"Mixed vegetables dipped in gram flour batter and deep-fried.",https://placehold.co/600x400.png
+3,Butter Chicken,15.99,Main Courses,"Grilled chicken simmered in a creamy tomato sauce.",https://placehold.co/600x400.png
+4,Palak Paneer,14.99,Main Courses,"Indian cheese cubes in a smooth spinach sauce.",https://placehold.co/600x400.png
+5,Chole Bhature,13.99,Main Courses,"Spicy chickpea curry served with fluffy fried bread.",https://placehold.co/600x400.png
+6,Gulab Jamun,4.99,Desserts,"Soft, spongy balls made of milk solids, soaked in rose-scented syrup.",https://placehold.co/600x400.png
+7,Rasmalai,5.99,Desserts,"Cottage cheese dumplings soaked in sweetened, thickened milk.",https://placehold.co/600x400.png
+8,Mango Lassi,4.50,Beverages,"A refreshing yogurt-based drink with mango pulp.",https://placehold.co/600x400.png
+9,Masala Chai,2.99,Beverages,"Spiced milk tea with a blend of aromatic herbs.",https://placehold.co/600x400.png

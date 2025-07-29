@@ -1,0 +1,2 @@
+id,tableNumber,items,status,subtotal,discount,total,createdAt
+ORD005,2,"[{""menuItem"":{""id"":""2"",""name"":""Pakora"",""price"":6.99,""category"":""Appetizers"",""description"":""Mixed vegetables dipped in gram flour batter and deep-fried."",""image"":""https://placehold.co/600x400.png""},""quantity"":1},{""menuItem"":{""id"":""4"",""name"":""Palak Paneer"",""price"":14.99,""category"":""Main Courses"",""description"":""Indian cheese cubes in a smooth spinach sauce."",""image"":""https://placehold.co/600x400.png""},""quantity"":1}]",archived,21.98,0,21.98,

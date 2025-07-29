@@ -3,10 +3,10 @@
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { tables as initialTables } from "@/lib/data";
 import type { Table as TableType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { User, Check, Ban } from "lucide-react";
+import { csvRepository } from "@/services/csv-repository";
 
 const statusConfig = {
   available: {
@@ -27,20 +27,24 @@ const statusConfig = {
 };
 
 export function TableLayout() {
-  const [tables, setTables] = React.useState<TableType[]>(initialTables);
+  const [tables, setTables] = React.useState<TableType[]>([]);
+
+  React.useEffect(() => {
+    csvRepository.getTables().then(setTables);
+  }, []);
 
   const toggleStatus = (tableId: number) => {
-    setTables(currentTables => 
-      currentTables.map(table => {
-        if (table.id === tableId) {
-          const statuses: TableType['status'][] = ['available', 'occupied', 'reserved'];
-          const currentIndex = statuses.indexOf(table.status);
-          const nextIndex = (currentIndex + 1) % statuses.length;
-          return { ...table, status: statuses[nextIndex], orderId: statuses[nextIndex] === 'available' ? undefined : table.orderId };
-        }
-        return table;
-      })
-    );
+    const updatedTables = tables.map(table => {
+      if (table.id === tableId) {
+        const statuses: TableType['status'][] = ['available', 'occupied', 'reserved'];
+        const currentIndex = statuses.indexOf(table.status);
+        const nextIndex = (currentIndex + 1) % statuses.length;
+        return { ...table, status: statuses[nextIndex], orderId: statuses[nextIndex] === 'available' ? undefined : table.orderId };
+      }
+      return table;
+    });
+    setTables(updatedTables);
+    csvRepository.saveTables(updatedTables);
   };
 
   return (

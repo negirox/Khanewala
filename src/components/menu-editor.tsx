@@ -32,13 +32,19 @@ import { menuItems as initialMenuItems } from "@/lib/data";
 import type { MenuItem } from "@/lib/types";
 import { PlusCircle, Edit, Trash2 } from "lucide-react";
 import { Textarea } from "./ui/textarea";
+import { csvRepository } from "@/services/csv-repository";
+
 
 const emptyMenuItem: MenuItem = { id: "", name: "", price: 0, category: "Main Courses", description: "" };
 
 export function MenuEditor() {
-  const [menuItems, setMenuItems] = React.useState<MenuItem[]>(initialMenuItems);
+  const [menuItems, setMenuItems] = React.useState<MenuItem[]>([]);
   const [isDialogOpen, setDialogOpen] = React.useState(false);
   const [editingItem, setEditingItem] = React.useState<MenuItem | null>(null);
+
+  React.useEffect(() => {
+    csvRepository.getMenuItems().then(setMenuItems);
+  }, []);
 
   const handleEdit = (item: MenuItem) => {
     setEditingItem(item);
@@ -51,15 +57,20 @@ export function MenuEditor() {
   };
   
   const handleDelete = (itemId: string) => {
-    setMenuItems(menuItems.filter(item => item.id !== itemId));
+    const updatedItems = menuItems.filter(item => item.id !== itemId);
+    setMenuItems(updatedItems);
+    csvRepository.saveMenuItems(updatedItems);
   }
 
   const handleSave = (itemData: MenuItem) => {
+    let updatedItems;
     if (editingItem) {
-      setMenuItems(menuItems.map(item => item.id === itemData.id ? itemData : item));
+      updatedItems = menuItems.map(item => item.id === itemData.id ? itemData : item)
     } else {
-      setMenuItems([...menuItems, { ...itemData, id: `ITEM${menuItems.length + 1}` }]);
+      updatedItems = [...menuItems, { ...itemData, id: `ITEM${menuItems.length + 1}` }];
     }
+    setMenuItems(updatedItems);
+    csvRepository.saveMenuItems(updatedItems);
     setDialogOpen(false);
     setEditingItem(null);
   };
