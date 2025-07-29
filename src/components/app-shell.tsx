@@ -10,6 +10,7 @@ import {
   Users,
   LayoutDashboard,
   Archive,
+  Users2
 } from "lucide-react";
 
 import {
@@ -30,6 +31,7 @@ const navItems = [
   { href: "/archive", icon: Archive, label: "Archive" },
   { href: "/tables", icon: Users, label: "Tables" },
   { href: "/menu", icon: BookOpen, label: "Menu" },
+  { href: "/staff", icon: Users2, label: "Staff" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

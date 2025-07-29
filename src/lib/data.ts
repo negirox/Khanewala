@@ -1,4 +1,4 @@
-import type { MenuItem, Order, Table } from "./types";
+import type { MenuItem, Order, Table, StaffMember } from "./types";
 
 export const menuItems: MenuItem[] = [
   { id: "1", name: "Samosa", price: 5.99, category: "Appetizers", description: "Crispy pastry filled with spiced potatoes and peas.", image: "https://placehold.co/600x400.png" },
@@ -97,4 +97,12 @@ export const tables: Table[] = [
   { id: 10, status: "available", capacity: 4 },
   { id: 11, status: "available", capacity: 2 },
   { id: 12, status: "reserved", capacity: 6 },
+];
+
+export const initialStaff: StaffMember[] = [
+  { id: "STAFF01", name: "Alice Johnson", role: "Manager", email: "alice@khanewala.com", phone: "123-456-7890", shift: "Morning", avatar: "https://placehold.co/100x100.png" },
+  { id: "STAFF02", name: "Bob Williams", role: "Chef", email: "bob@khanewala.com", phone: "123-456-7891", shift: "Afternoon", avatar: "https://placehold.co/100x100.png" },
+  { id: "STAFF03", name: "Charlie Brown", role: "Waiter", email: "charlie@khanewala.com", phone: "123-456-7892", shift: "Morning", avatar: "https://placehold.co/100x100.png" },
+  { id: "STAFF04", name: "Diana Prince", role: "Waiter", email: "diana@khanewala.com", phone: "123-456-7893", shift: "Night", avatar: "https://placehold.co/100x100.png" },
+  { id: "STAFF05", name: "Eve Adams", role: "Busboy", email: "eve@khanewala.com", phone: "123-456-7894", shift: "Afternoon", avatar: "https://placehold.co/100x100.png" },
 ];

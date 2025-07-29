@@ -31,3 +31,13 @@ export type Table = {
   capacity: number;
   orderId?: string;
 };
+
+export type StaffMember = {
+  id: string;
+  name: string;
+  role: "Manager" | "Chef" | "Waiter" | "Busboy";
+  email: string;
+  phone: string;
+  shift: "Morning" | "Afternoon" | "Night";
+  avatar?: string;
+};
