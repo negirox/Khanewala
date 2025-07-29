@@ -197,34 +197,51 @@ export function OrderKanban() {
                         {order.pointsEarned && order.pointsEarned > 0 && <div className="flex justify-between text-yellow-500"><span>Points Earned:</span> <span>+{order.pointsEarned}</span></div>}
                     </div>
                   </CardContent>
-                  <CardFooter className="flex flex-col gap-2">
-                     <div className="flex w-full flex-col sm:flex-row gap-2">
-                        <Button variant="outline" className="flex-1" onClick={() => { setDiscountOrder(order); setDiscountPercentage(order.discount)}}>
-                            <Percent className="mr-2 h-4 w-4" />
-                            Discount
-                        </Button>
-                        <Button variant="outline" className="flex-1" onClick={() => setPrintingOrder(order)}>
-                            <Printer className="mr-2 h-4 w-4" />
-                            Print Bill
-                        </Button>
-                     </div>
+                  <CardFooter className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        setDiscountOrder(order);
+                        setDiscountPercentage(order.discount);
+                      }}
+                    >
+                      <Percent className="mr-2 h-4 w-4" />
+                      Discount
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setPrintingOrder(order)}
+                    >
+                      <Printer className="mr-2 h-4 w-4" />
+                      Print Bill
+                    </Button>
                     {statusConfig[status].nextStatus && (
-                         <Button
-                          variant="secondary"
-                          className="w-full"
-                          onClick={() => handleUpdateStatus(order.id, statusConfig[status].nextStatus!)}
-                        >
-                          {statusConfig[status].nextStatus === 'archived' ? (
-                            <>
-                              Mark as Served & Archive <Archive className="ml-2 h-4 w-4" />
-                            </>
-                          ) : (
-                             <>
-                              Move to {statusConfig[statusConfig[status].nextStatus!].title}
-                              <ArrowRight className="ml-2 h-4 w-4" />
-                            </>
-                          )}
-                        </Button>
+                      <Button
+                        variant="secondary"
+                        className="w-full sm:w-auto sm:flex-1"
+                        onClick={() =>
+                          handleUpdateStatus(
+                            order.id,
+                            statusConfig[status].nextStatus!
+                          )
+                        }
+                      >
+                        {statusConfig[status].nextStatus === 'archived' ? (
+                          <>
+                            <span className="sm:hidden">Serve & Archive</span>
+                            <span className="hidden sm:inline">Mark as Served</span>
+                            <Archive className="ml-2 h-4 w-4" />
+                          </>
+                        ) : (
+                          <>
+                           <span className="sm:hidden">Next</span>
+                           <span className="hidden sm:inline">Move</span>
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </>
+                        )}
+                      </Button>
                     )}
                   </CardFooter>
                 </Card>
@@ -270,4 +287,5 @@ export function OrderKanban() {
 
     </div>
   );
-}
+
+    
