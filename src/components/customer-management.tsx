@@ -5,18 +5,18 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { Customer } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription as DialogDesc } from "./ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
-import { Mail, Phone, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { Mail, Phone, PlusCircle, Edit, Trash2, Star } from "lucide-react";
 import { csvRepository } from "@/services/csv-repository";
 import { cn } from "@/lib/utils";
 
 
-const emptyCustomer: Customer = { id: "", name: "", email: "", phone: "", avatar: "" };
+const emptyCustomer: Customer = { id: "", name: "", email: "", phone: "", avatar: "", loyaltyPoints: 0 };
 
 export function CustomerManagement() {
   const [customers, setCustomers] = React.useState<Customer[]>([]);
@@ -91,6 +91,9 @@ export function CustomerManagement() {
                 </Avatar>
                 <div className="flex-1 pt-2">
                     <CardTitle>{customer.name}</CardTitle>
+                    <CardDescription className="flex items-center justify-center gap-1 text-yellow-500">
+                        <Star className="h-4 w-4" /> {customer.loyaltyPoints} Points
+                    </CardDescription>
                 </div>
             </CardHeader>
             <CardContent className="flex-grow space-y-3">
@@ -133,6 +136,7 @@ const formSchema = z.object({
     email: z.string().email("Invalid email address"),
     phone: z.string().min(10, "Invalid phone number"),
     avatar: z.string().url().optional().or(z.literal('')),
+    loyaltyPoints: z.coerce.number().min(0, "Loyalty points cannot be negative."),
 });
 
 function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, customer: Customer | null, onSave: (data: Customer) => void}) {
@@ -154,9 +158,9 @@ function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{customer ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
-                    <DialogDescription>
+                    <DialogDesc>
                         {customer ? 'Update the details for this customer.' : 'Fill in the details for the new customer.'}
-                    </DialogDescription>
+                    </DialogDesc>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -185,6 +189,13 @@ function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen
                             <FormItem>
                                 <FormLabel>Avatar URL</FormLabel>
                                 <FormControl><Input placeholder="https://placehold.co/100x100.png" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="loyaltyPoints" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Loyalty Points</FormLabel>
+                                <FormControl><Input type="number" placeholder="0" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />

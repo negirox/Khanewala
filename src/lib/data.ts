@@ -112,7 +112,7 @@ export const initialStaff: StaffMember[] = [
 ];
 
 export const initialCustomers: Customer[] = [
-  { id: "CUST01", name: "John Doe", email: "john.d@email.com", phone: "555-0101", avatar: "https://placehold.co/100x100.png" },
-  { id: "CUST02", name: "Jane Smith", email: "jane.s@email.com", phone: "555-0102", avatar: "https://placehold.co/100x100.png" },
-  { id: "CUST03", name: "Peter Jones", email: "peter.j@email.com", phone: "555-0103", avatar: "https://placehold.co/100x100.png" },
+  { id: "CUST01", name: "John Doe", email: "john.d@email.com", phone: "555-0101", avatar: "https://placehold.co/100x100.png", loyaltyPoints: 150 },
+  { id: "CUST02", name: "Jane Smith", email: "jane.s@email.com", phone: "555-0102", avatar: "https://placehold.co/100x100.png", loyaltyPoints: 75 },
+  { id: "CUST03", name: "Peter Jones", email: "peter.j@email.com", phone: "555-0103", avatar: "https://placehold.co/100x100.png", loyaltyPoints: 20 },
 ];

@@ -17,6 +17,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { csvRepository } from "@/services/csv-repository";
+import { loyaltyService } from "@/services/loyalty-service";
+import { whatsappService } from "@/services/whatsapp-service";
+import { useToast } from "@/hooks/use-toast";
 
 const statusConfig: Record<
   OrderStatus,
@@ -39,6 +42,7 @@ export function OrderKanban() {
   const [printingOrder, setPrintingOrder] = React.useState<Order | null>(null);
   const [discountOrder, setDiscountOrder] = React.useState<Order | null>(null);
   const [discountPercentage, setDiscountPercentage] = React.useState<number>(0);
+  const { toast } = useToast();
 
   React.useEffect(() => {
     Promise.all([
@@ -71,9 +75,34 @@ export function OrderKanban() {
     }
   };
 
-  const handleNewOrder = (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
+  const handleNewOrder = async (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
+    let finalOrderData = { ...newOrderData };
+    let updatedCustomers = [...allCustomers];
+    
+    // Handle Loyalty Points
+    if (newOrderData.customerId) {
+        const customer = allCustomers.find(c => c.id === newOrderData.customerId);
+        if (customer) {
+            const { updatedCustomer, pointsEarned } = loyaltyService.addPointsForOrder(customer, newOrderData.total);
+            finalOrderData.pointsEarned = pointsEarned;
+            
+            // Send WhatsApp confirmation
+            whatsappService.sendOrderConfirmation(customer, finalOrderData as Order);
+
+            // Update customer in state and save
+            updatedCustomers = allCustomers.map(c => c.id === customer.id ? updatedCustomer : c);
+            setAllCustomers(updatedCustomers);
+            await csvRepository.saveCustomers(updatedCustomers);
+
+             toast({
+                title: "Loyalty Points Added!",
+                description: `${customer.name} earned ${pointsEarned} points.`,
+            });
+        }
+    }
+
     const newOrder: Order = {
-        ...newOrderData,
+        ...finalOrderData,
         id: `ORD${(Math.random() * 1000).toFixed(0).padStart(3, '0')}`,
         createdAt: new Date(),
     };
@@ -165,10 +194,11 @@ export function OrderKanban() {
                         <div className="flex justify-between"><span>Subtotal:</span> <span>${order.subtotal.toFixed(2)}</span></div>
                         {order.discount > 0 && <div className="flex justify-between text-destructive"><span>Discount:</span> <span>-{order.discount}%</span></div>}
                         <div className="flex justify-between font-bold text-base"><span>Total:</span> <span>${order.total.toFixed(2)}</span></div>
+                        {order.pointsEarned && order.pointsEarned > 0 && <div className="flex justify-between text-yellow-500"><span>Points Earned:</span> <span>+{order.pointsEarned}</span></div>}
                     </div>
                   </CardContent>
                   <CardFooter className="flex flex-col gap-2">
-                     <div className="flex flex-col sm:flex-row w-full gap-2">
+                     <div className="flex w-full flex-col sm:flex-row gap-2">
                         <Button variant="outline" className="w-full" onClick={() => { setDiscountOrder(order); setDiscountPercentage(order.discount)}}>
                             <Percent className="mr-2 h-4 w-4" />
                             Discount

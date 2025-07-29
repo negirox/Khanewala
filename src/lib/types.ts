@@ -25,6 +25,7 @@ export type Order = {
   createdAt: Date;
   customerId?: string;
   customerName?: string;
+  pointsEarned?: number;
 };
 
 export type Table = {
@@ -50,4 +51,5 @@ export type Customer = {
   email: string;
   phone: string;
   avatar?: string;
+  loyaltyPoints: number;
 };
