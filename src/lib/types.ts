@@ -23,6 +23,8 @@ export type Order = {
   discount: number; // Percentage
   total: number;
   createdAt: Date;
+  customerId?: string;
+  customerName?: string;
 };
 
 export type Table = {
@@ -39,5 +41,13 @@ export type StaffMember = {
   email: string;
   phone: string;
   shift: "Morning" | "Afternoon" | "Night";
+  avatar?: string;
+};
+
+export type Customer = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
   avatar?: string;
 };

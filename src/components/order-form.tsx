@@ -26,10 +26,11 @@ import {
   Bot,
   Sparkles,
   Loader2,
+  X,
 } from "lucide-react";
 import { getMenuRecommendations } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
-import type { MenuItem, OrderItem, Order } from "@/lib/types";
+import type { MenuItem, OrderItem, Order, Customer } from "@/lib/types";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -41,15 +42,19 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import Image from "next/image";
+import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
+import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "./ui/command";
 
 interface OrderFormProps {
   allMenuItems: MenuItem[];
+  allCustomers: Customer[];
   onSubmit: (orderData: Omit<Order, "id" | "createdAt">) => void;
 }
 
-export function OrderForm({ allMenuItems, onSubmit }: OrderFormProps) {
+export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormProps) {
   const [orderItems, setOrderItems] = React.useState<OrderItem[]>([]);
   const [tableNumber, setTableNumber] = React.useState<number | "">("");
+  const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
   const [isAiLoading, setIsAiLoading] = React.useState(false);
   const [aiSuggestion, setAiSuggestion] = React.useState<{ recommendations: string[], reasoning: string } | null>(null);
 
@@ -137,6 +142,8 @@ export function OrderForm({ allMenuItems, onSubmit }: OrderFormProps) {
         subtotal: subtotal,
         discount: 0,
         total: subtotal,
+        customerId: selectedCustomer?.id,
+        customerName: selectedCustomer?.name,
     });
   }
   
@@ -184,11 +191,24 @@ export function OrderForm({ allMenuItems, onSubmit }: OrderFormProps) {
         <div className="flex flex-col">
           <h3 className="font-semibold font-headline text-lg mb-2">Current Order</h3>
           <Card className="flex-1 flex flex-col">
-            <CardHeader>
+            <CardHeader className="space-y-4">
                 <div className="space-y-1">
                     <Label htmlFor="tableNumber">Table Number</Label>
                     <Input id="tableNumber" type="number" value={tableNumber} onChange={(e) => setTableNumber(Number(e.target.value))} placeholder="e.g. 5" />
                 </div>
+                 <div className="space-y-1">
+                    <Label>Customer (Optional)</Label>
+                    {selectedCustomer ? (
+                        <div className="flex items-center justify-between p-2 rounded-md bg-muted">
+                            <span className="font-medium">{selectedCustomer.name}</span>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedCustomer(null)}>
+                                <X className="h-4 w-4"/>
+                            </Button>
+                        </div>
+                    ) : (
+                        <CustomerSearchPopover customers={allCustomers} onSelectCustomer={setSelectedCustomer} />
+                    )}
+                 </div>
             </CardHeader>
             <CardContent className="flex-1 p-0">
               <ScrollArea className="h-full">
@@ -270,4 +290,40 @@ export function OrderForm({ allMenuItems, onSubmit }: OrderFormProps) {
       )}
     </>
   );
+}
+
+function CustomerSearchPopover({ customers, onSelectCustomer }: { customers: Customer[], onSelectCustomer: (customer: Customer) => void }) {
+    const [open, setOpen] = React.useState(false);
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-start">
+                    Search for a customer...
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0">
+                <Command>
+                    <CommandInput placeholder="Search by name, email..." />
+                    <CommandList>
+                        <CommandEmpty>No customer found.</CommandEmpty>
+                        <CommandGroup>
+                            {customers.map((customer) => (
+                                <CommandItem
+                                    key={customer.id}
+                                    value={`${customer.name} ${customer.email}`}
+                                    onSelect={() => {
+                                        onSelectCustomer(customer);
+                                        setOpen(false);
+                                    }}
+                                >
+                                    {customer.name}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    );
 }

@@ -1,4 +1,4 @@
-import type { MenuItem, Order, Table, StaffMember } from "./types";
+import type { MenuItem, Order, Table, StaffMember, Customer } from "./types";
 
 export const menuItems: MenuItem[] = [
   { id: "1", name: "Samosa", price: 5.99, category: "Appetizers", description: "Crispy pastry filled with spiced potatoes and peas.", image: "https://placehold.co/600x400.png" },
@@ -25,6 +25,8 @@ export let initialOrders: Order[] = [
     discount: 10,
     total: 39.56,
     createdAt: new Date(Date.now() - 10 * 60000), // 10 minutes ago
+    customerId: "CUST01",
+    customerName: "John Doe",
   },
   {
     id: "ORD002",
@@ -64,6 +66,8 @@ export let initialOrders: Order[] = [
     discount: 0,
     total: 19.96,
     createdAt: new Date(Date.now() - 15 * 60000), // 15 minutes ago
+    customerId: "CUST02",
+    customerName: "Jane Smith",
   },
 ];
 
@@ -105,4 +109,10 @@ export const initialStaff: StaffMember[] = [
   { id: "STAFF03", name: "Charlie Brown", role: "Waiter", email: "charlie@khanewala.com", phone: "123-456-7892", shift: "Morning", avatar: "https://placehold.co/100x100.png" },
   { id: "STAFF04", name: "Diana Prince", role: "Waiter", email: "diana@khanewala.com", phone: "123-456-7893", shift: "Night", avatar: "https://placehold.co/100x100.png" },
   { id: "STAFF05", name: "Eve Adams", role: "Busboy", email: "eve@khanewala.com", phone: "123-456-7894", shift: "Afternoon", avatar: "https://placehold.co/100x100.png" },
+];
+
+export const initialCustomers: Customer[] = [
+  { id: "CUST01", name: "John Doe", email: "john.d@email.com", phone: "555-0101", avatar: "https://placehold.co/100x100.png" },
+  { id: "CUST02", name: "Jane Smith", email: "jane.s@email.com", phone: "555-0102", avatar: "https://placehold.co/100x100.png" },
+  { id: "CUST03", name: "Peter Jones", email: "peter.j@email.com", phone: "555-0103", avatar: "https://placehold.co/100x100.png" },
 ];

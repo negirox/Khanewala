@@ -1,0 +1,4 @@
+id,name,email,phone,avatar
+CUST01,"John Doe","john.d@email.com","555-0101","https://placehold.co/100x100.png"
+CUST02,"Jane Smith","jane.s@email.com","555-0102","https://placehold.co/100x100.png"
+CUST03,"Peter Jones","peter.j@email.com","555-0103","https://placehold.co/100x100.png"

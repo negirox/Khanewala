@@ -9,8 +9,8 @@
  * You will also need to add file system access logic using Node.js `fs` module.
  */
 
-import { menuItems, initialOrders, initialArchivedOrders, tables, initialStaff } from '@/lib/data';
-import type { MenuItem, Order, Table, StaffMember } from '@/lib/types';
+import { menuItems, initialOrders, initialArchivedOrders, tables, initialStaff, initialCustomers } from '@/lib/data';
+import type { MenuItem, Order, Table, StaffMember, Customer } from '@/lib/types';
 import Papa from 'papaparse';
 import fs from 'fs/promises';
 import path from 'path';
@@ -121,6 +121,23 @@ class CsvRepository {
      * const filePath = getCSVPath('tables.csv');
      * const csvString = Papa.unparse(tables);
      * await fs.writeFile(filePath, csvString, 'utf8');
+    */
+    return Promise.resolve();
+  }
+
+  // Customers
+  async getCustomers(): Promise<Customer[]> {
+    console.log('Fetching customers from CSV...');
+    /*
+     * TODO: Implement file reading logic.
+    */
+    return Promise.resolve(initialCustomers);
+  }
+
+  async saveCustomers(customers: Customer[]): Promise<void> {
+    console.log('Saving customers to CSV...', customers);
+    /*
+     * TODO: Implement file writing logic.
     */
     return Promise.resolve();
   }

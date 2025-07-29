@@ -2,13 +2,13 @@
 "use client";
 
 import * as React from "react";
-import { PlusCircle, ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent } from "lucide-react";
+import { PlusCircle, ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { OrderForm } from "@/components/order-form";
 import { menuItems as allMenuItems } from "@/lib/data";
-import type { Order, OrderStatus } from "@/lib/types";
+import type { Order, OrderStatus, Customer } from "@/lib/types";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -34,6 +34,7 @@ const KANBAN_STATUSES: OrderStatus[] = ["received", "preparing", "ready"];
 export function OrderKanban() {
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
+  const [allCustomers, setAllCustomers] = React.useState<Customer[]>([]);
   const [isSheetOpen, setSheetOpen] = React.useState(false);
   const [printingOrder, setPrintingOrder] = React.useState<Order | null>(null);
   const [discountOrder, setDiscountOrder] = React.useState<Order | null>(null);
@@ -42,10 +43,12 @@ export function OrderKanban() {
   React.useEffect(() => {
     Promise.all([
       csvRepository.getActiveOrders(),
-      csvRepository.getArchivedOrders()
-    ]).then(([active, archived]) => {
+      csvRepository.getArchivedOrders(),
+      csvRepository.getCustomers()
+    ]).then(([active, archived, customers]) => {
       setOrders(active);
       setArchivedOrders(archived);
+      setAllCustomers(customers);
     })
   }, []);
 
@@ -116,7 +119,7 @@ export function OrderKanban() {
             </Button>
           </SheetTrigger>
           <SheetContent className="w-full sm:max-w-4xl">
-            <OrderForm allMenuItems={allMenuItems} onSubmit={handleNewOrder} />
+            <OrderForm allMenuItems={allMenuItems} allCustomers={allCustomers} onSubmit={handleNewOrder} />
           </SheetContent>
         </Sheet>
       </div>
@@ -141,6 +144,12 @@ export function OrderKanban() {
                         {formatDistanceToNow(order.createdAt, { addSuffix: true })}
                       </span>
                     </CardTitle>
+                    {order.customerName && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1">
+                            <User className="h-4 w-4" />
+                            <span>{order.customerName}</span>
+                        </div>
+                    )}
                   </CardHeader>
                   <CardContent className="flex-grow">
                     <ul>
