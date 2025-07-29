@@ -199,16 +199,15 @@ export function OrderKanban() {
                   </CardContent>
                   <CardFooter className="flex flex-col gap-2">
                      <div className="flex w-full flex-col sm:flex-row gap-2">
-                        <Button variant="outline" className="w-full" onClick={() => { setDiscountOrder(order); setDiscountPercentage(order.discount)}}>
+                        <Button variant="outline" className="flex-1" onClick={() => { setDiscountOrder(order); setDiscountPercentage(order.discount)}}>
                             <Percent className="mr-2 h-4 w-4" />
                             Discount
                         </Button>
-                        <Button variant="outline" className="w-full" onClick={() => setPrintingOrder(order)}>
+                        <Button variant="outline" className="flex-1" onClick={() => setPrintingOrder(order)}>
                             <Printer className="mr-2 h-4 w-4" />
                             Print Bill
                         </Button>
                      </div>
-                    <div className="w-full">
                     {statusConfig[status].nextStatus && (
                          <Button
                           variant="secondary"
@@ -227,7 +226,6 @@ export function OrderKanban() {
                           )}
                         </Button>
                     )}
-                    </div>
                   </CardFooter>
                 </Card>
               ))}
