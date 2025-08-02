@@ -150,19 +150,19 @@ export function StaffManagement() {
           </Card>
         ))}
       </div>
-      <EditStaffDialog
+      {isFormDialogOpen && <EditStaffDialog
         isOpen={isFormDialogOpen}
         onOpenChange={setFormDialogOpen}
         staffMember={editingStaff}
         onSave={handleSave}
-      />
-       <StaffTransactionDialog
+      />}
+       {isTransactionDialogOpen && <StaffTransactionDialog
         isOpen={isTransactionDialogOpen}
         onOpenChange={setTransactionDialogOpen}
         staffMember={viewingStaff}
         transactions={transactions.filter(t => t.staffId === viewingStaff?.id)}
         onAddTransaction={handleAddTransaction}
-      />
+      />}
     </div>
   );
 }
@@ -183,7 +183,7 @@ const formSchema = z.object({
     carryForwardBalance: z.coerce.number().optional(),
 });
 
-function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, staffMember: StaffMember | null, onSave: (data: StaffMember) => void}) {
+export function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, staffMember: StaffMember | null, onSave: (data: StaffMember) => void}) {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: staffMember || emptyStaffMember,
@@ -268,7 +268,7 @@ const transactionFormSchema = z.object({
 });
 
 
-function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transactions, onAddTransaction }: { 
+export function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transactions, onAddTransaction }: { 
     isOpen: boolean; 
     onOpenChange: (open: boolean) => void; 
     staffMember: StaffMember | null; 
@@ -374,7 +374,7 @@ function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transaction
                 </DialogContent>
             </Dialog>
 
-            <TransactionHistoryDialog 
+            {isHistoryOpen && <TransactionHistoryDialog 
                 isOpen={isHistoryOpen} 
                 onOpenChange={setHistoryOpen}
                 staffMember={staffMember}
@@ -387,7 +387,7 @@ function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transaction
                     salariesPaid: monthlyReport.salariesPaid,
                     netPayable: monthlyReport.netPayable,
                 }}
-            />
+            />}
         </>
     );
 }

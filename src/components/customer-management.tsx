@@ -124,12 +124,12 @@ export function CustomerManagement() {
           </Card>
         ))}
       </div>
-      <EditCustomerDialog
+      {isDialogOpen && <EditCustomerDialog
         isOpen={isDialogOpen}
         onOpenChange={setDialogOpen}
         customer={editingCustomer}
         onSave={handleSave}
-      />
+      />}
     </div>
   );
 }

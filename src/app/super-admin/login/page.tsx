@@ -26,16 +26,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { LockKeyhole, LogIn } from 'lucide-react';
+import { validateSuperAdminLogin } from '@/app/actions';
 
 const formSchema = z.object({
   username: z.string().min(1, 'Username is required'),
   password: z.string().min(1, 'Password is required'),
 });
-
-// IMPORTANT: These are hardcoded for demonstration purposes only.
-// In a real application, use a secure authentication system.
-const SUPER_ADMIN_USERNAME = 'superadmin';
-const SUPER_ADMIN_PASSWORD = 'password123';
 
 export default function SuperAdminLoginPage() {
   const router = useRouter();
@@ -56,11 +52,10 @@ export default function SuperAdminLoginPage() {
     }
   }, [router]);
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    if (
-      values.username === SUPER_ADMIN_USERNAME &&
-      values.password === SUPER_ADMIN_PASSWORD
-    ) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const { success } = await validateSuperAdminLogin(values);
+    
+    if (success) {
       // In a real app, you'd get a token from the server.
       // Here, we just set a flag in localStorage.
       localStorage.setItem('superAdminLoggedIn', 'true');
@@ -118,9 +113,8 @@ export default function SuperAdminLoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                <LogIn className="mr-2" />
-                Sign In
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Signing In...' : <><LogIn className="mr-2" />Sign In</>}
               </Button>
             </form>
           </Form>
