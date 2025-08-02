@@ -5,8 +5,7 @@ import * as React from "react";
 import { PlusCircle, ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent, User, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle as DialogTitlePrimitive } from "@/components/ui/dialog";
-import { OrderForm } from "@/components/order-form";
+import { Dialog, DialogContent, DialogHeader, DialogTitle as DialogTitlePrimitive } from "@/components/ui/dialog";
 import type { Order, OrderStatus, Customer, MenuItem, Table as TableType } from "@/lib/types";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
@@ -14,7 +13,7 @@ import { BillView } from "./bill-view";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { getActiveOrders, getArchivedOrders, getCustomers, getMenuItems, saveAllOrders, createNewOrder, getTables, saveTables } from "@/app/actions";
+import { getActiveOrders, getArchivedOrders, saveAllOrders, saveTables, getTables } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { appConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
@@ -35,10 +34,7 @@ const KANBAN_STATUSES: OrderStatus[] = ["received", "preparing", "ready"];
 export function OrderKanban() {
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
-  const [allCustomers, setAllCustomers] = React.useState<Customer[]>([]);
-  const [allMenuItems, setAllMenuItems] = React.useState<MenuItem[]>([]);
   const [allTables, setAllTables] = React.useState<TableType[]>([]);
-  const [isNewOrderDialogOpen, setNewOrderDialogOpen] = React.useState(false);
   const [printingOrder, setPrintingOrder] = React.useState<Order | null>(null);
   const [discountOrder, setDiscountOrder] = React.useState<Order | null>(null);
   const [discountPercentage, setDiscountPercentage] = React.useState<number>(0);
@@ -48,14 +44,10 @@ export function OrderKanban() {
     Promise.all([
       getActiveOrders(),
       getArchivedOrders(),
-      getCustomers(),
-      getMenuItems(),
       getTables()
-    ]).then(([active, archived, customers, menuItems, tables]) => {
+    ]).then(([active, archived, tables]) => {
       setOrders(active.map(o => ({...o, createdAt: new Date(o.createdAt)})));
       setArchivedOrders(archived.map(o => ({...o, createdAt: new Date(o.createdAt)})));
-      setAllCustomers(customers);
-      setAllMenuItems(menuItems);
       setAllTables(tables);
     })
   }, []);
@@ -89,31 +81,6 @@ export function OrderKanban() {
     setArchivedOrders(newArchivedOrders);
     await saveAllOrders(newActiveOrders, newArchivedOrders);
   }, [orders, archivedOrders, allTables]);
-
-  const handleNewOrder = React.useCallback(async (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
-    const { newActiveOrders, updatedCustomers, newOrder } = await createNewOrder(newOrderData, orders, archivedOrders, allCustomers);
-
-    setOrders(newActiveOrders.map(o => ({...o, createdAt: new Date(o.createdAt)})));
-    setAllCustomers(updatedCustomers);
-    
-    // Also update table status to occupied
-    const updatedTables = allTables.map(table => 
-        table.id === newOrder.tableNumber
-        ? { ...table, status: 'occupied', orderId: newOrder.id }
-        : table
-    );
-    setAllTables(updatedTables);
-    await saveTables(updatedTables);
-
-    if (newOrder.pointsEarned) {
-         toast({
-            title: "Loyalty Points Added!",
-            description: `${newOrder.customerName} earned ${newOrder.pointsEarned} points.`,
-        });
-    }
-
-    setNewOrderDialogOpen(false);
-  }, [orders, archivedOrders, allCustomers, allTables, toast]);
   
   const handleCancelOrder = React.useCallback(async (orderToCancel: Order) => {
     const newActiveOrders = orders.filter(o => o.id !== orderToCancel.id);
@@ -175,17 +142,6 @@ export function OrderKanban() {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold font-headline">Current Orders</h1>
-        <Dialog open={isNewOrderDialogOpen} onOpenChange={setNewOrderDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Order
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
-            <OrderForm allMenuItems={allMenuItems} allCustomers={allCustomers} allTables={allTables} onSubmit={handleNewOrder} onCancel={() => setNewOrderDialogOpen(false)} />
-          </DialogContent>
-        </Dialog>
       </div>
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 items-start">

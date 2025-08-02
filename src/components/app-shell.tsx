@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Shield,
   Settings,
+  PlusCircle,
 } from "lucide-react";
 
 import {
@@ -35,6 +36,12 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "./ui/collap
 import { cn } from "@/lib/utils";
 import { appConfig } from "@/lib/config";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
+import { Button } from "./ui/button";
+import { OrderForm } from "./order-form";
+import { createNewOrder, getCustomers, getMenuItems, getTables, getActiveOrders, getArchivedOrders, saveTables } from "@/app/actions";
+import type { Customer, MenuItem, Order, Table } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 const operationalNavItems = [
   { href: "/orders", icon: ClipboardList, label: "Orders" },
@@ -116,6 +123,78 @@ function AdminMenu() {
     )
 }
 
+function NewOrderDialog() {
+  const [isNewOrderDialogOpen, setNewOrderDialogOpen] = React.useState(false);
+  const [allCustomers, setAllCustomers] = React.useState<Customer[]>([]);
+  const [allMenuItems, setAllMenuItems] = React.useState<MenuItem[]>([]);
+  const [allTables, setAllTables] = React.useState<Table[]>([]);
+  const [orders, setOrders] = React.useState<Order[]>([]);
+  const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
+  const { toast } = useToast();
+
+   React.useEffect(() => {
+    // We only need to fetch this data when the dialog can be opened.
+    if (isNewOrderDialogOpen) {
+      Promise.all([
+        getCustomers(),
+        getMenuItems(),
+        getTables(),
+        getActiveOrders(),
+        getArchivedOrders(),
+      ]).then(([customers, menuItems, tables, active, archived]) => {
+        setAllCustomers(customers);
+        setAllMenuItems(menuItems);
+        setAllTables(tables);
+        setOrders(active);
+        setArchivedOrders(archived);
+      })
+    }
+  }, [isNewOrderDialogOpen]);
+
+  const handleNewOrder = React.useCallback(async (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
+    const { newActiveOrders, updatedCustomers, newOrder } = await createNewOrder(newOrderData, orders, archivedOrders, allCustomers);
+
+    // This won't trigger a live refresh on the kanban board, user will need to refresh.
+    // A more robust solution would involve a global state manager or context.
+    
+    // Also update table status to occupied
+    const updatedTables = allTables.map(table => 
+        table.id === newOrder.tableNumber
+        ? { ...table, status: 'occupied', orderId: newOrder.id }
+        : table
+    );
+    await saveTables(updatedTables);
+
+    if (newOrder.pointsEarned) {
+         toast({
+            title: "Loyalty Points Added!",
+            description: `${newOrder.customerName} earned ${newOrder.pointsEarned} points.`,
+        });
+    }
+
+    toast({
+        title: "Order Created",
+        description: `Order ${newOrder.id} has been created. Refresh the page to see it.`,
+    });
+
+    setNewOrderDialogOpen(false);
+  }, [orders, archivedOrders, allCustomers, allTables, toast]);
+
+  return (
+    <Dialog open={isNewOrderDialogOpen} onOpenChange={setNewOrderDialogOpen}>
+        <DialogTrigger asChild>
+        <Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Order
+        </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+        <OrderForm allMenuItems={allMenuItems} allCustomers={allCustomers} allTables={allTables} onSubmit={handleNewOrder} onCancel={() => setNewOrderDialogOpen(false)} />
+        </DialogContent>
+    </Dialog>
+  )
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
@@ -169,6 +248,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {allNavItems.find(item => pathname.startsWith(item.href))?.label}
                </h1>
             </div>
+            {pathname.startsWith('/orders') && <NewOrderDialog />}
           </header>
           <main className="flex-1 p-4 md:p-6">{children}</main>
         </SidebarInset>
