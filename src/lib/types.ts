@@ -1,3 +1,4 @@
+
 export type OrderStatus = "received" | "preparing" | "ready" | "served" | "archived";
 
 export type MenuItem = {
@@ -7,6 +8,7 @@ export type MenuItem = {
   category: "Appetizers" | "Main Courses" | "Desserts" | "Beverages";
   description?: string;
   image?: string;
+  "data-ai-hint"?: string;
 };
 
 export type OrderItem = {
@@ -43,6 +45,10 @@ export type StaffMember = {
   phone: string;
   shift: "Morning" | "Afternoon" | "Night";
   avatar?: string;
+  salary?: number;
+  aadharCard?: string;
+  panCard?: string;
+  voterId?: string;
 };
 
 export type Customer = {
@@ -53,3 +59,6 @@ export type Customer = {
   avatar?: string;
   loyaltyPoints: number;
 };
+
+export type AppTheme = 'default' | 'ocean' | 'sunset' | 'mint' | 'plum';
+export type AppFont = 'pt-sans' | 'roboto-slab';

@@ -20,6 +20,7 @@ import { csvRepository } from "@/services/csv-repository";
 import { loyaltyService } from "@/services/loyalty-service";
 import { whatsappService } from "@/services/whatsapp-service";
 import { useToast } from "@/hooks/use-toast";
+import { appConfig } from "@/lib/config";
 
 const statusConfig: Record<
   OrderStatus,
@@ -114,7 +115,17 @@ export function OrderKanban() {
 
   const handleApplyDiscount = () => {
     if (!discountOrder) return;
-    const discountValue = Math.max(0, Math.min(100, discountPercentage));
+    const discountValue = Math.max(0, Math.min(appConfig.maxDiscount, discountPercentage));
+    
+    if (discountValue > appConfig.maxDiscount) {
+        toast({
+            variant: "destructive",
+            title: "Discount Error",
+            description: `Discount cannot exceed the maximum of ${appConfig.maxDiscount}%.`,
+        });
+        return;
+    }
+
     const newActiveOrders = orders.map(o => {
         if (o.id === discountOrder.id) {
             const newTotal = o.subtotal * (1 - discountValue / 100);
@@ -191,36 +202,38 @@ export function OrderKanban() {
                     </ul>
                     <div className="border-t my-2" />
                     <div className="space-y-1 text-sm">
-                        <div className="flex justify-between"><span>Subtotal:</span> <span>${order.subtotal.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span>Subtotal:</span> <span>{appConfig.currency}{order.subtotal.toFixed(2)}</span></div>
                         {order.discount > 0 && <div className="flex justify-between text-destructive"><span>Discount:</span> <span>-{order.discount}%</span></div>}
-                        <div className="flex justify-between font-bold text-base"><span>Total:</span> <span>${order.total.toFixed(2)}</span></div>
+                        <div className="flex justify-between font-bold text-base"><span>Total:</span> <span>{appConfig.currency}{order.total.toFixed(2)}</span></div>
                         {order.pointsEarned && order.pointsEarned > 0 && <div className="flex justify-between text-yellow-500"><span>Points Earned:</span> <span>+{order.pointsEarned}</span></div>}
                     </div>
                   </CardContent>
-                  <CardFooter className="flex flex-col sm:flex-row gap-2">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => {
-                        setDiscountOrder(order);
-                        setDiscountPercentage(order.discount);
-                      }}
-                    >
-                      <Percent className="mr-2 h-4 w-4" />
-                      Discount
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setPrintingOrder(order)}
-                    >
-                      <Printer className="mr-2 h-4 w-4" />
-                      Print Bill
-                    </Button>
+                   <CardFooter className="flex flex-col gap-2">
+                     <div className="flex w-full flex-col sm:flex-row gap-2">
+                         <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => {
+                            setDiscountOrder(order);
+                            setDiscountPercentage(order.discount);
+                          }}
+                        >
+                          <Percent className="mr-2 h-4 w-4" />
+                          Discount
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => setPrintingOrder(order)}
+                        >
+                          <Printer className="mr-2 h-4 w-4" />
+                          Print Bill
+                        </Button>
+                     </div>
                     {statusConfig[status].nextStatus && (
                       <Button
                         variant="secondary"
-                        className="w-full sm:w-auto sm:flex-1"
+                        className="w-full"
                         onClick={() =>
                           handleUpdateStatus(
                             order.id,
@@ -230,14 +243,12 @@ export function OrderKanban() {
                       >
                         {statusConfig[status].nextStatus === 'archived' ? (
                           <>
-                            <span className="sm:hidden">Serve & Archive</span>
-                            <span className="hidden sm:inline">Mark as Served</span>
+                            <span>Serve & Archive</span>
                             <Archive className="ml-2 h-4 w-4" />
                           </>
                         ) : (
                           <>
-                           <span className="sm:hidden">Next</span>
-                           <span className="hidden sm:inline">Move</span>
+                           <span>Move to Next</span>
                             <ArrowRight className="ml-2 h-4 w-4" />
                           </>
                         )}
@@ -265,7 +276,8 @@ export function OrderKanban() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Apply Discount</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Enter a discount percentage for order {discountOrder?.id}.
+                    Enter a discount percentage for order {discountOrder?.id}. 
+                    The maximum allowed discount is {appConfig.maxDiscount}%.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="py-4">
@@ -275,7 +287,8 @@ export function OrderKanban() {
                     type="number"
                     value={discountPercentage}
                     onChange={(e) => setDiscountPercentage(Number(e.target.value))}
-                    placeholder="e.g. 15"
+                    placeholder={`e.g. 15 (Max ${appConfig.maxDiscount})`}
+                    max={appConfig.maxDiscount}
                 />
             </div>
             <AlertDialogFooter>
@@ -288,4 +301,3 @@ export function OrderKanban() {
     </div>
   );
 
-    

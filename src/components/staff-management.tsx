@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -9,13 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Mail, Phone, Clock, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csvRepository } from "@/services/csv-repository";
+import { appConfig } from "@/lib/config";
 
 const roleColors: Record<StaffMember['role'], string> = {
     Manager: "bg-red-500 text-white",
@@ -24,7 +26,7 @@ const roleColors: Record<StaffMember['role'], string> = {
     Busboy: "bg-green-500 text-white",
 };
 
-const emptyStaffMember: StaffMember = { id: "", name: "", role: "Waiter", email: "", phone: "", shift: "Morning", avatar: "" };
+const emptyStaffMember: StaffMember = { id: "", name: "", role: "Waiter", email: "", phone: "", shift: "Morning", avatar: "", salary: 0, aadharCard: "", panCard: "", voterId: "" };
 
 export function StaffManagement() {
   const [staff, setStaff] = React.useState<StaffMember[]>([]);
@@ -78,7 +80,7 @@ export function StaffManagement() {
           <Card key={member.id} className="flex flex-col">
             <CardHeader className="items-center text-center">
                 <Avatar className="h-20 w-20">
-                    <AvatarImage src={member.avatar} alt={member.name} />
+                    <AvatarImage src={member.avatar || "https://placehold.co/100x100.png"} alt={member.name} />
                     <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
@@ -100,6 +102,10 @@ export function StaffManagement() {
               <div className="flex items-center gap-3">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">Shift: {member.shift}</span>
+              </div>
+               <div className="flex items-center gap-3">
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">Salary: {appConfig.currency}{member.salary?.toFixed(2) ?? 'N/A'}</span>
               </div>
             </CardContent>
             <div className="flex justify-end p-2 border-t">
@@ -132,6 +138,10 @@ const formSchema = z.object({
     phone: z.string().min(10, "Invalid phone number"),
     shift: z.enum(["Morning", "Afternoon", "Night"]),
     avatar: z.string().url().optional().or(z.literal('')),
+    salary: z.coerce.number().min(0, "Salary cannot be negative.").optional(),
+    aadharCard: z.string().optional(),
+    panCard: z.string().optional(),
+    voterId: z.string().optional(),
 });
 
 function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, staffMember: StaffMember | null, onSave: (data: StaffMember) => void}) {
@@ -150,9 +160,12 @@ function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: { isOpen
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{staffMember ? 'Edit Staff Member' : 'Add New Staff Member'}</DialogTitle>
+                    <DialogDescription>
+                        {staffMember ? 'Update the details for this staff member.' : 'Fill in the details for the new staff member.'}
+                    </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -210,6 +223,45 @@ function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: { isOpen
                             <FormItem>
                                 <FormLabel>Avatar URL</FormLabel>
                                 <FormControl><Input placeholder="https://placehold.co/100x100.png" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormItem>
+                            <FormLabel>Upload Image</FormLabel>
+                            <div className="flex items-center gap-2">
+                                <Input type="file" className="flex-1" disabled/>
+                                <Button variant="outline" type="button" disabled>
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Upload
+                                </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">Image uploads are not implemented in this demo.</p>
+                        </FormItem>
+                         <FormField control={form.control} name="salary" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Salary</FormLabel>
+                                <FormControl><Input type="number" step="0.01" placeholder="3000.00" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="aadharCard" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Aadhar Card No.</FormLabel>
+                                <FormControl><Input placeholder="1234 5678 9012" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="panCard" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>PAN Card No.</FormLabel>
+                                <FormControl><Input placeholder="ABCDE1234F" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="voterId" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Voter ID No.</FormLabel>
+                                <FormControl><Input placeholder="XYZ1234567" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />

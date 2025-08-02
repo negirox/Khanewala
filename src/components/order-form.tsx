@@ -44,6 +44,7 @@ import {
 import Image from "next/image";
 import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "./ui/command";
+import { appConfig } from "@/lib/config";
 
 interface OrderFormProps {
   allMenuItems: MenuItem[];
@@ -176,7 +177,7 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
                                 {item.image && <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md object-cover" />}
                                 <div className="flex-1">
                                     <p className="font-semibold">{item.name}</p>
-                                    <p className="text-sm text-muted-foreground">${item.price.toFixed(2)}</p>
+                                    <p className="text-sm text-muted-foreground">{appConfig.currency}{item.price.toFixed(2)}</p>
                                 </div>
                             </Card>
                         ))}
@@ -219,14 +220,14 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
                       <div key={item.menuItem.id} className="flex items-center gap-4">
                         <div className="flex-1">
                           <p className="font-medium">{item.menuItem.name}</p>
-                          <p className="text-sm text-muted-foreground">${item.menuItem.price.toFixed(2)}</p>
+                          <p className="text-sm text-muted-foreground">{appConfig.currency}{item.menuItem.price.toFixed(2)}</p>
                         </div>
                         <div className="flex items-center gap-2">
                             <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleUpdateQuantity(item.menuItem.id, item.quantity - 1)}><MinusCircle className="h-4 w-4" /></Button>
                             <span>{item.quantity}</span>
                             <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleUpdateQuantity(item.menuItem.id, item.quantity + 1)}><PlusCircle className="h-4 w-4" /></Button>
                         </div>
-                        <p className="w-16 text-right font-medium">${(item.menuItem.price * item.quantity).toFixed(2)}</p>
+                        <p className="w-16 text-right font-medium">{appConfig.currency}{(item.menuItem.price * item.quantity).toFixed(2)}</p>
                         <Button variant="ghost" size="icon" className="text-destructive h-6 w-6" onClick={() => handleRemoveItem(item.menuItem.id)}><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     ))}
@@ -245,7 +246,7 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
                     <CardFooter className="flex flex-col gap-4 p-6">
                         <div className="flex justify-between w-full font-bold text-lg">
                             <span>Total</span>
-                            <span>${subtotal.toFixed(2)}</span>
+                            <span>{appConfig.currency}{subtotal.toFixed(2)}</span>
                         </div>
                          <Button type="button" variant="outline" className="w-full" onClick={handleGetAiSuggestions} disabled={isAiLoading}>
                             {isAiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}

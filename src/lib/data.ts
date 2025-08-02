@@ -1,15 +1,16 @@
 import type { MenuItem, Order, Table, StaffMember, Customer } from "./types";
+import { subDays } from 'date-fns';
 
 export const menuItems: MenuItem[] = [
-  { id: "1", name: "Samosa", price: 5.99, category: "Appetizers", description: "Crispy pastry filled with spiced potatoes and peas.", image: "https://placehold.co/600x400.png" },
-  { id: "2", name: "Pakora", price: 6.99, category: "Appetizers", description: "Mixed vegetables dipped in gram flour batter and deep-fried.", image: "https://placehold.co/600x400.png" },
-  { id: "3", name: "Butter Chicken", price: 15.99, category: "Main Courses", description: "Grilled chicken simmered in a creamy tomato sauce.", image: "https://placehold.co/600x400.png" },
-  { id: "4", name: "Palak Paneer", price: 14.99, category: "Main Courses", description: "Indian cheese cubes in a smooth spinach sauce.", image: "https://placehold.co/600x400.png" },
-  { id: "5", name: "Chole Bhature", price: 13.99, category: "Main Courses", description: "Spicy chickpea curry served with fluffy fried bread.", image: "https://placehold.co/600x400.png" },
-  { id: "6", name: "Gulab Jamun", price: 4.99, category: "Desserts", description: "Soft, spongy balls made of milk solids, soaked in rose-scented syrup.", image: "https://placehold.co/600x400.png" },
-  { id: "7", name: "Rasmalai", price: 5.99, category: "Desserts", description: "Cottage cheese dumplings soaked in sweetened, thickened milk.", image: "https://placehold.co/600x400.png" },
-  { id: "8", name: "Mango Lassi", price: 4.50, category: "Beverages", description: "A refreshing yogurt-based drink with mango pulp.", image: "https://placehold.co/600x400.png" },
-  { id: "9", name: "Masala Chai", price: 2.99, category: "Beverages", description: "Spiced milk tea with a blend of aromatic herbs.", image: "https://placehold.co/600x400.png" },
+  { id: "1", name: "Samosa", price: 5.99, category: "Appetizers", description: "Crispy pastry filled with spiced potatoes and peas.", image: "https://placehold.co/600x400.png", "data-ai-hint": "samosa pastry" },
+  { id: "2", name: "Pakora", price: 6.99, category: "Appetizers", description: "Mixed vegetables dipped in gram flour batter and deep-fried.", image: "https://placehold.co/600x400.png", "data-ai-hint": "pakora fritter" },
+  { id: "3", name: "Butter Chicken", price: 15.99, category: "Main Courses", description: "Grilled chicken simmered in a creamy tomato sauce.", image: "https://placehold.co/600x400.png", "data-ai-hint": "butter chicken" },
+  { id: "4", name: "Palak Paneer", price: 14.99, category: "Main Courses", description: "Indian cheese cubes in a smooth spinach sauce.", image: "https://placehold.co/600x400.png", "data-ai-hint": "palak paneer" },
+  { id: "5", name: "Chole Bhature", price: 13.99, category: "Main Courses", description: "Spicy chickpea curry served with fluffy fried bread.", image: "https://placehold.co/600x400.png", "data-ai-hint": "chole bhature" },
+  { id: "6", name: "Gulab Jamun", price: 4.99, category: "Desserts", description: "Soft, spongy balls made of milk solids, soaked in rose-scented syrup.", image: "https://placehold.co/600x400.png", "data-ai-hint": "gulab jamun" },
+  { id: "7", name: "Rasmalai", price: 5.99, category: "Desserts", description: "Cottage cheese dumplings soaked in sweetened, thickened milk.", image: "https://placehold.co/600x400.png", "data-ai-hint": "rasmalai dessert" },
+  { id: "8", name: "Mango Lassi", price: 4.50, category: "Beverages", description: "A refreshing yogurt-based drink with mango pulp.", image: "https://placehold.co/600x400.png", "data-ai-hint": "mango lassi" },
+  { id: "9", name: "Masala Chai", price: 2.99, category: "Beverages", description: "Spiced milk tea with a blend of aromatic herbs.", image: "https://placehold.co/600x400.png", "data-ai-hint": "masala chai" },
 ];
 
 export let initialOrders: Order[] = [
@@ -71,20 +72,39 @@ export let initialOrders: Order[] = [
   },
 ];
 
+const generatePastOrder = (daysAgo: number, id: string): Order => {
+    const itemsCount = Math.floor(Math.random() * 3) + 1;
+    const orderItems = Array.from({ length: itemsCount }, () => {
+        const menuItem = menuItems[Math.floor(Math.random() * menuItems.length)];
+        return { menuItem, quantity: Math.floor(Math.random() * 2) + 1 };
+    });
+    const subtotal = orderItems.reduce((acc, item) => acc + item.menuItem.price * item.quantity, 0);
+    const discount = Math.random() > 0.8 ? 10 : 0;
+    const total = subtotal * (1 - discount / 100);
+
+    return {
+        id,
+        tableNumber: Math.floor(Math.random() * 12) + 1,
+        items: orderItems,
+        status: "archived",
+        subtotal,
+        discount,
+        total,
+        createdAt: subDays(new Date(), daysAgo),
+    };
+};
+
 export let initialArchivedOrders: Order[] = [
-    {
-    id: "ORD005",
-    tableNumber: 2,
-    items: [
-      { menuItem: menuItems[1], quantity: 1 },
-      { menuItem: menuItems[3], quantity: 1 },
-    ],
-    status: "archived",
-    subtotal: 21.98,
-    discount: 0,
-    total: 21.98,
-    createdAt: new Date(Date.now() - 30 * 60000), // 30 minutes ago
-  },
+    generatePastOrder(0, "ORD005"),
+    generatePastOrder(0, "ORD006"),
+    generatePastOrder(1, "ORD007"),
+    generatePastOrder(1, "ORD008"),
+    generatePastOrder(2, "ORD009"),
+    generatePastOrder(3, "ORD010"),
+    generatePastOrder(4, "ORD011"),
+    generatePastOrder(5, "ORD012"),
+    generatePastOrder(6, "ORD013"),
+    generatePastOrder(6, "ORD014"),
 ];
 
 
@@ -104,11 +124,11 @@ export const tables: Table[] = [
 ];
 
 export const initialStaff: StaffMember[] = [
-  { id: "STAFF01", name: "Alice Johnson", role: "Manager", email: "alice@khanewala.com", phone: "123-456-7890", shift: "Morning", avatar: "https://placehold.co/100x100.png" },
-  { id: "STAFF02", name: "Bob Williams", role: "Chef", email: "bob@khanewala.com", phone: "123-456-7891", shift: "Afternoon", avatar: "https://placehold.co/100x100.png" },
-  { id: "STAFF03", name: "Charlie Brown", role: "Waiter", email: "charlie@khanewala.com", phone: "123-456-7892", shift: "Morning", avatar: "https://placehold.co/100x100.png" },
-  { id: "STAFF04", name: "Diana Prince", role: "Waiter", email: "diana@khanewala.com", phone: "123-456-7893", shift: "Night", avatar: "https://placehold.co/100x100.png" },
-  { id: "STAFF05", name: "Eve Adams", role: "Busboy", email: "eve@khanewala.com", phone: "123-456-7894", shift: "Afternoon", avatar: "https://placehold.co/100x100.png" },
+  { id: "STAFF01", name: "Alice Johnson", role: "Manager", email: "alice@khanewala.com", phone: "123-456-7890", shift: "Morning", avatar: "https://placehold.co/100x100.png", salary: 50000 },
+  { id: "STAFF02", name: "Bob Williams", role: "Chef", email: "bob@khanewala.com", phone: "123-456-7891", shift: "Afternoon", avatar: "https://placehold.co/100x100.png", salary: 45000 },
+  { id: "STAFF03", name: "Charlie Brown", role: "Waiter", email: "charlie@khanewala.com", phone: "123-456-7892", shift: "Morning", avatar: "https://placehold.co/100x100.png", salary: 30000 },
+  { id: "STAFF04", name: "Diana Prince", role: "Waiter", email: "diana@khanewala.com", phone: "123-456-7893", shift: "Night", avatar: "https://placehold.co/100x100.png", salary: 32000 },
+  { id: "STAFF05", name: "Eve Adams", role: "Busboy", email: "eve@khanewala.com", phone: "123-456-7894", shift: "Afternoon", avatar: "https://placehold.co/100x100.png", salary: 25000 },
 ];
 
 export const initialCustomers: Customer[] = [
