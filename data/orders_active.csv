@@ -1,0 +1,2 @@
+items,status,subtotal,discount,total,customerId,customerName,pointsRedeemed,redeemedValue,pointsEarned,id,createdAt
+"[{""quantity"":1,""menuItem"":{""id"":""ITEM002""}},{""quantity"":1,""menuItem"":{""id"":""ITEM001""}}]",ready,400,5,374,CUST01,John Doe,6,6,4,ORD-1754140520063-382,2025-08-02T13:15:20.063Z

@@ -81,7 +81,13 @@ export function BillView({ order }: { order: Order }) {
                 {order.discount > 0 && (
                      <div className="flex justify-between">
                         <span>Discount ({order.discount}%):</span>
-                        <span className="text-right">-{appConfig.currency}{(order.subtotal - order.total).toFixed(2)}</span>
+                        <span className="text-right">-{appConfig.currency}{(order.subtotal * order.discount / 100).toFixed(2)}</span>
+                    </div>
+                )}
+                 {(order.redeemedValue ?? 0) > 0 && (
+                    <div className="flex justify-between">
+                        <span>Points Redeemed:</span>
+                        <span className="text-right">-{appConfig.currency}{(order.redeemedValue!).toFixed(2)}</span>
                     </div>
                 )}
                 <div className="flex justify-between font-bold text-base mt-2">
