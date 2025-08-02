@@ -1,3 +1,4 @@
+
 export type OrderStatus = "received" | "preparing" | "ready" | "served" | "archived";
 
 export type MenuItem = {
@@ -44,6 +45,9 @@ export type StaffMember = {
   shift: "Morning" | "Afternoon" | "Night";
   avatar?: string;
   salary?: number;
+  aadharCard?: string;
+  panCard?: string;
+  voterId?: string;
 };
 
 export type Customer = {

@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -11,7 +12,7 @@ import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription as DialogDesc } from "./ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
-import { Mail, Phone, PlusCircle, Edit, Trash2, Star } from "lucide-react";
+import { Mail, Phone, PlusCircle, Edit, Trash2, Star, Upload } from "lucide-react";
 import { csvRepository } from "@/services/csv-repository";
 import { cn } from "@/lib/utils";
 
@@ -86,7 +87,7 @@ export function CustomerManagement() {
           <Card key={customer.id} className="flex flex-col">
             <CardHeader className="items-center text-center">
                 <Avatar className="h-20 w-20">
-                    <AvatarImage src={customer.avatar} alt={customer.name} />
+                    <AvatarImage src={customer.avatar || "https://placehold.co/100x100.png"} alt={customer.name} />
                     <AvatarFallback>{customer.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 pt-2">
@@ -155,7 +156,7 @@ function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{customer ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
                     <DialogDesc>
@@ -192,6 +193,17 @@ function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen
                                 <FormMessage />
                             </FormItem>
                         )} />
+                        <FormItem>
+                            <FormLabel>Upload Image</FormLabel>
+                            <div className="flex items-center gap-2">
+                                <Input type="file" className="flex-1" disabled/>
+                                <Button variant="outline" type="button" disabled>
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Upload
+                                </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">Image uploads are not implemented in this demo.</p>
+                        </FormItem>
                         <FormField control={form.control} name="loyaltyPoints" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Loyalty Points</FormLabel>

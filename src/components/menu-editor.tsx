@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -156,7 +157,7 @@ function EditItemDialog({ isOpen, onOpenChange, item, onSave }: { isOpen: boolea
   
   return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{item ? 'Edit Menu Item' : 'Add New Menu Item'}</DialogTitle>
             <DialogDescription>
