@@ -209,6 +209,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     appConfig.enabledAdminSections[item.configKey as keyof typeof appConfig.enabledAdminSections]
   );
   const allNavItems = [...operationalNavItems, ...adminNavItems];
+  
+  const isOrdersPage = pathname.startsWith('/orders');
 
   return (
     <SidebarProvider>
@@ -250,9 +252,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {allNavItems.find(item => pathname.startsWith(item.href))?.label}
                </h1>
             </div>
-            {pathname.startsWith('/orders') && <NewOrderDialog />}
+            {isOrdersPage && <NewOrderDialog />}
           </header>
-          <main className="flex-1 p-4 md:p-6">{children}</main>
+          <main className="flex-1 p-4 md:p-6">
+            {children}
+          </main>
         </SidebarInset>
       </div>
     </SidebarProvider>

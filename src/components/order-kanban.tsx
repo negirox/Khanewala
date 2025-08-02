@@ -243,10 +243,6 @@ export function OrderKanban() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold font-headline">Current Orders</h1>
-      </div>
-
       <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 items-start">
         {KANBAN_STATUSES.map((status) => (
           <div key={status} className="flex flex-col gap-4">
