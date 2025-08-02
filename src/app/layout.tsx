@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -26,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${ptSans.variable} ${robotoSlab.variable} font-body antialiased`}>
+    <html lang="en">
+      <body className={`${ptSans.variable} ${robotoSlab.variable} font-body antialiased`} suppressHydrationWarning>
         {children}
         <Toaster />
       </body>

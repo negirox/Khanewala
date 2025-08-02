@@ -4,7 +4,7 @@
  * handling all data operations by reading from and writing to CSV files
  * stored in the `/data` directory.
  */
-import type { MenuItem, Order, Table, StaffMember, Customer } from '@/lib/types';
+import type { MenuItem, Order, Table, StaffMember, Customer, StaffTransaction } from '@/lib/types';
 import Papa from 'papaparse';
 import fs from 'fs/promises';
 import path from 'path';
@@ -25,10 +25,16 @@ async function readCsv<T>(fileName: string): Promise<T[]> {
     if (parsed.errors.length > 0) {
       console.error(`Errors parsing ${fileName}:`, parsed.errors);
     }
-    return parsed.data;
+    // Convert date strings back to Date objects
+    return parsed.data.map((row: any) => {
+        if (row.date) row.date = new Date(row.date);
+        if (row.createdAt) row.createdAt = new Date(row.createdAt);
+        return row;
+    });
   } catch (error: any) {
     if (error.code === 'ENOENT') {
       console.warn(`CSV file not found: ${fileName}. Returning empty array.`);
+      await fs.writeFile(getCSVPath(fileName), Papa.unparse([]), 'utf8');
       return [];
     }
     console.error(`Error reading CSV file ${fileName}:`, error);
@@ -120,6 +126,14 @@ class CsvRepository {
 
   async saveStaff(staff: StaffMember[]): Promise<void> {
     await writeCsv('staff.csv', staff);
+  }
+
+  async getStaffTransactions(): Promise<StaffTransaction[]> {
+    return readCsv<StaffTransaction>('staff_transactions.csv');
+  }
+
+  async saveStaffTransactions(transactions: StaffTransaction[]): Promise<void> {
+    await writeCsv('staff_transactions.csv', transactions);
   }
   
   // Tables

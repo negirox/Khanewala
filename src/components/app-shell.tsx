@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Shield,
   Settings,
+  PlusCircle,
 } from "lucide-react";
 
 import {
@@ -35,6 +36,13 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "./ui/collap
 import { cn } from "@/lib/utils";
 import { appConfig } from "@/lib/config";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
+import { Button } from "./ui/button";
+import { OrderForm } from "./order-form";
+import { createNewOrder, saveTables } from "@/app/actions";
+import type { Order } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
+import { useAppData } from "@/hooks/use-app-data";
 
 const operationalNavItems = [
   { href: "/orders", icon: ClipboardList, label: "Orders" },
@@ -116,6 +124,57 @@ function AdminMenu() {
     )
 }
 
+function NewOrderDialog() {
+  const [isNewOrderDialogOpen, setNewOrderDialogOpen] = React.useState(false);
+  const { allCustomers, allMenuItems, allTables, activeOrders, archivedOrders, refreshData } = useAppData();
+  const { toast } = useToast();
+
+  const handleNewOrder = React.useCallback(async (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
+    
+    const { newOrder } = await createNewOrder(newOrderData, activeOrders, archivedOrders, allCustomers);
+    
+    // Also update table status to occupied
+    if (newOrder.tableNumber) {
+        const updatedTables = allTables.map(table => 
+            table.id === newOrder.tableNumber
+            ? { ...table, status: 'occupied', orderId: newOrder.id }
+            : table
+        );
+        await saveTables(updatedTables);
+    }
+
+    if (newOrder.pointsEarned) {
+         toast({
+            title: "Loyalty Points Added!",
+            description: `${newOrder.customerName} earned ${newOrder.pointsEarned} points.`,
+        });
+    }
+
+    toast({
+        title: "Order Created",
+        description: `Order ${newOrder.id} has been successfully created.`,
+    });
+
+    setNewOrderDialogOpen(false);
+    await refreshData(); // This will re-fetch all data and update the context
+
+  }, [activeOrders, archivedOrders, allCustomers, allTables, toast, refreshData]);
+
+  return (
+    <Dialog open={isNewOrderDialogOpen} onOpenChange={setNewOrderDialogOpen}>
+        <DialogTrigger asChild>
+        <Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Order
+        </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+        <OrderForm allMenuItems={allMenuItems} allCustomers={allCustomers} allTables={allTables} onSubmit={handleNewOrder} onCancel={() => setNewOrderDialogOpen(false)} />
+        </DialogContent>
+    </Dialog>
+  )
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
@@ -128,6 +187,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     appConfig.enabledAdminSections[item.configKey as keyof typeof appConfig.enabledAdminSections]
   );
   const allNavItems = [...operationalNavItems, ...adminNavItems];
+  
+  const isOrdersPage = pathname.startsWith('/orders');
 
   return (
     <SidebarProvider>
@@ -169,8 +230,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {allNavItems.find(item => pathname.startsWith(item.href))?.label}
                </h1>
             </div>
+            {isOrdersPage && <NewOrderDialog />}
           </header>
-          <main className="flex-1 p-4 md:p-6">{children}</main>
+          <main className="flex-1 p-4 md:p-6">
+            {children}
+          </main>
         </SidebarInset>
       </div>
     </SidebarProvider>

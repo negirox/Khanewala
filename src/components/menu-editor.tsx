@@ -30,15 +30,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { MenuItem } from "@/lib/types";
-import { PlusCircle, Edit, Trash2, Upload, Download } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Upload, Download, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import { getMenuItems, saveMenuItems } from "@/app/actions";
 import { appConfig } from "@/lib/config";
 import { useToast } from "@/hooks/use-toast";
-
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
+import { Card } from "./ui/card";
 
 const emptyMenuItem: MenuItem = { id: "", name: "", price: 0, category: "Main Courses", description: "" };
 const menuCategories = ["Appetizers", "Main Courses", "Desserts", "Beverages", "Breads", "Rice & Biryani", "Indian Chinese"];
+
+const ITEMS_PER_PAGE = 10;
 
 export function MenuEditor() {
   const [menuItems, setMenuItems] = React.useState<MenuItem[]>([]);
@@ -46,6 +52,11 @@ export function MenuEditor() {
   const [editingItem, setEditingItem] = React.useState<MenuItem | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [sortConfig, setSortConfig] = React.useState<{ key: keyof MenuItem; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending' });
+  const [currentPage, setCurrentPage] = React.useState(1);
+
 
   React.useEffect(() => {
     getMenuItems().then(setMenuItems);
@@ -143,9 +154,63 @@ export function MenuEditor() {
     document.body.removeChild(link);
   }, []);
 
+  const requestSort = React.useCallback((key: keyof MenuItem) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+    setCurrentPage(1);
+  }, [sortConfig]);
+
+  const getSortIcon = React.useCallback((key: keyof MenuItem) => {
+    if (!sortConfig || sortConfig.key !== key) {
+      return <ArrowUpDown className="h-4 w-4 ml-2" />;
+    }
+    return <ArrowUpDown className="h-4 w-4 ml-2 text-primary" />;
+  }, [sortConfig]);
+
+  const sortedAndFilteredItems = React.useMemo(() => {
+    let sortableItems = [...menuItems];
+    if (searchTerm) {
+      sortableItems = sortableItems.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [menuItems, searchTerm, sortConfig]);
+
+  const totalPages = Math.ceil(sortedAndFilteredItems.length / ITEMS_PER_PAGE);
+  const paginatedItems = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return sortedAndFilteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [sortedAndFilteredItems, currentPage]);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   return (
     <div className="flex flex-col">
-       <div className="flex items-center justify-end mb-4 gap-2">
+       <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-2">
+         <Input
+            placeholder="Search by name or category..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-sm"
+          />
         <div className="flex flex-wrap gap-2">
           <input
             type="file"
@@ -169,33 +234,58 @@ export function MenuEditor() {
         </div>
       </div>
       <Card className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {menuItems.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.name}</TableCell>
-                <TableCell>{item.category}</TableCell>
-                <TableCell>{appConfig.currency}{item.price.toFixed(2)}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(item.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
+        <div className="border rounded-md">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('name')}>Name {getSortIcon('name')}</Button></TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('category')}>Category {getSortIcon('category')}</Button></TableHead>
+                <TableHead><Button variant="ghost" onClick={() => requestSort('price')}>Price {getSortIcon('price')}</Button></TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {paginatedItems.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell>{item.category}</TableCell>
+                  <TableCell>{appConfig.currency}{item.price.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(item.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-end space-x-2 p-4">
+            <div className="flex-1 text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+            </div>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+            >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+            </Button>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages || totalPages === 0}
+            >
+                Next
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+        </div>
       </Card>
       <EditItemDialog 
         isOpen={isDialogOpen}
@@ -206,12 +296,6 @@ export function MenuEditor() {
     </div>
   );
 }
-
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
-import { Card } from "./ui/card";
 
 const formSchema = z.object({
   id: z.string(),
@@ -345,3 +429,5 @@ function EditItemDialog({ isOpen, onOpenChange, item, onSave }: { isOpen: boolea
       </Dialog>
   );
 }
+
+    

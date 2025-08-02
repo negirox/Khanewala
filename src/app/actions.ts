@@ -2,9 +2,11 @@
 'use server';
 
 import { csvRepository } from '@/services/csv-repository';
-import type { Order, MenuItem, Customer, StaffMember, Table } from '@/lib/types';
+import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction, StaffTransactionType } from '@/lib/types';
 import { loyaltyService } from '@/services/loyalty-service';
 import { whatsappService } from '@/services/whatsapp-service';
+import Papa from 'papaparse';
+
 
 // Menu Items
 export async function getMenuItems(): Promise<MenuItem[]> {
@@ -32,16 +34,17 @@ export async function createNewOrder(newOrderData: Omit<Order, 'id' | 'createdAt
     let finalOrderData = { ...newOrderData };
     let updatedCustomers = [...allCustomers];
     
-    // Handle Loyalty Points
+    // Handle Loyalty Points Earning
     if (newOrderData.customerId) {
         const customer = allCustomers.find(c => c.id === newOrderData.customerId);
         if (customer) {
-            const { updatedCustomer, pointsEarned } = loyaltyService.addPointsForOrder(customer, newOrderData.total);
+            // Earn points on the final total
+            const { updatedCustomer, pointsEarned } = loyaltyService.addPointsForOrder(customer, finalOrderData.total);
             finalOrderData.pointsEarned = pointsEarned;
             
             // Send WhatsApp confirmation
             const tempOrder = { ...finalOrderData, id: 'temp', createdAt: new Date() }
-            whatsappService.sendOrderConfirmation(customer, tempOrder as Order);
+            whatsappService.sendOrderConfirmation(updatedCustomer, tempOrder as Order);
 
             // Update customer in state and save
             updatedCustomers = allCustomers.map(c => c.id === customer.id ? updatedCustomer : c);
@@ -51,7 +54,8 @@ export async function createNewOrder(newOrderData: Omit<Order, 'id' | 'createdAt
 
     const newOrder: Order = {
         ...finalOrderData,
-        id: `ORD${(Math.random() * 1000).toFixed(0).padStart(3, '0')}`,
+        // Using timestamp and random number for a more unique ID
+        id: `ORD-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`,
         createdAt: new Date(),
     };
     const newActiveOrders = [newOrder, ...activeOrders];
@@ -70,6 +74,80 @@ export async function getStaff(): Promise<StaffMember[]> {
 export async function saveStaff(staff: StaffMember[]): Promise<void> {
     return csvRepository.saveStaff(staff);
 }
+
+// Staff Transactions
+export async function getStaffTransactions(): Promise<StaffTransaction[]> {
+    return csvRepository.getStaffTransactions();
+}
+
+export async function addStaffTransaction(
+    transaction: Omit<StaffTransaction, 'id' | 'date'>, 
+    staffMember: StaffMember, 
+    currentMonthNetPayable: number
+): Promise<{newTransaction: StaffTransaction, updatedStaffMember: StaffMember}> {
+    const allTransactions = await getStaffTransactions();
+    const allStaff = await getStaff();
+
+    const newTransaction: StaffTransaction = {
+        ...transaction,
+        id: `TXN_${Date.now()}`,
+        date: new Date(),
+    };
+    const updatedTransactions = [...allTransactions, newTransaction];
+    await csvRepository.saveStaffTransactions(updatedTransactions);
+
+    let updatedStaffMember = { ...staffMember };
+
+    // If a salary payment was made, update the carry forward balance
+    if (transaction.type === 'Salary') {
+        const remainingBalance = currentMonthNetPayable - transaction.amount;
+        updatedStaffMember.carryForwardBalance = remainingBalance;
+        
+        const updatedStaffList = allStaff.map(s => s.id === staffMember.id ? updatedStaffMember : s);
+        await csvRepository.saveStaff(updatedStaffList);
+    }
+    
+    return { newTransaction, updatedStaffMember };
+}
+
+export async function generateStaffTransactionReport(
+    staffId: string, 
+    transactions: StaffTransaction[],
+    summary: { 
+        grossSalary: number, 
+        carryForward: number, 
+        totalDeductions: number, 
+        bonuses: number,
+        salariesPaid: number,
+        netPayable: number
+    }
+): Promise<string> {
+    const transactionData = transactions.map(tx => ({
+        "Transaction ID": tx.id,
+        "Date": tx.date.toISOString().split('T')[0],
+        "Type": tx.type,
+        "Amount": tx.amount,
+        "Payment Mode": tx.paymentMode,
+        "Notes": tx.notes || ''
+    }));
+
+    const reportCsv = Papa.unparse(transactionData);
+
+    const summaryData = [
+        {"Key": "Gross Salary", "Value": summary.grossSalary},
+        {"Key": "Carry Forward from Last Month", "Value": summary.carryForward},
+        {"Key": "Total Bonus", "Value": summary.bonuses},
+        {"Key": "Total Deductions (Advance + Daily)", "Value": summary.totalDeductions},
+        {"Key": "Total Salary Paid this month", "Value": summary.salariesPaid},
+        {"Key": "Final Net Payable this month", "Value": summary.netPayable},
+    ];
+
+    const summaryCsv = Papa.unparse(summaryData, { header: false });
+
+    return `${reportCsv}\n\nTransaction Summary\n${summaryCsv}`;
+}
+
+
 
 // Tables
 export async function getTables(): Promise<Table[]> {

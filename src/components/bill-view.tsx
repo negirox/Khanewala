@@ -12,7 +12,8 @@ export function BillView({ order }: { order: Order }) {
   const [tokenNumber, setTokenNumber] = React.useState<number | null>(null);
 
   React.useEffect(() => {
-    // Generate a random 3-digit token number when the component mounts
+    // Generate a random 3-digit token number only on the client-side after mount
+    // to prevent hydration errors.
     setTokenNumber(Math.floor(100 + Math.random() * 900));
   }, [order.id]);
 
@@ -46,7 +47,7 @@ export function BillView({ order }: { order: Order }) {
             <Separator className="my-2 border-dashed border-black" />
             <div className="flex justify-between mb-1 text-xs">
                 <span>Bill No: {order.id}</span>
-                <span>Table: {order.tableNumber}</span>
+                {order.tableNumber && <span>Table: {order.tableNumber}</span>}
             </div>
             <div className="flex justify-between mb-2 text-xs">
                 <span>Date: {new Date(order.createdAt).toLocaleDateString()}</span>
@@ -80,7 +81,13 @@ export function BillView({ order }: { order: Order }) {
                 {order.discount > 0 && (
                      <div className="flex justify-between">
                         <span>Discount ({order.discount}%):</span>
-                        <span className="text-right">-{appConfig.currency}{(order.subtotal - order.total).toFixed(2)}</span>
+                        <span className="text-right">-{appConfig.currency}{(order.subtotal * order.discount / 100).toFixed(2)}</span>
+                    </div>
+                )}
+                 {(order.redeemedValue ?? 0) > 0 && (
+                    <div className="flex justify-between">
+                        <span>Points Redeemed:</span>
+                        <span className="text-right">-{appConfig.currency}{(order.redeemedValue!).toFixed(2)}</span>
                     </div>
                 )}
                 <div className="flex justify-between font-bold text-base mt-2">

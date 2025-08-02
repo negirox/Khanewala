@@ -1,3 +1,13 @@
-id,tableNumber,items,status,subtotal,discount,total,createdAt,customerId,customerName,pointsEarned
-ORD005,10,"[{""menuItem"":{""id"":""8"",""name"":""Mango Lassi"",""price"":150,""category"":""Beverages""},""quantity"":2}]",archived,300,0,300,2024-08-01T10:00:00.000Z,,,
-ORD006,2,"[{""menuItem"":{""id"":""3"",""name"":""Butter Chicken"",""price"":450,""category"":""Main Courses""},""quantity"":1},{""menuItem"":{""id"":""1"",""name"":""Samosa"",""price"":60,""category"":""Appetizers""},""quantity"":2}]",archived,570,10,513,2024-07-31T18:30:00.000Z,,,
+items,status,subtotal,discount,total,customerId,customerName,pointsRedeemed,redeemedValue,pointsEarned,id,createdAt
+"[{""quantity"":1,""menuItem"":{""id"":""ITEM002""}},{""quantity"":1,""menuItem"":{""id"":""ITEM001""}}]",archived,400,5,374,CUST01,John Doe,6,6,4,ORD-1754140520063-382,2025-08-02T13:15:20.063Z
+"[{""quantity"":1,""menuItem"":{""id"":""ITEM002""}},{""quantity"":1,""menuItem"":{""id"":""ITEM001""}}]",archived,400,10,350,CUST02,Jane Smith,10,10,4,ORD-1754140976132-490,2025-08-02T13:22:56.132Z
+"[{""quantity"":1,""menuItem"":{""id"":""ITEM001""}},{""quantity"":1,""menuItem"":{""id"":""ITEM002""}},{""quantity"":1,""menuItem"":{""id"":""ITEM003""}}]",archived,850,0,840,CUST02,Jane Smith,10,10,8,ORD-1754140416493-646,2025-08-02T13:13:36.493Z
+"[{""quantity"":4,""menuItem"":{""id"":""6""}}]",archived,400,2,392,,,,,,ORD004,2024-08-01T11:55:00.000Z
+"[{""quantity"":2,""menuItem"":{""id"":""3""}},{""quantity"":2,""menuItem"":{""id"":""7""}}]",archived,1140,10,1026,,,,,,ORD001,2024-08-01T12:00:00.000Z
+"[{""quantity"":2,""menuItem"":{""id"":""ITEM002""}},{""quantity"":1,""menuItem"":{""id"":""ITEM003""}}]",archived,950,0,950,,,,,,ORD-1754137054606-121,2025-08-02T12:17:34.606Z
+"[{""quantity"":1,""menuItem"":{""id"":""ITEM004""}}]",archived,350,0,344,CUST02,Jane Smith,6,6,3,ORD-1754140146819-627,2025-08-02T13:09:06.819Z
+"[{""quantity"":1,""menuItem"":{""id"":""ITEM001""}}]",archived,150,4,144,CUST02,Jane Smith,3,3,1,ORD-1754139358380-107,2025-08-02T12:55:58.381Z
+"[{""quantity"":1,""menuItem"":{""id"":""4""}},{""quantity"":1,""menuItem"":{""id"":""1""}}]",archived,440,0,440,,,,,,ORD002,2024-08-01T12:05:00.000Z
+"[{""quantity"":2,""menuItem"":{""id"":""1""}},{""quantity"":1,""menuItem"":{""id"":""5""}},{""quantity"":2,""menuItem"":{""id"":""9""}}]",archived,470,0,470,,,,,,ORD003,2024-08-01T12:08:00.000Z
+"[{""quantity"":2,""menuItem"":{""id"":""8""}}]",archived,300,0,300,,,,,,ORD005,2024-08-01T10:00:00.000Z
+"[{""quantity"":1,""menuItem"":{""id"":""3""}},{""quantity"":2,""menuItem"":{""id"":""1""}}]",archived,570,10,513,,,,,,ORD006,2024-07-31T18:30:00.000Z
