@@ -174,7 +174,7 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
           Browse the menu and add items to the order.
         </SheetDescription>
       </SheetHeader>
-      <div className="grid grid-cols-2 gap-4 h-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full overflow-y-auto">
         {/* Left Side: Menu */}
         <div className="flex flex-col">
           <h3 className="font-semibold font-headline text-lg mb-2">Menu</h3>
@@ -224,7 +224,7 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
                  </div>
             </CardHeader>
             <CardContent className="flex-1 p-0">
-              <ScrollArea className="h-full">
+              <ScrollArea className="h-[300px] md:h-full">
               <div className="p-6 pt-0">
                 {orderItems.length > 0 ? (
                   <div className="space-y-4">
@@ -315,7 +315,7 @@ function CustomerSearchPopover({ customers, onSelectCustomer }: { customers: Cus
                     Search for a customer...
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-0">
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                 <Command>
                     <CommandInput placeholder="Search by name, email..." />
                     <CommandList>
