@@ -46,6 +46,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "./ui/command";
 import { appConfig } from "@/lib/config";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 
 interface OrderFormProps {
   allMenuItems: MenuItem[];
@@ -183,25 +184,29 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit }: O
         {/* Left Side: Menu */}
         <div className="flex flex-col h-full">
           <h3 className="font-semibold font-headline text-lg mb-2">Menu</h3>
-          <ScrollArea className="flex-1 pr-4 -mr-4 border rounded-md p-2">
-            <div className="space-y-4">
+           <ScrollArea className="flex-1 pr-4 -mr-4 border rounded-md">
+            <Accordion type="multiple" defaultValue={Object.keys(menuByCategory)} className="w-full">
             {Object.entries(menuByCategory).map(([category, items]) => (
-                <div key={category}>
-                    <h4 className="font-semibold text-md mb-2 sticky top-0 bg-background/95 backdrop-blur-sm py-1">{category}</h4>
-                    <div className="grid grid-cols-1 gap-2">
-                        {items.map(item => (
-                            <Card key={item.id} className="flex p-2 items-center gap-2 cursor-pointer hover:bg-accent/50" onClick={() => handleAddItem(item)}>
-                                {item.image && <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md object-cover" />}
-                                <div className="flex-1">
-                                    <p className="font-semibold">{item.name}</p>
-                                    <p className="text-sm text-muted-foreground">{appConfig.currency}{item.price.toFixed(2)}</p>
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
-                </div>
+                <AccordionItem value={category} key={category}>
+                    <AccordionTrigger className="font-semibold text-md sticky top-0 bg-background/95 backdrop-blur-sm py-2 px-2">
+                        {category}
+                    </AccordionTrigger>
+                    <AccordionContent className="p-1">
+                         <div className="grid grid-cols-1 gap-2 p-1">
+                            {items.map(item => (
+                                <Card key={item.id} className="flex p-2 items-center gap-2 cursor-pointer hover:bg-accent/50" onClick={() => handleAddItem(item)}>
+                                    {item.image && <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md object-cover" />}
+                                    <div className="flex-1">
+                                        <p className="font-semibold">{item.name}</p>
+                                        <p className="text-sm text-muted-foreground">{appConfig.currency}{item.price.toFixed(2)}</p>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
             ))}
-            </div>
+            </Accordion>
           </ScrollArea>
         </div>
 
@@ -360,5 +365,3 @@ function CustomerSearchPopover({ customers, onSelectCustomer }: { customers: Cus
         </Popover>
     );
 }
-
-    
