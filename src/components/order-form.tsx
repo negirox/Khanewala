@@ -166,7 +166,7 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
         {/* Right Side: Order Summary */}
         <div className="flex flex-col h-full min-h-0">
           <h3 className="font-semibold font-headline text-lg mb-2">Current Order</h3>
-          <Card className="flex-1 flex flex-col">
+          <Card className="flex-1 flex flex-col min-h-0">
             <CardHeader className="space-y-4">
                 <div className="space-y-1">
                     <Label htmlFor="tableNumber">Table Number</Label>
