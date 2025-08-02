@@ -23,24 +23,11 @@ import {
   PlusCircle,
   MinusCircle,
   Trash2,
-  Bot,
-  Sparkles,
   Loader2,
   X,
 } from "lucide-react";
-import { getMenuRecommendations } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import type { MenuItem, OrderItem, Order, Customer, Table } from "@/lib/types";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import Image from "next/image";
 import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "./ui/command";
@@ -60,8 +47,6 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
   const [orderItems, setOrderItems] = React.useState<OrderItem[]>([]);
   const [tableNumber, setTableNumber] = React.useState<string>("");
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
-  const [isAiLoading, setIsAiLoading] = React.useState(false);
-  const [aiSuggestion, setAiSuggestion] = React.useState<{ recommendations: string[], reasoning: string } | null>(null);
 
   const { toast } = useToast();
 
@@ -101,44 +86,6 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
         setOrderItems((prev) => prev.map(item => item.menuItem.id === menuItemId ? { ...item, quantity } : item));
     }
   }, [handleRemoveItem]);
-
-  const handleGetAiSuggestions = React.useCallback(async () => {
-    if (orderItems.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Cannot get suggestions",
-        description: "Please add items to the order first.",
-      });
-      return;
-    }
-
-    setIsAiLoading(true);
-    const orderSummary = orderItems
-      .map((item) => `${item.quantity}x ${item.menuItem.name}`)
-      .join(", ");
-
-    try {
-        const result = await getMenuRecommendations({ orderSummary });
-        if (result.success && result.data) {
-            setAiSuggestion(result.data);
-        } else {
-          toast({
-            variant: "destructive",
-            title: "AI Suggestion Error",
-            description: result.error,
-          });
-        }
-    } catch (error) {
-        console.error("AI Suggestion failed:", error);
-        toast({
-            variant: "destructive",
-            title: "AI Suggestion Error",
-            description: "An unexpected error occurred.",
-        });
-    } finally {
-        setIsAiLoading(false);
-    }
-  }, [orderItems, toast]);
 
   const handleSubmit = React.useCallback(() => {
     if (orderItems.length === 0 || tableNumber === "") {
@@ -289,10 +236,6 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
                             <span>Total</span>
                             <span>{appConfig.currency}{subtotal.toFixed(2)}</span>
                         </div>
-                         <Button type="button" variant="outline" className="w-full" onClick={handleGetAiSuggestions} disabled={isAiLoading}>
-                            {isAiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
-                            Get AI Suggestions
-                        </Button>
                     </CardFooter>
                 </>
             )}
@@ -303,34 +246,6 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
         <Button onClick={handleSubmit} disabled={orderItems.length === 0 || tableNumber === ""}>Place Order</Button>
       </DialogFooter>
-
-      {aiSuggestion && (
-        <AlertDialog open={!!aiSuggestion} onOpenChange={(open) => !open && setAiSuggestion(null)}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI Recommendations</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Based on the current order, here are some suggestions:
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className="space-y-4">
-                    <div>
-                        <h4 className="font-semibold mb-2">Suggestions:</h4>
-                        <ul className="list-disc pl-5 space-y-1">
-                            {aiSuggestion.recommendations.map((rec, i) => <li key={i}>{rec}</li>)}
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 className="font-semibold mb-2">Reasoning:</h4>
-                        <p className="text-sm text-muted-foreground">{aiSuggestion.reasoning}</p>
-                    </div>
-                </div>
-                <AlertDialogFooter>
-                    <AlertDialogAction>Got it, thanks!</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-      )}
     </>
   );
 }
