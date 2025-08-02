@@ -24,11 +24,11 @@ import { format, subDays, startOfDay } from "date-fns";
 import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart, ArrowUpDown } from "lucide-react";
 import { appConfig } from "@/lib/config";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 
-const chartColors = ["#2563eb", "#f97316", "#22c55e", "#ef4444", "#8b5cf6"];
+const chartColors = ["#2563eb", "#f97316", "#22c55e", "#ef4444", "#8b5cf6", "#14b8a6", "#d946ef"];
 
 
 export function Dashboard() {
@@ -188,7 +188,11 @@ export function Dashboard() {
                         <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `${appConfig.currency}${value}`} />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="total" fill="var(--color-primary)" radius={4} />
+                        <Bar dataKey="total" radius={4}>
+                            {dailyRevenue.map((_entry, index) => (
+                                <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                            ))}
+                        </Bar>
                     </RechartsBarChart>
                 </ChartContainer>
             </CardContent>
@@ -292,3 +296,5 @@ export function Dashboard() {
     </div>
   );
 }
+
+    
