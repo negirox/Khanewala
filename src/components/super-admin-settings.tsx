@@ -44,6 +44,7 @@ const formSchema = z.object({
     settings: z.boolean(),
   }),
   gstNumber: z.string().optional(),
+  currency: z.string().min(1, "Currency symbol is required"),
   maxDiscount: z.coerce.number().min(0, "Max discount cannot be negative.").max(100, "Max discount cannot be over 100."),
 });
 
@@ -66,6 +67,7 @@ export function SuperAdminSettings() {
       font: "pt-sans",
       enabledAdminSections: appConfig.enabledAdminSections,
       gstNumber: appConfig.gstNumber || "",
+      currency: appConfig.currency,
       maxDiscount: appConfig.maxDiscount,
     },
   });
@@ -223,6 +225,22 @@ export function SuperAdminSettings() {
                     />
                      <FormField
                         control={form.control}
+                        name="currency"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Currency Symbol</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g. ₹" {...field} />
+                            </FormControl>
+                             <FormDescription>
+                                The currency symbol to be used across the application (e.g. $, €, ₹).
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
                         name="maxDiscount"
                         render={({ field }) => (
                         <FormItem>
@@ -280,3 +298,5 @@ export function SuperAdminSettings() {
     </div>
   );
 }
+
+    
