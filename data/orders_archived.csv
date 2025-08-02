@@ -1,4 +1,5 @@
 items,status,subtotal,discount,total,customerId,customerName,pointsRedeemed,redeemedValue,pointsEarned,id,createdAt
+"[{""quantity"":1,""menuItem"":{""id"":""ITEM004""}}]",archived,350,0,344,CUST02,Jane Smith,6,6,3,ORD-1754140146819-627,2025-08-02T13:09:06.819Z
 "[{""quantity"":1,""menuItem"":{""id"":""ITEM001""}}]",archived,150,4,144,CUST02,Jane Smith,3,3,1,ORD-1754139358380-107,2025-08-02T12:55:58.381Z
 "[{""quantity"":1,""menuItem"":{""id"":""4""}},{""quantity"":1,""menuItem"":{""id"":""1""}}]",archived,440,0,440,,,,,,ORD002,2024-08-01T12:05:00.000Z
 "[{""quantity"":2,""menuItem"":{""id"":""1""}},{""quantity"":1,""menuItem"":{""id"":""5""}},{""quantity"":2,""menuItem"":{""id"":""9""}}]",archived,470,0,470,,,,,,ORD003,2024-08-01T12:08:00.000Z

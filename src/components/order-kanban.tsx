@@ -467,4 +467,3 @@ export function OrderKanban() {
     </div>
   );
 }
-
