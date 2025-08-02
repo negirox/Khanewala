@@ -13,6 +13,7 @@ import {
   Contact,
   ChevronDown,
   Shield,
+  Settings,
 } from "lucide-react";
 
 import {
@@ -45,6 +46,7 @@ const adminNavItems = [
   { href: "/menu", icon: BookOpen, label: "Menu" },
   { href: "/staff", icon: Users2, label: "Staff" },
   { href: "/customers", icon: Contact, label: "Customers" },
+  { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
 function AdminMenu() {
