@@ -64,13 +64,15 @@ export function OrderKanban() {
             newActiveOrders = newActiveOrders.filter(o => o.id !== orderId);
             
             // Update table status to available
-            newTables = newTables.map(table => 
-                table.id === orderToArchive.tableNumber 
-                ? { ...table, status: 'available', orderId: undefined } 
-                : table
-            );
-            setAllTables(newTables);
-            await saveTables(newTables);
+            if (orderToArchive.tableNumber) {
+              newTables = newTables.map(table => 
+                  table.id === orderToArchive.tableNumber 
+                  ? { ...table, status: 'available', orderId: undefined } 
+                  : table
+              );
+              setAllTables(newTables);
+              await saveTables(newTables);
+            }
         }
     } else {
         newActiveOrders = newActiveOrders.map((order) =>
@@ -86,13 +88,15 @@ export function OrderKanban() {
     const newActiveOrders = orders.filter(o => o.id !== orderToCancel.id);
     setOrders(newActiveOrders);
 
-    const newTables = allTables.map(table => 
-        table.id === orderToCancel.tableNumber 
-        ? { ...table, status: 'available', orderId: undefined } 
-        : table
-    );
-    setAllTables(newTables);
-    await saveTables(newTables);
+    if (orderToCancel.tableNumber) {
+      const newTables = allTables.map(table => 
+          table.id === orderToCancel.tableNumber 
+          ? { ...table, status: 'available', orderId: undefined } 
+          : table
+      );
+      setAllTables(newTables);
+      await saveTables(newTables);
+    }
 
     await saveAllOrders(newActiveOrders, archivedOrders);
 
@@ -160,7 +164,7 @@ export function OrderKanban() {
                   <CardHeader>
                     <CardTitle className="flex flex-wrap justify-between items-center gap-2">
                         <div className="flex items-center gap-x-3">
-                             <span>{order.id} - Table {order.tableNumber}</span>
+                             <span>{order.id}{order.tableNumber && ` - Table ${order.tableNumber}`}</span>
                              {(order.status === 'received' || order.status === 'preparing') && (
                                  <AlertDialog>
                                     <AlertDialogTrigger asChild>

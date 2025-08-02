@@ -86,23 +86,23 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
   }, [handleRemoveItem]);
 
   const handleSubmit = React.useCallback(() => {
-    if (orderItems.length === 0 || tableNumber === "") {
+    if (orderItems.length === 0) {
         toast({
             variant: "destructive",
             title: "Incomplete Order",
-            description: "Please add items and specify a table number.",
+            description: "Please add at least one item to the order.",
         });
         return;
     }
     onSubmit({
         items: orderItems,
-        tableNumber: Number(tableNumber),
+        tableNumber: tableNumber ? Number(tableNumber) : undefined,
         status: "received",
         subtotal: subtotal,
         discount: 0,
         total: subtotal,
         customerId: selectedCustomer?.id,
-        customerName: selectedCustomer?.name,
+        customerName: selectedCustomer?.name || 'WOW Users',
     });
   }, [orderItems, tableNumber, onSubmit, subtotal, selectedCustomer, toast]);
   
@@ -126,9 +126,9 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
           Browse the menu and add items to the order.
         </DialogDescription>
       </DialogHeader>
-      <div className="flex justify-end gap-2">
+       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button onClick={handleSubmit} disabled={orderItems.length === 0 || tableNumber === ""}>Place Order</Button>
+        <Button onClick={handleSubmit} disabled={orderItems.length === 0}>Place Order</Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
         {/* Left Side: Menu */}
@@ -169,12 +169,13 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
           <Card className="flex-1 flex flex-col min-h-0">
             <CardHeader className="space-y-4">
                 <div className="space-y-1">
-                    <Label htmlFor="tableNumber">Table Number</Label>
+                    <Label htmlFor="tableNumber">Table Number (Optional)</Label>
                      <Select value={tableNumber} onValueChange={setTableNumber}>
                         <SelectTrigger id="tableNumber">
                             <SelectValue placeholder="Select an available table" />
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="">None (Takeaway/Delivery)</SelectItem>
                             {availableTables.length > 0 ? (
                                 availableTables.map(table => (
                                     <SelectItem key={table.id} value={String(table.id)}>
@@ -283,5 +284,3 @@ function CustomerSearchPopover({ customers, onSelectCustomer }: { customers: Cus
         </Popover>
     );
 }
-
-    

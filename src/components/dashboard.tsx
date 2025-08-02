@@ -286,7 +286,7 @@ export function Dashboard() {
                   paginatedOrders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell className="font-medium">{order.id}</TableCell>
-                      <TableCell>{order.tableNumber}</TableCell>
+                      <TableCell>{order.tableNumber || 'N/A'}</TableCell>
                       <TableCell>
                         {format(new Date(order.createdAt), "HH:mm")}
                       </TableCell>
@@ -337,5 +337,3 @@ export function Dashboard() {
     </div>
   );
 }
-
-    

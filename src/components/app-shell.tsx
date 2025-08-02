@@ -158,12 +158,14 @@ function NewOrderDialog() {
     // A more robust solution would involve a global state manager or context.
     
     // Also update table status to occupied
-    const updatedTables = allTables.map(table => 
-        table.id === newOrder.tableNumber
-        ? { ...table, status: 'occupied', orderId: newOrder.id }
-        : table
-    );
-    await saveTables(updatedTables);
+    if (newOrder.tableNumber) {
+        const updatedTables = allTables.map(table => 
+            table.id === newOrder.tableNumber
+            ? { ...table, status: 'occupied', orderId: newOrder.id }
+            : table
+        );
+        await saveTables(updatedTables);
+    }
 
     if (newOrder.pointsEarned) {
          toast({

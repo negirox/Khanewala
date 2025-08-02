@@ -20,7 +20,7 @@ export type OrderItem = {
 
 export type Order = {
   id: string;
-  tableNumber: number;
+  tableNumber?: number;
   items: OrderItem[];
   status: OrderStatus;
   subtotal: number;

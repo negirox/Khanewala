@@ -46,7 +46,7 @@ export function BillView({ order }: { order: Order }) {
             <Separator className="my-2 border-dashed border-black" />
             <div className="flex justify-between mb-1 text-xs">
                 <span>Bill No: {order.id}</span>
-                <span>Table: {order.tableNumber}</span>
+                {order.tableNumber && <span>Table: {order.tableNumber}</span>}
             </div>
             <div className="flex justify-between mb-2 text-xs">
                 <span>Date: {new Date(order.createdAt).toLocaleDateString()}</span>
