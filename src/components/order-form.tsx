@@ -43,7 +43,7 @@ interface OrderFormProps {
 
 export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onCancel }: OrderFormProps) {
   const [orderItems, setOrderItems] = React.useState<OrderItem[]>([]);
-  const [tableNumber, setTableNumber] = React.useState<string>("");
+  const [tableNumber, setTableNumber] = React.useState<string>("takeaway");
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
 
   const { toast } = useToast();
@@ -96,7 +96,7 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
     }
     onSubmit({
         items: orderItems,
-        tableNumber: tableNumber ? Number(tableNumber) : undefined,
+        tableNumber: tableNumber && tableNumber !== 'takeaway' ? Number(tableNumber) : undefined,
         status: "received",
         subtotal: subtotal,
         discount: 0,
@@ -175,7 +175,7 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
                             <SelectValue placeholder="Select an available table" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">None (Takeaway/Delivery)</SelectItem>
+                            <SelectItem value="takeaway">None (Takeaway/Delivery)</SelectItem>
                             {availableTables.length > 0 ? (
                                 availableTables.map(table => (
                                     <SelectItem key={table.id} value={String(table.id)}>
