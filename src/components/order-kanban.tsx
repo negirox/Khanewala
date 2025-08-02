@@ -115,7 +115,17 @@ export function OrderKanban() {
 
   const handleApplyDiscount = () => {
     if (!discountOrder) return;
-    const discountValue = Math.max(0, Math.min(100, discountPercentage));
+    const discountValue = Math.max(0, Math.min(appConfig.maxDiscount, discountPercentage));
+    
+    if (discountValue > appConfig.maxDiscount) {
+        toast({
+            variant: "destructive",
+            title: "Discount Error",
+            description: `Discount cannot exceed the maximum of ${appConfig.maxDiscount}%.`,
+        });
+        return;
+    }
+
     const newActiveOrders = orders.map(o => {
         if (o.id === discountOrder.id) {
             const newTotal = o.subtotal * (1 - discountValue / 100);
@@ -198,7 +208,7 @@ export function OrderKanban() {
                         {order.pointsEarned && order.pointsEarned > 0 && <div className="flex justify-between text-yellow-500"><span>Points Earned:</span> <span>+{order.pointsEarned}</span></div>}
                     </div>
                   </CardContent>
-                  <CardFooter className="flex-col sm:flex-row gap-2">
+                   <CardFooter className="flex flex-col gap-2">
                      <div className="flex w-full flex-col sm:flex-row gap-2">
                          <Button
                           variant="outline"
@@ -266,7 +276,8 @@ export function OrderKanban() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Apply Discount</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Enter a discount percentage for order {discountOrder?.id}.
+                    Enter a discount percentage for order {discountOrder?.id}. 
+                    The maximum allowed discount is {appConfig.maxDiscount}%.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="py-4">
@@ -276,7 +287,8 @@ export function OrderKanban() {
                     type="number"
                     value={discountPercentage}
                     onChange={(e) => setDiscountPercentage(Number(e.target.value))}
-                    placeholder="e.g. 15"
+                    placeholder={`e.g. 15 (Max ${appConfig.maxDiscount})`}
+                    max={appConfig.maxDiscount}
                 />
             </div>
             <AlertDialogFooter>
@@ -288,3 +300,4 @@ export function OrderKanban() {
 
     </div>
   );
+

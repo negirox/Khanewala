@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -41,17 +42,23 @@ const operationalNavItems = [
   { href: "/tables", icon: Users, label: "Tables" },
 ];
 
-const adminNavItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/menu", icon: BookOpen, label: "Menu" },
-  { href: "/staff", icon: Users2, label: "Staff" },
-  { href: "/customers", icon: Contact, label: "Customers" },
-  { href: "/settings", icon: Settings, label: "Settings" },
+const allAdminNavItems = [
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", configKey: "dashboard" },
+  { href: "/menu", icon: BookOpen, label: "Menu", configKey: "menu" },
+  { href: "/staff", icon: Users2, label: "Staff", configKey: "staff" },
+  { href: "/customers", icon: Contact, label: "Customers", configKey: "customers" },
+  { href: "/settings", icon: Settings, label: "Settings", configKey: "settings" },
 ];
 
 function AdminMenu() {
     const pathname = usePathname();
     const { state } = useSidebar();
+    
+    // Filter admin items based on config
+    const adminNavItems = allAdminNavItems.filter(item => 
+      appConfig.enabledAdminSections[item.configKey as keyof typeof appConfig.enabledAdminSections]
+    );
+
     const isAnyAdminItemActive = adminNavItems.some(item => pathname.startsWith(item.href));
 
     if (state === 'collapsed') {
@@ -112,6 +119,16 @@ function AdminMenu() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
+  // Hide shell on super admin pages
+  if (pathname.startsWith('/super-admin')) {
+    return <main className="p-4 md:p-6">{children}</main>;
+  }
+
+  const adminNavItems = allAdminNavItems.filter(item => 
+    appConfig.enabledAdminSections[item.configKey as keyof typeof appConfig.enabledAdminSections]
+  );
+  const allNavItems = [...operationalNavItems, ...adminNavItems];
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-background">
@@ -149,7 +166,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <SidebarTrigger className="md:hidden" />
             <div className="flex-1">
                <h1 className="font-headline text-lg font-semibold">
-                {[...operationalNavItems, ...adminNavItems].find(item => pathname.startsWith(item.href))?.label || 'Dashboard'}
+                {allNavItems.find(item => pathname.startsWith(item.href))?.label}
                </h1>
             </div>
           </header>
