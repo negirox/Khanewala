@@ -6,6 +6,8 @@ import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction, S
 import { loyaltyService } from '@/services/loyalty-service';
 import { whatsappService } from '@/services/whatsapp-service';
 import Papa from 'papaparse';
+import fs from 'fs/promises';
+import path from 'path';
 
 
 // Menu Items
@@ -178,4 +180,21 @@ export async function getMenuRecommendations(input: MenuRecommendationInput) {
     console.error(error);
     return { success: false, error: 'Failed to get AI recommendations. Please try again later.' };
   }
+}
+
+// Super Admin Login
+export async function validateSuperAdminLogin(credentials: {username: string, password: string}): Promise<{success: boolean}> {
+    try {
+        const configPath = path.join(process.cwd(), 'adminconfig.json');
+        const configFile = await fs.readFile(configPath, 'utf8');
+        const adminConfig = JSON.parse(configFile);
+
+        if (credentials.username === adminConfig.username && credentials.password === adminConfig.password) {
+            return { success: true };
+        }
+        return { success: false };
+    } catch (error) {
+        console.error("Error reading admin config:", error);
+        return { success: false };
+    }
 }
