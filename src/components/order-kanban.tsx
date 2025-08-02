@@ -17,6 +17,7 @@ import { getActiveOrders, getArchivedOrders, saveAllOrders, saveTables, getTable
 import { useToast } from "@/hooks/use-toast";
 import { appConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 const statusConfig: Record<
   OrderStatus,
@@ -162,15 +163,44 @@ export function OrderKanban() {
               {groupedOrders[status]?.sort((a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((order) => (
                 <Card key={order.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col">
                   <CardHeader>
-                    <CardTitle className="flex flex-wrap justify-between items-center gap-2 text-base">
-                        <div className="flex items-center gap-x-3">
-                             <span className="font-bold">{order.id}{order.tableNumber && ` - T${order.tableNumber}`}</span>
+                    <CardTitle className="flex flex-wrap justify-between items-center gap-2">
+                        <div className="flex-1">
+                             <span className="font-bold text-base">{order.id}{order.tableNumber && ` - T${order.tableNumber}`}</span>
+                             <p className="text-xs font-normal text-muted-foreground whitespace-nowrap">
+                                {formatDistanceToNow(order.createdAt, { addSuffix: true })}
+                            </p>
+                        </div>
+                        <div className="flex items-center">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                                        setDiscountOrder(order);
+                                        setDiscountPercentage(order.discount);
+                                    }}>
+                                        <Percent className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Apply Discount</TooltipContent>
+                            </Tooltip>
+                             <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPrintingOrder(order)}>
+                                        <Printer className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Print Bill</TooltipContent>
+                            </Tooltip>
                              {(order.status === 'received' || order.status === 'preparing') && (
                                  <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive">
-                                             <Trash2 className="h-4 w-4" />
-                                         </Button>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+                                                     <Trash2 className="h-4 w-4" />
+                                                 </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Cancel Order</TooltipContent>
+                                        </Tooltip>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogHeader>
@@ -187,9 +217,6 @@ export function OrderKanban() {
                                 </AlertDialog>
                              )}
                         </div>
-                      <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
-                        {formatDistanceToNow(order.createdAt, { addSuffix: true })}
-                      </span>
                     </CardTitle>
                     {order.customerName && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1">
@@ -216,29 +243,6 @@ export function OrderKanban() {
                     </div>
                   </CardContent>
                    <CardFooter className="flex flex-col gap-2">
-                     <div className="flex w-full flex-col sm:flex-row gap-2">
-                         <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => {
-                            setDiscountOrder(order);
-                            setDiscountPercentage(order.discount);
-                          }}
-                        >
-                          <Percent className="mr-2 h-4 w-4" />
-                          Discount
-                        </Button>
-                        <Button
-                          variant="outline"
-                           size="sm"
-                          className="flex-1"
-                          onClick={() => setPrintingOrder(order)}
-                        >
-                          <Printer className="mr-2 h-4 w-4" />
-                          Print Bill
-                        </Button>
-                     </div>
                     {statusConfig[status].nextStatus && (
                       <Button
                         size="sm"
