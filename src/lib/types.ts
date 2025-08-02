@@ -64,3 +64,16 @@ export type Customer = {
 
 export type AppTheme = 'default' | 'ocean' | 'sunset' | 'mint' | 'plum';
 export type AppFont = 'pt-sans' | 'roboto-slab';
+
+export type StaffTransactionType = "Advance" | "Daily Wage" | "Bonus" | "Salary";
+export type PaymentMode = "Cash" | "Online";
+
+export type StaffTransaction = {
+    id: string;
+    staffId: string;
+    date: Date;
+    amount: number;
+    type: StaffTransactionType;
+    paymentMode: PaymentMode;
+    notes?: string;
+};

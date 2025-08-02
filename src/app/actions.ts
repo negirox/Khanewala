@@ -2,7 +2,7 @@
 'use server';
 
 import { csvRepository } from '@/services/csv-repository';
-import type { Order, MenuItem, Customer, StaffMember, Table } from '@/lib/types';
+import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction } from '@/lib/types';
 import { loyaltyService } from '@/services/loyalty-service';
 import { whatsappService } from '@/services/whatsapp-service';
 
@@ -70,6 +70,24 @@ export async function getStaff(): Promise<StaffMember[]> {
 export async function saveStaff(staff: StaffMember[]): Promise<void> {
     return csvRepository.saveStaff(staff);
 }
+
+// Staff Transactions
+export async function getStaffTransactions(): Promise<StaffTransaction[]> {
+    return csvRepository.getStaffTransactions();
+}
+
+export async function addStaffTransaction(transaction: Omit<StaffTransaction, 'id' | 'date'>): Promise<StaffTransaction> {
+    const allTransactions = await getStaffTransactions();
+    const newTransaction: StaffTransaction = {
+        ...transaction,
+        id: `TXN_${Date.now()}`,
+        date: new Date(),
+    };
+    const updatedTransactions = [...allTransactions, newTransaction];
+    await csvRepository.saveStaffTransactions(updatedTransactions);
+    return newTransaction;
+}
+
 
 // Tables
 export async function getTables(): Promise<Table[]> {

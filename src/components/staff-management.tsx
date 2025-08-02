@@ -5,8 +5,8 @@ import * as React from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import type { StaffMember } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import type { StaffMember, StaffTransaction, StaffTransactionType, PaymentMode } from "@/lib/types";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -14,10 +14,14 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign, Upload } from "lucide-react";
+import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign, Upload, HandCoins } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getStaff, saveStaff } from "@/app/actions";
+import { getStaff, saveStaff, getStaffTransactions, addStaffTransaction } from "@/app/actions";
 import { appConfig } from "@/lib/config";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { Separator } from "./ui/separator";
 
 const roleColors: Record<StaffMember['role'], string> = {
     Manager: "bg-red-500 text-white",
@@ -30,21 +34,25 @@ const emptyStaffMember: StaffMember = { id: "", name: "", role: "Waiter", email:
 
 export function StaffManagement() {
   const [staff, setStaff] = React.useState<StaffMember[]>([]);
-  const [isDialogOpen, setDialogOpen] = React.useState(false);
+  const [transactions, setTransactions] = React.useState<StaffTransaction[]>([]);
+  const [isFormDialogOpen, setFormDialogOpen] = React.useState(false);
+  const [isTransactionDialogOpen, setTransactionDialogOpen] = React.useState(false);
   const [editingStaff, setEditingStaff] = React.useState<StaffMember | null>(null);
+  const [viewingStaff, setViewingStaff] = React.useState<StaffMember | null>(null);
 
   React.useEffect(() => {
     getStaff().then(setStaff);
+    getStaffTransactions().then(setTransactions);
   }, []);
 
   const handleEdit = React.useCallback((member: StaffMember) => {
     setEditingStaff(member);
-    setDialogOpen(true);
+    setFormDialogOpen(true);
   }, []);
   
   const handleAddNew = React.useCallback(() => {
     setEditingStaff(null);
-    setDialogOpen(true);
+    setFormDialogOpen(true);
   }, []);
   
   const handleDelete = React.useCallback((staffId: string) => {
@@ -66,9 +74,18 @@ export function StaffManagement() {
         saveStaff(updatedStaff);
         return updatedStaff;
     });
-    setDialogOpen(false);
+    setFormDialogOpen(false);
     setEditingStaff(null);
   }, [editingStaff]);
+
+  const handleViewTransactions = React.useCallback((member: StaffMember) => {
+    setViewingStaff(member);
+    setTransactionDialogOpen(true);
+  }, []);
+
+  const handleAddTransaction = React.useCallback(async (newTransaction: StaffTransaction) => {
+    setTransactions(prev => [...prev, newTransaction]);
+  }, []);
 
   return (
     <div className="flex flex-col">
@@ -87,7 +104,7 @@ export function StaffManagement() {
                     <AvatarImage src={member.avatar || "https://placehold.co/100x100.png"} alt={member.name} />
                     <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
+                <div className="flex-1 pt-2">
                     <CardTitle>{member.name}</CardTitle>
                     <Badge className={cn("mt-1", roleColors[member.role])}>{member.role}</Badge>
                 </div>
@@ -112,22 +129,34 @@ export function StaffManagement() {
                 <span className="text-sm">Salary: {appConfig.currency}{member.salary?.toFixed(2) ?? 'N/A'}</span>
               </div>
             </CardContent>
-            <div className="flex justify-end p-2 border-t">
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(member)}>
-                    <Edit className="h-4 w-4" />
+            <CardFooter className="flex flex-col gap-2 border-t pt-2">
+                <Button variant="outline" className="w-full" onClick={() => handleViewTransactions(member)}>
+                    <HandCoins className="mr-2"/> View Transactions
                 </Button>
-                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(member.id)}>
-                    <Trash2 className="h-4 w-4" />
-                </Button>
-            </div>
+                <div className="flex justify-end w-full">
+                    <Button variant="ghost" size="icon" onClick={() => handleEdit(member)}>
+                        <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(member.id)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            </CardFooter>
           </Card>
         ))}
       </div>
       <EditStaffDialog
-        isOpen={isDialogOpen}
-        onOpenChange={setDialogOpen}
+        isOpen={isFormDialogOpen}
+        onOpenChange={setFormDialogOpen}
         staffMember={editingStaff}
         onSave={handleSave}
+      />
+       <StaffTransactionDialog
+        isOpen={isTransactionDialogOpen}
+        onOpenChange={setTransactionDialogOpen}
+        staffMember={viewingStaff}
+        transactions={transactions.filter(t => t.staffId === viewingStaff?.id)}
+        onAddTransaction={handleAddTransaction}
       />
     </div>
   );
@@ -274,6 +303,163 @@ function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: { isOpen
                         </DialogFooter>
                     </form>
                 </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+
+const transactionTypes: StaffTransactionType[] = ["Advance", "Daily Wage", "Bonus", "Salary"];
+const paymentModes: PaymentMode[] = ["Cash", "Online"];
+
+const transactionFormSchema = z.object({
+    amount: z.coerce.number().positive("Amount must be positive"),
+    type: z.enum(transactionTypes),
+    paymentMode: z.enum(paymentModes),
+    notes: z.string().optional(),
+});
+
+
+function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transactions, onAddTransaction }: { 
+    isOpen: boolean; 
+    onOpenChange: (open: boolean) => void; 
+    staffMember: StaffMember | null; 
+    transactions: StaffTransaction[];
+    onAddTransaction: (transaction: StaffTransaction) => void;
+}) {
+    const { toast } = useToast();
+    const form = useForm<z.infer<typeof transactionFormSchema>>({
+        resolver: zodResolver(transactionFormSchema),
+        defaultValues: { amount: 0, type: "Advance", paymentMode: "Cash", notes: "" },
+    });
+
+    const monthlyReport = React.useMemo(() => {
+        const currentMonthTxs = transactions.filter(tx => new Date(tx.date).getMonth() === new Date().getMonth());
+        const grossSalary = staffMember?.salary || 0;
+        const advances = currentMonthTxs.filter(tx => tx.type === 'Advance').reduce((sum, tx) => sum + tx.amount, 0);
+        const dailyWages = currentMonthTxs.filter(tx => tx.type === 'Daily Wage').reduce((sum, tx) => sum + tx.amount, 0);
+        const bonuses = currentMonthTxs.filter(tx => tx.type === 'Bonus').reduce((sum, tx) => sum + tx.amount, 0);
+        const salariesPaid = currentMonthTxs.filter(tx => tx.type === 'Salary').reduce((sum, tx) => sum + tx.amount, 0);
+        
+        const totalDeductions = advances + dailyWages;
+        const netPayable = grossSalary + bonuses - totalDeductions - salariesPaid;
+
+        return { currentMonthTxs, grossSalary, totalDeductions, bonuses, salariesPaid, netPayable };
+    }, [transactions, staffMember]);
+
+
+    async function onSubmit(values: z.infer<typeof transactionFormSchema>) {
+        if (!staffMember) return;
+        
+        const newTransaction = await addStaffTransaction({ ...values, staffId: staffMember.id });
+        onAddTransaction(newTransaction);
+
+        toast({
+            title: "Transaction Added",
+            description: `${values.type} of ${appConfig.currency}${values.amount} recorded for ${staffMember.name}.`,
+        });
+        form.reset();
+    }
+
+    if (!staffMember) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Salary Report: {staffMember.name}</DialogTitle>
+                    <DialogDescription>
+                        View and manage salary transactions for the current month.
+                    </DialogDescription>
+                </DialogHeader>
+                
+                <div className="grid grid-cols-2 gap-x-8 gap-y-4 flex-1 min-h-0">
+                    {/* Left: Report */}
+                    <div className="flex flex-col gap-4">
+                        <h3 className="font-semibold text-lg">Current Month Summary</h3>
+                        <Card>
+                            <CardContent className="p-4 space-y-2">
+                                <div className="flex justify-between"><span>Gross Salary:</span> <span className="font-medium">{appConfig.currency}{monthlyReport.grossSalary.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Bonus:</span> <span className="font-medium text-green-600">+{appConfig.currency}{monthlyReport.bonuses.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Deductions (Advance/Daily):</span> <span className="font-medium text-red-600">-{appConfig.currency}{monthlyReport.totalDeductions.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Salary Paid:</span> <span className="font-medium">-{appConfig.currency}{monthlyReport.salariesPaid.toFixed(2)}</span></div>
+                                <Separator />
+                                <div className="flex justify-between font-bold text-lg"><span>Net Payable:</span> <span>{appConfig.currency}{monthlyReport.netPayable.toFixed(2)}</span></div>
+                            </CardContent>
+                        </Card>
+                         <div className="flex-1 flex flex-col min-h-0">
+                            <h4 className="font-semibold mb-2">Recent Transactions</h4>
+                            <div className="overflow-y-auto border rounded-md">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead>Type</TableHead>
+                                            <TableHead className="text-right">Amount</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {monthlyReport.currentMonthTxs.map(tx => (
+                                            <TableRow key={tx.id}>
+                                                <TableCell>{format(new Date(tx.date), "dd-MMM")}</TableCell>
+                                                <TableCell>{tx.type}</TableCell>
+                                                <TableCell className="text-right font-medium">{appConfig.currency}{tx.amount.toFixed(2)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right: Add Transaction */}
+                    <div className="flex flex-col gap-4">
+                         <h3 className="font-semibold text-lg">Add New Transaction</h3>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 border rounded-md">
+                                <FormField control={form.control} name="type" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Type</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                {transactionTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="amount" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Amount</FormLabel>
+                                        <FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="paymentMode" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Payment Mode</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Select mode" /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                {paymentModes.map(mode => <SelectItem key={mode} value={mode}>{mode}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="notes" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Notes (Optional)</FormLabel>
+                                        <FormControl><Input placeholder="e.g. for personal use" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <Button type="submit" className="w-full">Add Transaction</Button>
+                            </form>
+                        </Form>
+                    </div>
+                </div>
             </DialogContent>
         </Dialog>
     );
