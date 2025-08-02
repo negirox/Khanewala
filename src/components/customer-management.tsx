@@ -13,17 +13,19 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Mail, Phone, PlusCircle, Edit, Trash2, Star, Upload } from "lucide-react";
-import { getCustomers, saveCustomers } from "@/app/actions";
+import { getCustomers, saveCustomers, addNewCustomer } from "@/app/actions";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 
-const emptyCustomer: Customer = { id: "", name: "", email: "", phone: "", avatar: "", loyaltyPoints: 0 };
+const emptyCustomer: Omit<Customer, 'id'> = { name: "", email: "", phone: "", avatar: "", loyaltyPoints: 0 };
 
 export function CustomerManagement() {
   const [customers, setCustomers] = React.useState<Customer[]>([]);
   const [isDialogOpen, setDialogOpen] = React.useState(false);
   const [editingCustomer, setEditingCustomer] = React.useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
+  const { toast } = useToast();
 
   React.useEffect(() => {
     getCustomers().then(setCustomers);
@@ -47,20 +49,27 @@ export function CustomerManagement() {
     });
   }, []);
 
-  const handleSave = React.useCallback((customerData: Customer) => {
-    setCustomers(prevCustomers => {
-        let updatedCustomers;
-        if (editingCustomer) {
-          updatedCustomers = prevCustomers.map(customer => customer.id === customerData.id ? customerData : customer);
+  const handleSave = React.useCallback(async (customerData: Omit<Customer, 'id'> | Customer) => {
+    if ('id' in customerData && customerData.id) { // Editing existing customer
+        const updatedCustomer = customerData as Customer;
+        setCustomers(prev => {
+            const updated = prev.map(c => c.id === updatedCustomer.id ? updatedCustomer : c);
+            saveCustomers(updated);
+            return updated;
+        });
+        toast({ title: "Customer Updated", description: `${updatedCustomer.name}'s details have been updated.` });
+    } else { // Adding new customer
+        const { success, newCustomer } = await addNewCustomer(customerData);
+        if (success && newCustomer) {
+            setCustomers(prev => [...prev, newCustomer]);
+            toast({ title: "Customer Added", description: `A welcome email has been sent to ${newCustomer.name}.` });
         } else {
-          updatedCustomers = [...prevCustomers, { ...customerData, id: `CUST${prevCustomers.length + 1}` }];
+            toast({ variant: "destructive", title: "Error", description: "Failed to add new customer." });
         }
-        saveCustomers(updatedCustomers);
-        return updatedCustomers;
-    });
+    }
     setDialogOpen(false);
     setEditingCustomer(null);
-  }, [editingCustomer]);
+  }, [toast]);
 
   const filteredCustomers = React.useMemo(() => {
     return customers.filter(customer =>
@@ -136,7 +145,7 @@ export function CustomerManagement() {
 
 
 const formSchema = z.object({
-    id: z.string(),
+    id: z.string().optional(),
     name: z.string().min(2, "Name is required"),
     email: z.string().email("Invalid email address"),
     phone: z.string().min(10, "Invalid phone number"),
@@ -144,17 +153,24 @@ const formSchema = z.object({
     loyaltyPoints: z.coerce.number().min(0, "Loyalty points cannot be negative."),
 });
 
-function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, customer: Customer | null, onSave: (data: Customer) => void}) {
-    const form = useForm<z.infer<typeof formSchema>>({
+type CustomerFormData = z.infer<typeof formSchema>;
+
+function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { 
+    isOpen: boolean, 
+    onOpenChange: (open: boolean) => void, 
+    customer: Customer | null, 
+    onSave: (data: CustomerFormData) => void
+}) {
+    const form = useForm<CustomerFormData>({
         resolver: zodResolver(formSchema),
         defaultValues: customer || emptyCustomer,
     });
 
     React.useEffect(() => {
-        form.reset(customer || emptyCustomer);
+        form.reset(customer || (emptyCustomer as CustomerFormData));
     }, [customer, form]);
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    function onSubmit(values: CustomerFormData) {
         onSave(values);
     }
 

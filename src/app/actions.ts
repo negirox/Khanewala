@@ -10,6 +10,7 @@ import path from 'path';
 import { csvRepository } from '@/services/csv-repository';
 import { apiRepository } from '@/services/api-repository';
 import { appConfig } from '@/lib/config';
+import { brevoService } from '@/services/brevo-service';
 
 // Data Repository Switch
 const dataRepository = appConfig.dataSource === 'csv' ? csvRepository : apiRepository;
@@ -177,6 +178,30 @@ export async function getCustomers(): Promise<Customer[]> {
 export async function saveCustomers(customers: Customer[]): Promise<void> {
     return dataRepository.saveCustomers(customers);
 }
+
+
+export async function addNewCustomer(customerData: Omit<Customer, 'id'>): Promise<{success: boolean, newCustomer: Customer | null}> {
+    try {
+        const allCustomers = await getCustomers();
+        const newCustomer: Customer = {
+            ...customerData,
+            id: `CUST-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`
+        };
+
+        const updatedCustomers = [...allCustomers, newCustomer];
+        await dataRepository.saveCustomers(updatedCustomers);
+        
+        // After successfully saving, send the welcome email
+        await brevoService.sendWelcomeEmail(newCustomer);
+        
+        return { success: true, newCustomer };
+
+    } catch (error) {
+        console.error("Error adding new customer:", error);
+        return { success: false, newCustomer: null };
+    }
+}
+
 
 // This was in the old actions file, keeping it here.
 import { getMenuRecommendations as getMenuRecommendationsAI, type MenuRecommendationInput } from '@/ai/flows/menu-recommendation';
