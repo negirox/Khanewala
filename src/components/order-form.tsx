@@ -296,7 +296,7 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit }: O
         </div>
       </div>
       <SheetFooter className="pt-4">
-        <Button onClick={handleSubmit} className="w-full" size="lg" disabled={orderItems.length === 0 || tableNumber === ""}>Place Order</Button>
+        <Button onClick={handleSubmit} className="w-full" disabled={orderItems.length === 0 || tableNumber === ""}>Place Order</Button>
       </SheetFooter>
 
       {aiSuggestion && (
@@ -365,3 +365,5 @@ function CustomerSearchPopover({ customers, onSelectCustomer }: { customers: Cus
         </Popover>
     );
 }
+
+    
