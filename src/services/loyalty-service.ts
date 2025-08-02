@@ -60,6 +60,28 @@ class LoyaltyService {
 
     return { updatedCustomer, redeemedValue, pointsRedeemed: redeemablePoints };
   }
+  
+  /**
+   * Reverts a redemption of loyalty points, adding them back to the customer's balance.
+   *
+   * @param customer The customer whose redemption is being reverted.
+   * @param pointsToReturn The number of points to return to the customer.
+   * @returns An object with the updated customer.
+   */
+  revertRedemption(customer: Customer, pointsToReturn: number): { updatedCustomer: Customer } {
+    if (pointsToReturn <= 0) {
+      return { updatedCustomer: customer };
+    }
+
+    const updatedCustomer: Customer = {
+      ...customer,
+      loyaltyPoints: customer.loyaltyPoints + pointsToReturn,
+    };
+    
+    console.log(`Reverted redemption of ${pointsToReturn} points for ${customer.name}. New total: ${updatedCustomer.loyaltyPoints}`);
+    
+    return { updatedCustomer };
+  }
 }
 
 export const loyaltyService = new LoyaltyService();

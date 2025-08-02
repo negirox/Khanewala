@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent, User, Trash2, Star } from "lucide-react";
+import { ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent, User, Trash2, Star, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle as DialogTitlePrimitive, DialogDescription } from "@/components/ui/dialog";
@@ -119,9 +119,9 @@ export function OrderKanban() {
 
   const handleApplyDiscount = React.useCallback(async () => {
     if (!discountOrder) return;
+
     const discountValue = Math.max(0, Math.min(appConfig.maxDiscount, discountPercentage));
-    
-    if (discountValue > appConfig.maxDiscount) {
+    if (discountPercentage > appConfig.maxDiscount) {
         toast({
             variant: "destructive",
             title: "Discount Error",
@@ -132,16 +132,24 @@ export function OrderKanban() {
 
     const newActiveOrders = orders.map(o => {
         if (o.id === discountOrder.id) {
-            const newTotal = o.subtotal * (1 - discountValue / 100);
+            const discountedSubtotal = o.subtotal * (1 - discountValue / 100);
+            const newTotal = discountedSubtotal - (o.redeemedValue || 0);
             return { ...o, discount: discountValue, total: newTotal };
         }
         return o;
     });
+
     setOrders(newActiveOrders);
     await saveAllOrders(newActiveOrders, archivedOrders);
+    
+    toast({
+        title: discountValue > 0 ? "Discount Applied" : "Discount Removed",
+        description: `Order ${discountOrder.id} total has been updated.`,
+    });
+
     setDiscountOrder(null);
     setDiscountPercentage(0);
-  }, [discountOrder, discountPercentage, orders, archivedOrders, toast]);
+}, [discountOrder, discountPercentage, orders, archivedOrders, toast]);
 
   const handleRedeemPoints = React.useCallback(async () => {
     if (!redeemOrder || !redeemOrder.customerId) return;
@@ -155,20 +163,20 @@ export function OrderKanban() {
     const { updatedCustomer, redeemedValue, pointsRedeemed } = loyaltyService.redeemPoints(customer, pointsToRedeem);
     
     if (pointsRedeemed > 0) {
-      // Update the customer's point balance in the main list
       const newCustomers = allCustomers.map(c => c.id === updatedCustomer.id ? updatedCustomer : c);
       setAllCustomers(newCustomers);
       await saveCustomers(newCustomers);
       
-      // Update the order with the redeemed value
       const newActiveOrders = orders.map(o => {
         if (o.id === redeemOrder.id) {
-          return { 
-            ...o, 
-            pointsRedeemed: (o.pointsRedeemed || 0) + pointsRedeemed,
-            redeemedValue: (o.redeemedValue || 0) + redeemedValue,
-            total: o.total - redeemedValue,
-          };
+            const currentRedeemedValue = o.redeemedValue || 0;
+            const newTotal = o.total - (redeemedValue - currentRedeemedValue);
+            return {
+                ...o,
+                pointsRedeemed: pointsRedeemed,
+                redeemedValue: redeemedValue,
+                total: newTotal,
+            };
         }
         return o;
       });
@@ -187,6 +195,44 @@ export function OrderKanban() {
 
   }, [redeemOrder, pointsToRedeem, orders, archivedOrders, allCustomers, toast]);
   
+  const handleRevertRedemption = React.useCallback(async (orderToUpdate: Order) => {
+    if (!orderToUpdate.customerId || !orderToUpdate.pointsRedeemed) return;
+
+    const customer = allCustomers.find(c => c.id === orderToUpdate.customerId);
+    if (!customer) {
+        toast({ variant: "destructive", title: "Customer not found." });
+        return;
+    }
+
+    const { updatedCustomer } = loyaltyService.revertRedemption(customer, orderToUpdate.pointsRedeemed);
+    
+    const newCustomers = allCustomers.map(c => c.id === updatedCustomer.id ? updatedCustomer : c);
+    setAllCustomers(newCustomers);
+    await saveCustomers(newCustomers);
+    
+    const newActiveOrders = orders.map(o => {
+        if (o.id === orderToUpdate.id) {
+            const newTotal = o.total + (o.redeemedValue || 0);
+            return {
+                ...o,
+                pointsRedeemed: 0,
+                redeemedValue: 0,
+                total: newTotal,
+            };
+        }
+        return o;
+    });
+
+    setOrders(newActiveOrders);
+    await saveAllOrders(newActiveOrders, archivedOrders);
+
+    toast({
+        title: "Redemption Reverted",
+        description: `${orderToUpdate.pointsRedeemed} points returned to ${customer.name}.`,
+    });
+  }, [orders, archivedOrders, allCustomers, toast]);
+
+
   const groupedOrders = React.useMemo(() => {
     return orders.reduce((acc, order) => {
       (acc[order.status] = acc[order.status] || []).push(order);
@@ -237,20 +283,27 @@ export function OrderKanban() {
                                     <TooltipTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                                             setDiscountOrder(order);
-                                            setDiscountPercentage(order.discount);
+                                            setDiscountPercentage(order.discount || 0);
                                         }}>
                                             <Percent className="h-4 w-4" />
                                         </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>Apply Discount</TooltipContent>
+                                    <TooltipContent>Apply/Remove Discount</TooltipContent>
                                 </Tooltip>
                                  <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" disabled={!order.customerId} onClick={() => setRedeemOrder(order)}>
-                                            <Star className="h-4 w-4" />
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" disabled={!order.customerId} onClick={() => {
+                                            if (order.redeemedValue && order.redeemedValue > 0) {
+                                                handleRevertRedemption(order);
+                                            } else {
+                                                setRedeemOrder(order);
+                                                setPointsToRedeem(0);
+                                            }
+                                        }}>
+                                           {(order.redeemedValue && order.redeemedValue > 0) ? <RotateCcw className="h-4 w-4 text-destructive" /> : <Star className="h-4 w-4" />}
                                         </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>Redeem Points</TooltipContent>
+                                    <TooltipContent>{(order.redeemedValue && order.redeemedValue > 0) ? 'Revert Point Redemption' : 'Redeem Points'}</TooltipContent>
                                 </Tooltip>
                                 </>
                             )}
@@ -358,10 +411,10 @@ export function OrderKanban() {
       <AlertDialog open={!!discountOrder} onOpenChange={(open) => !open && setDiscountOrder(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Apply Discount</AlertDialogTitle>
+                <AlertDialogTitle>Apply/Remove Discount</AlertDialogTitle>
                 <AlertDialogDescription>
                     Enter a discount percentage for order {discountOrder?.id}. 
-                    The maximum allowed discount is {appConfig.maxDiscount}%.
+                    Set to 0 to remove the discount. The maximum is {appConfig.maxDiscount}%.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="py-4">
@@ -414,3 +467,4 @@ export function OrderKanban() {
     </div>
   );
 }
+
