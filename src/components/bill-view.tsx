@@ -12,7 +12,8 @@ export function BillView({ order }: { order: Order }) {
   const [tokenNumber, setTokenNumber] = React.useState<number | null>(null);
 
   React.useEffect(() => {
-    // Generate a random 3-digit token number when the component mounts
+    // Generate a random 3-digit token number only on the client-side after mount
+    // to prevent hydration errors.
     setTokenNumber(Math.floor(100 + Math.random() * 900));
   }, [order.id]);
 
