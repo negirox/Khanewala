@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen,
   ClipboardList,
@@ -131,6 +131,7 @@ function NewOrderDialog() {
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
   const { toast } = useToast();
+  const router = useRouter();
 
    React.useEffect(() => {
     // We only need to fetch this data when the dialog can be opened.
@@ -153,9 +154,6 @@ function NewOrderDialog() {
 
   const handleNewOrder = React.useCallback(async (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
     const { newActiveOrders, updatedCustomers, newOrder } = await createNewOrder(newOrderData, orders, archivedOrders, allCustomers);
-
-    // This won't trigger a live refresh on the kanban board, user will need to refresh.
-    // A more robust solution would involve a global state manager or context.
     
     // Also update table status to occupied
     if (newOrder.tableNumber) {
@@ -176,11 +174,13 @@ function NewOrderDialog() {
 
     toast({
         title: "Order Created",
-        description: `Order ${newOrder.id} has been created. Refresh the page to see it.`,
+        description: `Order ${newOrder.id} has been successfully created.`,
     });
 
     setNewOrderDialogOpen(false);
-  }, [orders, archivedOrders, allCustomers, allTables, toast]);
+    router.refresh();
+
+  }, [orders, archivedOrders, allCustomers, allTables, toast, router]);
 
   return (
     <Dialog open={isNewOrderDialogOpen} onOpenChange={setNewOrderDialogOpen}>

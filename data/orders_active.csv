@@ -1,4 +1,0 @@
-items,status,subtotal,discount,total,customerId,customerName,pointsRedeemed,redeemedValue,pointsEarned,id,createdAt
-"[{""quantity"":2,""menuItem"":{""id"":""ITEM002""}},{""quantity"":1,""menuItem"":{""id"":""ITEM003""}}]",preparing,950,0,950,,,,,,ORD-1754137054606-121,2025-08-02T12:17:34.606Z
-"[{""quantity"":2,""menuItem"":{""id"":""3""}},{""quantity"":2,""menuItem"":{""id"":""7""}}]",preparing,1140,10,1026,,,,,,ORD001,2024-08-01T12:00:00.000Z
-"[{""quantity"":4,""menuItem"":{""id"":""6""}}]",ready,400,2,392,,,,,,ORD004,2024-08-01T11:55:00.000Z
