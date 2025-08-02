@@ -1,3 +1,4 @@
 id,tableNumber,items,status,subtotal,discount,total,createdAt,customerId,customerName,pointsEarned
-ORD005,10,"[{""menuItem"":{""id"":""8"",""name"":""Mango Lassi"",""price"":150,""category"":""Beverages""},""quantity"":2}]",archived,300,0,300,2024-08-01T10:00:00.000Z,,,
-ORD006,2,"[{""menuItem"":{""id"":""3"",""name"":""Butter Chicken"",""price"":450,""category"":""Main Courses""},""quantity"":1},{""menuItem"":{""id"":""1"",""name"":""Samosa"",""price"":60,""category"":""Appetizers""},""quantity"":2}]",archived,570,10,513,2024-07-31T18:30:00.000Z,,,
+ORD003,1,"[{""quantity"":2,""menuItem"":{""id"":""1""}},{""quantity"":1,""menuItem"":{""id"":""5""}},{""quantity"":2,""menuItem"":{""id"":""9""}}]",archived,470,0,470,2024-08-01T12:08:00.000Z,,,
+ORD005,10,"[{""quantity"":2,""menuItem"":{""id"":""8""}}]",archived,300,0,300,2024-08-01T10:00:00.000Z,,,
+ORD006,2,"[{""quantity"":1,""menuItem"":{""id"":""3""}},{""quantity"":2,""menuItem"":{""id"":""1""}}]",archived,570,10,513,2024-07-31T18:30:00.000Z,,,

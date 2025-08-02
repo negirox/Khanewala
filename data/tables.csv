@@ -1,6 +1,6 @@
 id,status,capacity,orderId
 1,occupied,4,ORD003
-2,available,2,
+2,reserved,2,
 3,occupied,4,ORD001
 4,available,6,
 5,occupied,2,ORD002

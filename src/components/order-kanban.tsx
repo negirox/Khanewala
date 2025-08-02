@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { OrderForm } from "@/components/order-form";
-import type { Order, OrderStatus, Customer, MenuItem } from "@/lib/types";
+import type { Order, OrderStatus, Customer, MenuItem, Table as TableType } from "@/lib/types";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,7 +15,7 @@ import { BillView } from "./bill-view";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { getActiveOrders, getArchivedOrders, getCustomers, getMenuItems, saveAllOrders, createNewOrder } from "@/app/actions";
+import { getActiveOrders, getArchivedOrders, getCustomers, getMenuItems, saveAllOrders, createNewOrder, getTables, saveTables } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { appConfig } from "@/lib/config";
 
@@ -37,6 +37,7 @@ export function OrderKanban() {
   const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
   const [allCustomers, setAllCustomers] = React.useState<Customer[]>([]);
   const [allMenuItems, setAllMenuItems] = React.useState<MenuItem[]>([]);
+  const [allTables, setAllTables] = React.useState<TableType[]>([]);
   const [isSheetOpen, setSheetOpen] = React.useState(false);
   const [printingOrder, setPrintingOrder] = React.useState<Order | null>(null);
   const [discountOrder, setDiscountOrder] = React.useState<Order | null>(null);
@@ -48,24 +49,36 @@ export function OrderKanban() {
       getActiveOrders(),
       getArchivedOrders(),
       getCustomers(),
-      getMenuItems()
-    ]).then(([active, archived, customers, menuItems]) => {
+      getMenuItems(),
+      getTables()
+    ]).then(([active, archived, customers, menuItems, tables]) => {
       setOrders(active.map(o => ({...o, createdAt: new Date(o.createdAt)})));
       setArchivedOrders(archived.map(o => ({...o, createdAt: new Date(o.createdAt)})));
       setAllCustomers(customers);
       setAllMenuItems(menuItems);
+      setAllTables(tables);
     })
   }, []);
 
   const handleUpdateStatus = React.useCallback((orderId: string, newStatus: OrderStatus) => {
     let newActiveOrders = [...orders];
     let newArchivedOrders = [...archivedOrders];
+    let newTables = [...allTables];
 
     if (newStatus === 'archived') {
         const orderToArchive = newActiveOrders.find(o => o.id === orderId);
         if(orderToArchive) {
             newArchivedOrders = [{...orderToArchive, status: 'archived'}, ...newArchivedOrders];
             newActiveOrders = newActiveOrders.filter(o => o.id !== orderId);
+            
+            // Update table status to available
+            newTables = newTables.map(table => 
+                table.id === orderToArchive.tableNumber 
+                ? { ...table, status: 'available', orderId: undefined } 
+                : table
+            );
+            setAllTables(newTables);
+            saveTables(newTables);
         }
     } else {
         newActiveOrders = newActiveOrders.map((order) =>
@@ -75,7 +88,7 @@ export function OrderKanban() {
     setOrders(newActiveOrders);
     setArchivedOrders(newArchivedOrders);
     saveAllOrders(newActiveOrders, newArchivedOrders);
-  }, [orders, archivedOrders]);
+  }, [orders, archivedOrders, allTables]);
 
   const handleNewOrder = React.useCallback(async (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
     const { newActiveOrders, updatedCustomers, newOrder } = await createNewOrder(newOrderData, orders, archivedOrders, allCustomers);
@@ -280,3 +293,5 @@ export function OrderKanban() {
 
     </div>
   );
+
+    
