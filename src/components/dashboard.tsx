@@ -86,6 +86,14 @@ export function Dashboard() {
 
   }, [archivedOrders]);
 
+  const requestSort = React.useCallback((key: keyof Order) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  }, [sortConfig]);
+
   const sortedAndFilteredOrders = React.useMemo(() => {
     let sortableItems = [...archivedOrders];
 
@@ -113,15 +121,7 @@ export function Dashboard() {
     return sortableItems;
   }, [archivedOrders, searchTerm, sortConfig]);
 
-  const requestSort = (key: keyof Order) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const getSortIcon = (key: keyof Order) => {
+  const getSortIcon = React.useCallback((key: keyof Order) => {
     if (!sortConfig || sortConfig.key !== key) {
       return <ArrowUpDown className="h-4 w-4" />;
     }
@@ -129,7 +129,7 @@ export function Dashboard() {
       return <ArrowUpDown className="h-4 w-4 text-primary" />;
     }
     return <ArrowUpDown className="h-4 w-4 text-primary" />;
-  }
+  }, [sortConfig]);
 
 
   return (

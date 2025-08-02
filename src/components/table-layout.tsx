@@ -34,19 +34,21 @@ export function TableLayout() {
     getTables().then(setTables);
   }, []);
 
-  const toggleStatus = (tableId: number) => {
-    const updatedTables = tables.map(table => {
-      if (table.id === tableId) {
-        const statuses: TableType['status'][] = ['available', 'occupied', 'reserved'];
-        const currentIndex = statuses.indexOf(table.status);
-        const nextIndex = (currentIndex + 1) % statuses.length;
-        return { ...table, status: statuses[nextIndex], orderId: statuses[nextIndex] === 'available' ? undefined : table.orderId };
-      }
-      return table;
+  const toggleStatus = React.useCallback((tableId: number) => {
+    setTables(prevTables => {
+        const updatedTables = prevTables.map(table => {
+          if (table.id === tableId) {
+            const statuses: TableType['status'][] = ['available', 'occupied', 'reserved'];
+            const currentIndex = statuses.indexOf(table.status);
+            const nextIndex = (currentIndex + 1) % statuses.length;
+            return { ...table, status: statuses[nextIndex], orderId: statuses[nextIndex] === 'available' ? undefined : table.orderId };
+          }
+          return table;
+        });
+        saveTables(updatedTables);
+        return updatedTables;
     });
-    setTables(updatedTables);
-    saveTables(updatedTables);
-  };
+  }, []);
 
   return (
     <div className="flex flex-col">

@@ -37,34 +37,38 @@ export function StaffManagement() {
     getStaff().then(setStaff);
   }, []);
 
-  const handleEdit = (member: StaffMember) => {
+  const handleEdit = React.useCallback((member: StaffMember) => {
     setEditingStaff(member);
     setDialogOpen(true);
-  };
+  }, []);
   
-  const handleAddNew = () => {
+  const handleAddNew = React.useCallback(() => {
     setEditingStaff(null);
     setDialogOpen(true);
-  };
+  }, []);
   
-  const handleDelete = (staffId: string) => {
-    const updatedStaff = staff.filter(member => member.id !== staffId);
-    setStaff(updatedStaff);
-    saveStaff(updatedStaff);
-  }
+  const handleDelete = React.useCallback((staffId: string) => {
+    setStaff(prevStaff => {
+        const updatedStaff = prevStaff.filter(member => member.id !== staffId);
+        saveStaff(updatedStaff);
+        return updatedStaff;
+    });
+  }, []);
 
-  const handleSave = (staffData: StaffMember) => {
-    let updatedStaff;
-    if (editingStaff) {
-      updatedStaff = staff.map(member => member.id === staffData.id ? staffData : member);
-    } else {
-      updatedStaff = [...staff, { ...staffData, id: `STAFF${staff.length + 1}` }];
-    }
-    setStaff(updatedStaff);
-    saveStaff(updatedStaff);
+  const handleSave = React.useCallback((staffData: StaffMember) => {
+    setStaff(prevStaff => {
+        let updatedStaff;
+        if (editingStaff) {
+          updatedStaff = prevStaff.map(member => member.id === staffData.id ? staffData : member);
+        } else {
+          updatedStaff = [...prevStaff, { ...staffData, id: `STAFF${prevStaff.length + 1}` }];
+        }
+        saveStaff(updatedStaff);
+        return updatedStaff;
+    });
     setDialogOpen(false);
     setEditingStaff(null);
-  };
+  }, [editingStaff]);
 
   return (
     <div className="flex flex-col">

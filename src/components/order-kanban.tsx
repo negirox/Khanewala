@@ -57,27 +57,27 @@ export function OrderKanban() {
     })
   }, []);
 
-  const handleUpdateStatus = (orderId: string, newStatus: OrderStatus) => {
+  const handleUpdateStatus = React.useCallback((orderId: string, newStatus: OrderStatus) => {
     let newActiveOrders = [...orders];
     let newArchivedOrders = [...archivedOrders];
 
     if (newStatus === 'archived') {
-        const orderToArchive = orders.find(o => o.id === orderId);
+        const orderToArchive = newActiveOrders.find(o => o.id === orderId);
         if(orderToArchive) {
-            newArchivedOrders = [{...orderToArchive, status: 'archived'}, ...archivedOrders];
-            newActiveOrders = orders.filter(o => o.id !== orderId);
+            newArchivedOrders = [{...orderToArchive, status: 'archived'}, ...newArchivedOrders];
+            newActiveOrders = newActiveOrders.filter(o => o.id !== orderId);
         }
     } else {
-        newActiveOrders = orders.map((order) =>
+        newActiveOrders = newActiveOrders.map((order) =>
             order.id === orderId ? { ...order, status: newStatus } : order
         );
     }
     setOrders(newActiveOrders);
     setArchivedOrders(newArchivedOrders);
     saveAllOrders(newActiveOrders, newArchivedOrders);
-  };
+  }, [orders, archivedOrders]);
 
-  const handleNewOrder = async (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
+  const handleNewOrder = React.useCallback(async (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
     const { newActiveOrders, updatedCustomers, newOrder } = await createNewOrder(newOrderData, orders, archivedOrders, allCustomers);
 
     setOrders(newActiveOrders.map(o => ({...o, createdAt: new Date(o.createdAt)})));
@@ -91,9 +91,9 @@ export function OrderKanban() {
     }
 
     setSheetOpen(false);
-  }
+  }, [orders, archivedOrders, allCustomers, toast]);
 
-  const handleApplyDiscount = () => {
+  const handleApplyDiscount = React.useCallback(() => {
     if (!discountOrder) return;
     const discountValue = Math.max(0, Math.min(appConfig.maxDiscount, discountPercentage));
     
@@ -117,7 +117,7 @@ export function OrderKanban() {
     saveAllOrders(newActiveOrders, archivedOrders);
     setDiscountOrder(null);
     setDiscountPercentage(0);
-  }
+  }, [discountOrder, discountPercentage, orders, archivedOrders, toast]);
   
   const groupedOrders = React.useMemo(() => {
     return orders.reduce((acc, order) => {

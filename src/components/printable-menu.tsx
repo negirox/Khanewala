@@ -24,7 +24,7 @@ export function PrintableMenu() {
     }, {} as Record<string, MenuItem[]>);
   }, [menuItems]);
 
-  const handlePrint = () => {
+  const handlePrint = React.useCallback(() => {
     // Temporarily hide the print button for printing
     const printButton = document.getElementById('print-menu-button');
     if (printButton) printButton.style.display = 'none';
@@ -33,7 +33,7 @@ export function PrintableMenu() {
 
     // Restore the print button after printing
     if (printButton) printButton.style.display = 'block';
-  };
+  }, []);
 
 
   return (

@@ -51,36 +51,40 @@ export function MenuEditor() {
     getMenuItems().then(setMenuItems);
   }, []);
 
-  const handleEdit = (item: MenuItem) => {
+  const handleEdit = React.useCallback((item: MenuItem) => {
     setEditingItem(item);
     setDialogOpen(true);
-  };
+  }, []);
   
-  const handleAddNew = () => {
+  const handleAddNew = React.useCallback(() => {
     setEditingItem(null);
     setDialogOpen(true);
-  };
+  }, []);
   
-  const handleDelete = (itemId: string) => {
-    const updatedItems = menuItems.filter(item => item.id !== itemId);
-    setMenuItems(updatedItems);
-    saveMenuItems(updatedItems);
-  }
+  const handleDelete = React.useCallback((itemId: string) => {
+    setMenuItems(prevItems => {
+        const updatedItems = prevItems.filter(item => item.id !== itemId);
+        saveMenuItems(updatedItems);
+        return updatedItems;
+    });
+  }, []);
 
-  const handleSave = (itemData: MenuItem) => {
-    let updatedItems;
-    if (editingItem) {
-      updatedItems = menuItems.map(item => item.id === itemData.id ? itemData : item)
-    } else {
-      updatedItems = [...menuItems, { ...itemData, id: `ITEM${Date.now()}` }];
-    }
-    setMenuItems(updatedItems);
-    saveMenuItems(updatedItems);
+  const handleSave = React.useCallback((itemData: MenuItem) => {
+    setMenuItems(prevItems => {
+        let updatedItems;
+        if (editingItem) {
+          updatedItems = prevItems.map(item => item.id === itemData.id ? itemData : item)
+        } else {
+          updatedItems = [...prevItems, { ...itemData, id: `ITEM${Date.now()}` }];
+        }
+        saveMenuItems(updatedItems);
+        return updatedItems;
+    });
     setDialogOpen(false);
     setEditingItem(null);
-  };
+  }, [editingItem]);
   
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       Papa.parse(file, {
@@ -96,9 +100,11 @@ export function MenuEditor() {
             image: row.image || "https://placehold.co/600x400.png",
           })) as MenuItem[];
 
-          const updatedMenuItems = [...menuItems, ...newItems];
-          setMenuItems(updatedMenuItems);
-          saveMenuItems(updatedMenuItems);
+          setMenuItems(prevItems => {
+              const updatedMenuItems = [...prevItems, ...newItems];
+              saveMenuItems(updatedMenuItems);
+              return updatedMenuItems;
+          });
           
           toast({
             title: "Menu Imported",
@@ -114,13 +120,13 @@ export function MenuEditor() {
         }
       });
     }
-  };
+  }, [toast]);
 
-  const triggerFileUpload = () => {
+  const triggerFileUpload = React.useCallback(() => {
     fileInputRef.current?.click();
-  };
+  }, []);
 
-  const handleDownloadSample = () => {
+  const handleDownloadSample = React.useCallback(() => {
     const sampleData = [
       { name: "Samosa", price: 5.99, category: "Appetizers", description: "Crispy pastry with spiced potatoes and peas.", image: "https://placehold.co/600x400.png" },
       { name: "Paneer Butter Masala", price: 14.99, category: "Main Courses", description: "Paneer in a creamy tomato sauce.", image: "https://placehold.co/600x400.png" },
@@ -135,7 +141,7 @@ export function MenuEditor() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }
+  }, []);
 
   return (
     <div className="flex flex-col">

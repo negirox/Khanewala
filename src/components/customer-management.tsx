@@ -29,34 +29,38 @@ export function CustomerManagement() {
     getCustomers().then(setCustomers);
   }, []);
 
-  const handleEdit = (customer: Customer) => {
+  const handleEdit = React.useCallback((customer: Customer) => {
     setEditingCustomer(customer);
     setDialogOpen(true);
-  };
+  }, []);
   
-  const handleAddNew = () => {
+  const handleAddNew = React.useCallback(() => {
     setEditingCustomer(null);
     setDialogOpen(true);
-  };
+  }, []);
   
-  const handleDelete = (customerId: string) => {
-    const updatedCustomers = customers.filter(customer => customer.id !== customerId);
-    setCustomers(updatedCustomers);
-    saveCustomers(updatedCustomers);
-  }
+  const handleDelete = React.useCallback((customerId: string) => {
+    setCustomers(prevCustomers => {
+      const updatedCustomers = prevCustomers.filter(customer => customer.id !== customerId);
+      saveCustomers(updatedCustomers);
+      return updatedCustomers;
+    });
+  }, []);
 
-  const handleSave = (customerData: Customer) => {
-    let updatedCustomers;
-    if (editingCustomer) {
-      updatedCustomers = customers.map(customer => customer.id === customerData.id ? customerData : customer);
-    } else {
-      updatedCustomers = [...customers, { ...customerData, id: `CUST${customers.length + 1}` }];
-    }
-    setCustomers(updatedCustomers);
-    saveCustomers(updatedCustomers);
+  const handleSave = React.useCallback((customerData: Customer) => {
+    setCustomers(prevCustomers => {
+        let updatedCustomers;
+        if (editingCustomer) {
+          updatedCustomers = prevCustomers.map(customer => customer.id === customerData.id ? customerData : customer);
+        } else {
+          updatedCustomers = [...prevCustomers, { ...customerData, id: `CUST${prevCustomers.length + 1}` }];
+        }
+        saveCustomers(updatedCustomers);
+        return updatedCustomers;
+    });
     setDialogOpen(false);
     setEditingCustomer(null);
-  };
+  }, [editingCustomer]);
 
   const filteredCustomers = React.useMemo(() => {
     return customers.filter(customer =>
