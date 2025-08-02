@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { Order, MenuItem } from "@/lib/types";
 import { format, subDays, startOfDay } from "date-fns";
-import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart, ArrowUpDown } from "lucide-react";
+import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { appConfig } from "@/lib/config";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
@@ -29,17 +29,17 @@ import { Button } from "./ui/button";
 import { getArchivedOrders } from "@/app/actions";
 
 const chartColors = ["#2563eb", "#f97316", "#22c55e", "#ef4444", "#8b5cf6", "#14b8a6", "#d946ef"];
-
+const ITEMS_PER_PAGE = 10;
 
 export function Dashboard() {
   const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof Order; direction: 'ascending' | 'descending' } | null>({ key: 'createdAt', direction: 'descending' });
+  const [currentPage, setCurrentPage] = React.useState(1);
 
   React.useEffect(() => {
     getArchivedOrders().then(orders => setArchivedOrders(orders.map(o => ({...o, createdAt: new Date(o.createdAt)}))));
   }, []);
-
 
   const stats = React.useMemo(() => {
     const totalSales = archivedOrders.reduce((sum, order) => sum + order.total, 0);
@@ -92,6 +92,7 @@ export function Dashboard() {
       direction = 'descending';
     }
     setSortConfig({ key, direction });
+    setCurrentPage(1);
   }, [sortConfig]);
 
   const sortedAndFilteredOrders = React.useMemo(() => {
@@ -121,6 +122,12 @@ export function Dashboard() {
     return sortableItems;
   }, [archivedOrders, searchTerm, sortConfig]);
 
+  const totalPages = Math.ceil(sortedAndFilteredOrders.length / ITEMS_PER_PAGE);
+  const paginatedOrders = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return sortedAndFilteredOrders.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [sortedAndFilteredOrders, currentPage]);
+
   const getSortIcon = React.useCallback((key: keyof Order) => {
     if (!sortConfig || sortConfig.key !== key) {
       return <ArrowUpDown className="h-4 w-4" />;
@@ -131,6 +138,9 @@ export function Dashboard() {
     return <ArrowUpDown className="h-4 w-4 text-primary" />;
   }, [sortConfig]);
 
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -227,7 +237,6 @@ export function Dashboard() {
         </Card>
       </div>
 
-
       {/* Completed Orders Table */}
       <Card>
         <CardHeader>
@@ -245,60 +254,88 @@ export function Dashboard() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>
-                   <Button variant="ghost" onClick={() => requestSort('id')}>
-                        Order ID {getSortIcon('id')}
-                    </Button>
-                </TableHead>
-                <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('tableNumber')}>
-                        Table {getSortIcon('tableNumber')}
-                    </Button>
-                </TableHead>
-                <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('createdAt')}>
-                        Time {getSortIcon('createdAt')}
-                    </Button>
-                </TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead className="text-right">
-                    <Button variant="ghost" onClick={() => requestSort('total')}>
-                        Amount {getSortIcon('total')}
-                    </Button>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedAndFilteredOrders.length > 0 ? (
-                sortedAndFilteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id}</TableCell>
-                    <TableCell>{order.tableNumber}</TableCell>
-                    <TableCell>
-                      {format(new Date(order.createdAt), "HH:mm")}
-                    </TableCell>
-                    <TableCell>
-                      {order.items.map(i => i.quantity).reduce((a, b) => a + b, 0)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {appConfig.currency}{order.total.toFixed(2)}
+          <div className="border rounded-md">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('id')}>
+                          Order ID {getSortIcon('id')}
+                      </Button>
+                  </TableHead>
+                  <TableHead>
+                      <Button variant="ghost" onClick={() => requestSort('tableNumber')}>
+                          Table {getSortIcon('tableNumber')}
+                      </Button>
+                  </TableHead>
+                  <TableHead>
+                      <Button variant="ghost" onClick={() => requestSort('createdAt')}>
+                          Time {getSortIcon('createdAt')}
+                      </Button>
+                  </TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead className="text-right">
+                      <Button variant="ghost" onClick={() => requestSort('total')}>
+                          Amount {getSortIcon('total')}
+                      </Button>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedOrders.length > 0 ? (
+                  paginatedOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium">{order.id}</TableCell>
+                      <TableCell>{order.tableNumber}</TableCell>
+                      <TableCell>
+                        {format(new Date(order.createdAt), "HH:mm")}
+                      </TableCell>
+                      <TableCell>
+                        {order.items.map(i => i.quantity).reduce((a, b) => a + b, 0)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {appConfig.currency}{order.total.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      No matching orders found.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    No matching orders found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+           {/* Pagination */}
+          <div className="flex items-center justify-end space-x-2 py-4">
+              <div className="flex-1 text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+              </div>
+              <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+              >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+              </Button>
+              <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+              >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+              </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
   );
 }
+
+    
