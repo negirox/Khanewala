@@ -178,3 +178,5 @@ export async function getMenuRecommendations(input: MenuRecommendationInput) {
     return { success: false, error: 'Failed to get AI recommendations. Please try again later.' };
   }
 }
+
+    

@@ -97,6 +97,15 @@ export function OrderKanban() {
     setOrders(newActiveOrders.map(o => ({...o, createdAt: new Date(o.createdAt)})));
     setAllCustomers(updatedCustomers);
     
+    // Also update table status to occupied
+    const updatedTables = allTables.map(table => 
+        table.id === newOrder.tableNumber
+        ? { ...table, status: 'occupied', orderId: newOrder.id }
+        : table
+    );
+    setAllTables(updatedTables);
+    await saveTables(updatedTables);
+
     if (newOrder.pointsEarned) {
          toast({
             title: "Loyalty Points Added!",
@@ -105,7 +114,7 @@ export function OrderKanban() {
     }
 
     setSheetOpen(false);
-  }, [orders, archivedOrders, allCustomers, toast]);
+  }, [orders, archivedOrders, allCustomers, allTables, toast]);
   
   const handleCancelOrder = React.useCallback((orderToCancel: Order) => {
     const newActiveOrders = orders.filter(o => o.id !== orderToCancel.id);
@@ -174,8 +183,8 @@ export function OrderKanban() {
               New Order
             </Button>
           </SheetTrigger>
-          <SheetContent className="w-full sm:max-w-4xl">
-            <OrderForm allMenuItems={allMenuItems} allCustomers={allCustomers} onSubmit={handleNewOrder} />
+          <SheetContent className="w-full sm:max-w-4xl flex flex-col">
+            <OrderForm allMenuItems={allMenuItems} allCustomers={allCustomers} allTables={allTables} onSubmit={handleNewOrder} />
           </SheetContent>
         </Sheet>
       </div>
@@ -339,5 +348,8 @@ export function OrderKanban() {
 
     </div>
   );
+
+    
+
 
     

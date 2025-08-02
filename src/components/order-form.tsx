@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   PlusCircle,
@@ -31,7 +30,7 @@ import {
 } from "lucide-react";
 import { getMenuRecommendations } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
-import type { MenuItem, OrderItem, Order, Customer } from "@/lib/types";
+import type { MenuItem, OrderItem, Order, Customer, Table } from "@/lib/types";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -46,16 +45,18 @@ import Image from "next/image";
 import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "./ui/command";
 import { appConfig } from "@/lib/config";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 interface OrderFormProps {
   allMenuItems: MenuItem[];
   allCustomers: Customer[];
+  allTables: Table[];
   onSubmit: (orderData: Omit<Order, "id" | "createdAt">) => void;
 }
 
-export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormProps) {
+export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit }: OrderFormProps) {
   const [orderItems, setOrderItems] = React.useState<OrderItem[]>([]);
-  const [tableNumber, setTableNumber] = React.useState<number | "">("");
+  const [tableNumber, setTableNumber] = React.useState<string>("");
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
   const [isAiLoading, setIsAiLoading] = React.useState(false);
   const [aiSuggestion, setAiSuggestion] = React.useState<{ recommendations: string[], reasoning: string } | null>(null);
@@ -165,6 +166,10 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
     }, {} as Record<string, MenuItem[]>);
   }, [allMenuItems]);
 
+  const availableTables = React.useMemo(() => {
+    return allTables.filter(table => table.status === 'available');
+  }, [allTables]);
+
 
   return (
     <>
@@ -174,11 +179,11 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
           Browse the menu and add items to the order.
         </SheetDescription>
       </SheetHeader>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full overflow-y-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
         {/* Left Side: Menu */}
-        <div className="flex flex-col">
+        <div className="flex flex-col h-full">
           <h3 className="font-semibold font-headline text-lg mb-2">Menu</h3>
-          <ScrollArea className="flex-1 pr-4 -mr-4">
+          <ScrollArea className="flex-1 pr-4 -mr-4 border rounded-md p-2">
             <div className="space-y-4">
             {Object.entries(menuByCategory).map(([category, items]) => (
                 <div key={category}>
@@ -201,13 +206,28 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
         </div>
 
         {/* Right Side: Order Summary */}
-        <div className="flex flex-col">
+        <div className="flex flex-col h-full">
           <h3 className="font-semibold font-headline text-lg mb-2">Current Order</h3>
           <Card className="flex-1 flex flex-col">
             <CardHeader className="space-y-4">
                 <div className="space-y-1">
                     <Label htmlFor="tableNumber">Table Number</Label>
-                    <Input id="tableNumber" type="number" value={tableNumber} onChange={(e) => setTableNumber(Number(e.target.value))} placeholder="e.g. 5" />
+                     <Select value={tableNumber} onValueChange={setTableNumber}>
+                        <SelectTrigger id="tableNumber">
+                            <SelectValue placeholder="Select an available table" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableTables.length > 0 ? (
+                                availableTables.map(table => (
+                                    <SelectItem key={table.id} value={String(table.id)}>
+                                        Table {table.id} (Capacity: {table.capacity})
+                                    </SelectItem>
+                                ))
+                            ) : (
+                                <SelectItem value="disabled" disabled>No available tables</SelectItem>
+                            )}
+                        </SelectContent>
+                    </Select>
                 </div>
                  <div className="space-y-1">
                     <Label>Customer (Optional)</Label>
@@ -224,7 +244,7 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
                  </div>
             </CardHeader>
             <CardContent className="flex-1 p-0">
-              <ScrollArea className="h-[300px] md:h-full">
+              <ScrollArea className="h-full">
               <div className="p-6 pt-0">
                 {orderItems.length > 0 ? (
                   <div className="space-y-4">
@@ -270,7 +290,7 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
           </Card>
         </div>
       </div>
-      <SheetFooter className="mt-4">
+      <SheetFooter className="pt-4">
         <Button onClick={handleSubmit} className="w-full" size="lg" disabled={orderItems.length === 0 || tableNumber === ""}>Place Order</Button>
       </SheetFooter>
 
@@ -340,3 +360,5 @@ function CustomerSearchPopover({ customers, onSelectCustomer }: { customers: Cus
         </Popover>
     );
 }
+
+    
