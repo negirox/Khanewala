@@ -1,4 +1,6 @@
 items,status,subtotal,discount,total,customerId,customerName,pointsRedeemed,redeemedValue,pointsEarned,id,createdAt
+"[{""quantity"":1,""menuItem"":{""id"":""ITEM002""}},{""quantity"":1,""menuItem"":{""id"":""ITEM001""}}]",archived,400,5,374,CUST01,John Doe,6,6,4,ORD-1754140520063-382,2025-08-02T13:15:20.063Z
+"[{""quantity"":1,""menuItem"":{""id"":""ITEM002""}},{""quantity"":1,""menuItem"":{""id"":""ITEM001""}}]",archived,400,10,350,CUST02,Jane Smith,10,10,4,ORD-1754140976132-490,2025-08-02T13:22:56.132Z
 "[{""quantity"":1,""menuItem"":{""id"":""ITEM001""}},{""quantity"":1,""menuItem"":{""id"":""ITEM002""}},{""quantity"":1,""menuItem"":{""id"":""ITEM003""}}]",archived,850,0,840,CUST02,Jane Smith,10,10,8,ORD-1754140416493-646,2025-08-02T13:13:36.493Z
 "[{""quantity"":4,""menuItem"":{""id"":""6""}}]",archived,400,2,392,,,,,,ORD004,2024-08-01T11:55:00.000Z
 "[{""quantity"":2,""menuItem"":{""id"":""3""}},{""quantity"":2,""menuItem"":{""id"":""7""}}]",archived,1140,10,1026,,,,,,ORD001,2024-08-01T12:00:00.000Z
