@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { MenuItem } from "@/lib/types";
-import { PlusCircle, Edit, Trash2, Upload } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Upload, Download } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import { getMenuItems, saveMenuItems } from "@/app/actions";
 import { appConfig } from "@/lib/config";
@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 
 
 const emptyMenuItem: MenuItem = { id: "", name: "", price: 0, category: "Main Courses", description: "" };
+const menuCategories = ["Appetizers", "Main Courses", "Desserts", "Beverages", "Breads", "Rice & Biryani", "Indian Chinese"];
 
 export function MenuEditor() {
   const [menuItems, setMenuItems] = React.useState<MenuItem[]>([]);
@@ -90,7 +91,7 @@ export function MenuEditor() {
             id: `ITEM${Date.now()}_${Math.random()}`,
             name: row.name || "Unnamed Item",
             price: Number(row.price) || 0,
-            category: ["Appetizers", "Main Courses", "Desserts", "Beverages"].includes(row.category) ? row.category : "Main Courses",
+            category: menuCategories.includes(row.category) ? row.category : "Main Courses",
             description: row.description || "",
             image: row.image || "https://placehold.co/600x400.png",
           })) as MenuItem[];
@@ -119,11 +120,28 @@ export function MenuEditor() {
     fileInputRef.current?.click();
   };
 
+  const handleDownloadSample = () => {
+    const sampleData = [
+      { name: "Samosa", price: 5.99, category: "Appetizers", description: "Crispy pastry with spiced potatoes and peas.", image: "https://placehold.co/600x400.png" },
+      { name: "Paneer Butter Masala", price: 14.99, category: "Main Courses", description: "Paneer in a creamy tomato sauce.", image: "https://placehold.co/600x400.png" },
+    ];
+    const csv = Papa.unparse(sampleData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'sample-menu.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   return (
     <div className="flex flex-col">
        <div className="flex items-center justify-between mb-4 gap-2">
         <h1 className="text-2xl font-bold font-headline">Menu Editor</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
             type="file"
             ref={fileInputRef}
@@ -131,6 +149,10 @@ export function MenuEditor() {
             className="hidden"
             accept=".csv"
           />
+           <Button variant="outline" onClick={handleDownloadSample}>
+            <Download className="mr-2 h-4 w-4" />
+            Download Sample
+          </Button>
           <Button variant="outline" onClick={triggerFileUpload}>
             <Upload className="mr-2 h-4 w-4" />
             Upload CSV
@@ -190,8 +212,9 @@ const formSchema = z.object({
   id: z.string(),
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   price: z.coerce.number().min(0, { message: "Price cannot be negative." }),
-  category: z.enum(["Appetizers", "Main Courses", "Desserts", "Beverages"]),
+  category: z.enum(menuCategories),
   description: z.string().optional(),
+  image: z.string().url().optional().or(z.literal('')),
 });
 
 
@@ -259,10 +282,7 @@ function EditItemDialog({ isOpen, onOpenChange, item, onSave }: { isOpen: boolea
                       </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Appetizers">Appetizers</SelectItem>
-                        <SelectItem value="Main Courses">Main Courses</SelectItem>
-                        <SelectItem value="Desserts">Desserts</SelectItem>
-                        <SelectItem value="Beverages">Beverages</SelectItem>
+                        {menuCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -282,6 +302,35 @@ function EditItemDialog({ isOpen, onOpenChange, item, onSave }: { isOpen: boolea
                   </FormItem>
                 )}
               />
+              <FormField
+                  control={form.control}
+                  name="image"
+                  render={({field}) => (
+                    <FormItem>
+                      <FormLabel>Image URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://placehold.co/600x400.png"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormItem>
+                  <FormLabel>Upload Image</FormLabel>
+                  <div className="flex items-center gap-2">
+                    <Input type="file" className="flex-1" disabled />
+                    <Button variant="outline" type="button" disabled>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Max 300kb. Image uploads are not implemented in this demo.
+                  </p>
+                </FormItem>
               <DialogFooter>
                 <Button type="submit">Save Changes</Button>
               </DialogFooter>
