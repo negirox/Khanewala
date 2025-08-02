@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign, Upload, HandCoins, Download, History, ChevronLeft, ChevronRight } from "lucide-react";
+import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign, Upload, HandCoins, Download, History, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStaff, saveStaff, getStaffTransactions, addStaffTransaction, generateStaffTransactionReport } from "@/app/actions";
 import { appConfig } from "@/lib/config";
@@ -417,21 +417,62 @@ function TransactionHistoryDialog({
     });
     const [transactionTypeFilter, setTransactionTypeFilter] = React.useState<StaffTransactionType | "All">("All");
     const [currentPage, setCurrentPage] = React.useState(1);
+    const [sortConfig, setSortConfig] = React.useState<{ key: keyof StaffTransaction; direction: 'ascending' | 'descending' } | null>({ key: 'date', direction: 'descending' });
 
-    const filteredTransactions = React.useMemo(() => {
-        return transactions.filter(tx => {
+    const requestSort = React.useCallback((key: keyof StaffTransaction) => {
+        let direction: 'ascending' | 'descending' = 'ascending';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    }, [sortConfig]);
+    
+    const getSortIcon = React.useCallback((key: keyof StaffTransaction) => {
+        if (!sortConfig || sortConfig.key !== key) {
+          return <ArrowUpDown className="h-4 w-4" />;
+        }
+        if (sortConfig.direction === 'ascending') {
+          return <ArrowUpDown className="h-4 w-4 text-primary" />; // Could use different icons for up/down
+        }
+        return <ArrowUpDown className="h-4 w-4 text-primary" />;
+      }, [sortConfig]);
+
+
+    const sortedAndFilteredTransactions = React.useMemo(() => {
+        let sortableItems = transactions.filter(tx => {
             const txDate = new Date(tx.date);
             const inRange = dateRange?.from && dateRange?.to && txDate >= startOfMonth(dateRange.from) && txDate <= endOfMonth(dateRange.to);
             const typeMatch = transactionTypeFilter === "All" || tx.type === transactionTypeFilter;
             return inRange && typeMatch;
-        }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [transactions, dateRange, transactionTypeFilter]);
+        });
 
-    const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
+        if (sortConfig !== null) {
+            sortableItems.sort((a, b) => {
+                const aValue = a[sortConfig.key];
+                const bValue = b[sortConfig.key];
+
+                if(sortConfig.key === 'date') {
+                    return sortConfig.direction === 'ascending' ? new Date(aValue).getTime() - new Date(bValue).getTime() : new Date(bValue).getTime() - new Date(aValue).getTime();
+                }
+
+                if (aValue < bValue) {
+                  return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                  return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        
+        return sortableItems;
+    }, [transactions, dateRange, transactionTypeFilter, sortConfig]);
+
+    const totalPages = Math.ceil(sortedAndFilteredTransactions.length / ITEMS_PER_PAGE);
     const paginatedTransactions = React.useMemo(() => {
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-        return filteredTransactions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-    }, [filteredTransactions, currentPage]);
+        return sortedAndFilteredTransactions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    }, [sortedAndFilteredTransactions, currentPage]);
 
     React.useEffect(() => {
         setCurrentPage(1);
@@ -441,7 +482,7 @@ function TransactionHistoryDialog({
     const handleExport = async () => {
         if (!staffMember) return;
 
-        const csvString = await generateStaffTransactionReport(staffMember.id, filteredTransactions, summary);
+        const csvString = await generateStaffTransactionReport(staffMember.id, sortedAndFilteredTransactions, summary);
         const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
@@ -460,7 +501,7 @@ function TransactionHistoryDialog({
             <DialogContent className="max-w-4xl w-full max-h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>Transaction History: {staffMember.name}</DialogTitle>
-                    <DialogDescription>View, filter, and export all transactions.</DialogDescription>
+                    <DialogDescription>View, filter, sort, and export all transactions.</DialogDescription>
                 </DialogHeader>
 
                 <div className="flex-1 flex flex-col min-h-0 gap-4">
@@ -489,10 +530,16 @@ function TransactionHistoryDialog({
                         <Table>
                             <TableHeader className="sticky top-0 bg-secondary z-10">
                                 <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Type</TableHead>
+                                    <TableHead>
+                                        <Button variant="ghost" onClick={() => requestSort('date')}>Date {getSortIcon('date')}</Button>
+                                    </TableHead>
+                                    <TableHead>
+                                        <Button variant="ghost" onClick={() => requestSort('type')}>Type {getSortIcon('type')}</Button>
+                                    </TableHead>
                                     <TableHead>Notes</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
+                                    <TableHead className="text-right">
+                                        <Button variant="ghost" onClick={() => requestSort('amount')}>Amount {getSortIcon('amount')}</Button>
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -529,7 +576,7 @@ function TransactionHistoryDialog({
                             variant="outline"
                             size="sm"
                             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={currentPage === totalPages}
+                            disabled={currentPage === totalPages || totalPages === 0}
                         >
                             Next
                              <ChevronRight className="h-4 w-4" />
