@@ -29,13 +29,13 @@ import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Switch } from "./ui/switch";
 import { useRouter } from "next/navigation";
 import { Separator } from "./ui/separator";
+import { Upload } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 const formSchema = z.object({
   appName: z.string().min(1, "App name is required"),
-  logoUrl: z.string().url("Must be a valid URL.").or(z.literal("")),
-  theme: z.enum(["default", "ocean", "sunset"]),
-  gstNumber: z.string().optional(),
-  maxDiscount: z.coerce.number().min(0, "Max discount cannot be negative.").max(100, "Max discount cannot be over 100."),
+  theme: z.enum(["default", "ocean", "sunset", "mint", "plum"]),
+  font: z.enum(["pt-sans", "roboto-slab"]),
   enabledAdminSections: z.object({
     dashboard: z.boolean(),
     menu: z.boolean(),
@@ -43,6 +43,8 @@ const formSchema = z.object({
     customers: z.boolean(),
     settings: z.boolean(),
   }),
+  gstNumber: z.string().optional(),
+  maxDiscount: z.coerce.number().min(0, "Max discount cannot be negative.").max(100, "Max discount cannot be over 100."),
 });
 
 export function SuperAdminSettings() {
@@ -60,17 +62,15 @@ export function SuperAdminSettings() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       appName: appConfig.title,
-      logoUrl: "", // Assuming logo is a component, so URL is for display only
       theme: "default",
+      font: "pt-sans",
+      enabledAdminSections: appConfig.enabledAdminSections,
       gstNumber: appConfig.gstNumber || "",
       maxDiscount: appConfig.maxDiscount,
-      enabledAdminSections: appConfig.enabledAdminSections,
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // In a real application, you would save these settings to a backend.
-    // For this demo, we'll just show a toast notification.
     toast({
       title: "Settings Saved!",
       description: (
@@ -108,7 +108,6 @@ export function SuperAdminSettings() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               
-              {/* Branding Section */}
               <div>
                 <h3 className="text-lg font-medium mb-4">Branding & Appearance</h3>
                 <div className="space-y-4">
@@ -125,22 +124,42 @@ export function SuperAdminSettings() {
                         </FormItem>
                         )}
                     />
+                    
+                    <FormItem>
+                        <FormLabel>Logo</FormLabel>
+                        <div className="flex items-center gap-2">
+                            <Input type="file" className="flex-1" disabled/>
+                            <Button variant="outline" type="button" disabled>
+                                <Upload className="mr-2 h-4 w-4" />
+                                Upload
+                            </Button>
+                        </div>
+                        <FormDescription>Upload a logo for your restaurant. Image uploads are not implemented in this demo.</FormDescription>
+                    </FormItem>
 
                     <FormField
-                        control={form.control}
-                        name="logoUrl"
-                        render={({ field }) => (
+                      control={form.control}
+                      name="font"
+                      render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Logo URL</FormLabel>
+                          <FormLabel>Application Font</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
-                            <Input
-                                placeholder="https://example.com/logo.png"
-                                {...field}
-                            />
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a font" />
+                              </SelectTrigger>
                             </FormControl>
-                            <FormMessage />
+                            <SelectContent>
+                              <SelectItem value="pt-sans">PT Sans (Sans-serif)</SelectItem>
+                              <SelectItem value="roboto-slab">Roboto Slab (Serif)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            This will change the main font used throughout the application.
+                          </FormDescription>
+                          <FormMessage />
                         </FormItem>
-                        )}
+                      )}
                     />
 
                     <FormField
@@ -153,31 +172,27 @@ export function SuperAdminSettings() {
                             <RadioGroup
                                 onValueChange={field.onChange}
                                 defaultValue={field.value}
-                                className="flex flex-col space-y-1"
+                                className="grid grid-cols-1 md:grid-cols-2 gap-4"
                             >
                                 <FormItem className="flex items-center space-x-3 space-y-0">
-                                <FormControl>
-                                    <RadioGroupItem value="default" />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                    Default (Yellow, Red, Green)
-                                </FormLabel>
+                                  <FormControl><RadioGroupItem value="default" /></FormControl>
+                                  <FormLabel className="font-normal">Default (Yellow, Red, Green)</FormLabel>
                                 </FormItem>
                                 <FormItem className="flex items-center space-x-3 space-y-0">
-                                <FormControl>
-                                    <RadioGroupItem value="ocean" />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                    Oceanic Blues
-                                </FormLabel>
+                                  <FormControl><RadioGroupItem value="ocean" /></FormControl>
+                                  <FormLabel className="font-normal">Oceanic Blues</FormLabel>
                                 </FormItem>
                                 <FormItem className="flex items-center space-x-3 space-y-0">
-                                <FormControl>
-                                    <RadioGroupItem value="sunset" />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                    Sunset Oranges
-                                </FormLabel>
+                                  <FormControl><RadioGroupItem value="sunset" /></FormControl>
+                                  <FormLabel className="font-normal">Sunset Oranges</FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                  <FormControl><RadioGroupItem value="mint" /></FormControl>
+                                  <FormLabel className="font-normal">Cool Mint</FormLabel>
+                                </FormItem>
+                                 <FormItem className="flex items-center space-x-3 space-y-0">
+                                  <FormControl><RadioGroupItem value="plum" /></FormControl>
+                                  <FormLabel className="font-normal">Royal Plum</FormLabel>
                                 </FormItem>
                             </RadioGroup>
                             </FormControl>
@@ -190,7 +205,6 @@ export function SuperAdminSettings() {
 
               <Separator />
 
-              {/* Financial Section */}
               <div>
                 <h3 className="text-lg font-medium mb-4">Financial Settings</h3>
                 <div className="space-y-4">
@@ -228,7 +242,6 @@ export function SuperAdminSettings() {
               
               <Separator />
 
-              {/* Admin Menu Section */}
               <div>
                 <h3 className="text-lg font-medium mb-4">Admin Menu Sections</h3>
                 <div className="space-y-4 p-4 border rounded-lg">

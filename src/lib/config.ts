@@ -19,7 +19,7 @@ type AppConfig = {
 export const appConfig: AppConfig = {
     title: "KhaneWala",
     logo: UtensilsCrossed,
-    currency: "$",
+    currency: "₹",
     gstNumber: "27ABCDE1234F1Z5",
     maxDiscount: 25,
     enabledAdminSections: {

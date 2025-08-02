@@ -58,3 +58,6 @@ export type Customer = {
   avatar?: string;
   loyaltyPoints: number;
 };
+
+export type AppTheme = 'default' | 'ocean' | 'sunset' | 'mint' | 'plum';
+export type AppFont = 'pt-sans' | 'roboto-slab';
