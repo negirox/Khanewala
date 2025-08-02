@@ -5,12 +5,11 @@ import * as React from "react";
 import { PlusCircle, ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent, User, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle as DialogTitlePrimitive } from "@/components/ui/dialog";
 import { OrderForm } from "@/components/order-form";
 import type { Order, OrderStatus, Customer, MenuItem, Table as TableType } from "@/lib/types";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BillView } from "./bill-view";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { Input } from "./ui/input";
@@ -39,7 +38,7 @@ export function OrderKanban() {
   const [allCustomers, setAllCustomers] = React.useState<Customer[]>([]);
   const [allMenuItems, setAllMenuItems] = React.useState<MenuItem[]>([]);
   const [allTables, setAllTables] = React.useState<TableType[]>([]);
-  const [isSheetOpen, setSheetOpen] = React.useState(false);
+  const [isNewOrderDialogOpen, setNewOrderDialogOpen] = React.useState(false);
   const [printingOrder, setPrintingOrder] = React.useState<Order | null>(null);
   const [discountOrder, setDiscountOrder] = React.useState<Order | null>(null);
   const [discountPercentage, setDiscountPercentage] = React.useState<number>(0);
@@ -61,7 +60,7 @@ export function OrderKanban() {
     })
   }, []);
 
-  const handleUpdateStatus = React.useCallback((orderId: string, newStatus: OrderStatus) => {
+  const handleUpdateStatus = React.useCallback(async (orderId: string, newStatus: OrderStatus) => {
     let newActiveOrders = [...orders];
     let newArchivedOrders = [...archivedOrders];
     let newTables = [...allTables];
@@ -79,7 +78,7 @@ export function OrderKanban() {
                 : table
             );
             setAllTables(newTables);
-            saveTables(newTables);
+            await saveTables(newTables);
         }
     } else {
         newActiveOrders = newActiveOrders.map((order) =>
@@ -88,7 +87,7 @@ export function OrderKanban() {
     }
     setOrders(newActiveOrders);
     setArchivedOrders(newArchivedOrders);
-    saveAllOrders(newActiveOrders, newArchivedOrders);
+    await saveAllOrders(newActiveOrders, newArchivedOrders);
   }, [orders, archivedOrders, allTables]);
 
   const handleNewOrder = React.useCallback(async (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
@@ -113,10 +112,10 @@ export function OrderKanban() {
         });
     }
 
-    setSheetOpen(false);
+    setNewOrderDialogOpen(false);
   }, [orders, archivedOrders, allCustomers, allTables, toast]);
   
-  const handleCancelOrder = React.useCallback((orderToCancel: Order) => {
+  const handleCancelOrder = React.useCallback(async (orderToCancel: Order) => {
     const newActiveOrders = orders.filter(o => o.id !== orderToCancel.id);
     setOrders(newActiveOrders);
 
@@ -126,9 +125,9 @@ export function OrderKanban() {
         : table
     );
     setAllTables(newTables);
-    saveTables(newTables);
+    await saveTables(newTables);
 
-    saveAllOrders(newActiveOrders, archivedOrders);
+    await saveAllOrders(newActiveOrders, archivedOrders);
 
     toast({
         title: "Order Cancelled",
@@ -138,7 +137,7 @@ export function OrderKanban() {
   }, [orders, archivedOrders, allTables, toast]);
 
 
-  const handleApplyDiscount = React.useCallback(() => {
+  const handleApplyDiscount = React.useCallback(async () => {
     if (!discountOrder) return;
     const discountValue = Math.max(0, Math.min(appConfig.maxDiscount, discountPercentage));
     
@@ -159,7 +158,7 @@ export function OrderKanban() {
         return o;
     });
     setOrders(newActiveOrders);
-    saveAllOrders(newActiveOrders, archivedOrders);
+    await saveAllOrders(newActiveOrders, archivedOrders);
     setDiscountOrder(null);
     setDiscountPercentage(0);
   }, [discountOrder, discountPercentage, orders, archivedOrders, toast]);
@@ -176,17 +175,17 @@ export function OrderKanban() {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold font-headline">Current Orders</h1>
-        <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
-          <SheetTrigger asChild>
+        <Dialog open={isNewOrderDialogOpen} onOpenChange={setNewOrderDialogOpen}>
+          <DialogTrigger asChild>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
               New Order
             </Button>
-          </SheetTrigger>
-          <SheetContent className="w-full sm:max-w-4xl flex flex-col">
-            <OrderForm allMenuItems={allMenuItems} allCustomers={allCustomers} allTables={allTables} onSubmit={handleNewOrder} />
-          </SheetContent>
-        </Sheet>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+            <OrderForm allMenuItems={allMenuItems} allCustomers={allCustomers} allTables={allTables} onSubmit={handleNewOrder} onCancel={() => setNewOrderDialogOpen(false)} />
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 items-start">
@@ -313,7 +312,7 @@ export function OrderKanban() {
        <Dialog open={!!printingOrder} onOpenChange={(open) => !open && setPrintingOrder(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Print Bill</DialogTitle>
+            <DialogTitlePrimitive>Print Bill</DialogTitlePrimitive>
           </DialogHeader>
           {printingOrder && <BillView order={printingOrder} />}
         </DialogContent>
@@ -348,8 +347,3 @@ export function OrderKanban() {
 
     </div>
   );
-
-    
-
-
-    

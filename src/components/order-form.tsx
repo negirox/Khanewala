@@ -11,11 +11,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
@@ -53,9 +53,10 @@ interface OrderFormProps {
   allCustomers: Customer[];
   allTables: Table[];
   onSubmit: (orderData: Omit<Order, "id" | "createdAt">) => void;
+  onCancel: () => void;
 }
 
-export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit }: OrderFormProps) {
+export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onCancel }: OrderFormProps) {
   const [orderItems, setOrderItems] = React.useState<OrderItem[]>([]);
   const [tableNumber, setTableNumber] = React.useState<string>("");
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
@@ -174,12 +175,12 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit }: O
 
   return (
     <>
-      <SheetHeader>
-        <SheetTitle className="font-headline">Create New Order</SheetTitle>
-        <SheetDescription>
+      <DialogHeader>
+        <DialogTitle className="font-headline">Create New Order</DialogTitle>
+        <DialogDescription>
           Browse the menu and add items to the order.
-        </SheetDescription>
-      </SheetHeader>
+        </DialogDescription>
+      </DialogHeader>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
         {/* Left Side: Menu */}
         <div className="flex flex-col h-full">
@@ -199,6 +200,9 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit }: O
                                     <div className="flex-1">
                                         <p className="font-semibold">{item.name}</p>
                                         <p className="text-sm text-muted-foreground">{appConfig.currency}{item.price.toFixed(2)}</p>
+                                    </div>
+                                    <div className="p-2">
+                                        <PlusCircle className="text-primary"/>
                                     </div>
                                 </Card>
                             ))}
@@ -295,9 +299,10 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit }: O
           </Card>
         </div>
       </div>
-      <SheetFooter className="pt-4">
-        <Button onClick={handleSubmit} className="w-full" disabled={orderItems.length === 0 || tableNumber === ""}>Place Order</Button>
-      </SheetFooter>
+      <DialogFooter className="pt-4">
+        <Button variant="outline" onClick={onCancel}>Cancel</Button>
+        <Button onClick={handleSubmit} disabled={orderItems.length === 0 || tableNumber === ""}>Place Order</Button>
+      </DialogFooter>
 
       {aiSuggestion && (
         <AlertDialog open={!!aiSuggestion} onOpenChange={(open) => !open && setAiSuggestion(null)}>
@@ -365,5 +370,3 @@ function CustomerSearchPopover({ customers, onSelectCustomer }: { customers: Cus
         </Popover>
     );
 }
-
-    
