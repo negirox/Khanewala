@@ -128,6 +128,10 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
           Browse the menu and add items to the order.
         </DialogDescription>
       </DialogHeader>
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={onCancel}>Cancel</Button>
+        <Button onClick={handleSubmit} disabled={orderItems.length === 0 || tableNumber === ""}>Place Order</Button>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
         {/* Left Side: Menu */}
         <div className="flex flex-col h-full min-h-0">
@@ -242,10 +246,6 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
           </Card>
         </div>
       </div>
-      <DialogFooter className="pt-4">
-        <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button onClick={handleSubmit} disabled={orderItems.length === 0 || tableNumber === ""}>Place Order</Button>
-      </DialogFooter>
     </>
   );
 }
