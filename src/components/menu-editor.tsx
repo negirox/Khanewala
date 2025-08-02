@@ -139,8 +139,7 @@ export function MenuEditor() {
 
   return (
     <div className="flex flex-col">
-       <div className="flex items-center justify-between mb-4 gap-2">
-        <h1 className="text-2xl font-bold font-headline">Menu Editor</h1>
+       <div className="flex items-center justify-end mb-4 gap-2">
         <div className="flex flex-wrap gap-2">
           <input
             type="file"
