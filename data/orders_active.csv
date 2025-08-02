@@ -1,4 +1,3 @@
 id,tableNumber,items,status,subtotal,discount,total,createdAt,customerId,customerName,pointsEarned
 ORD001,3,"[{""quantity"":2,""menuItem"":{""id"":""3""}},{""quantity"":2,""menuItem"":{""id"":""7""}}]",preparing,1140,10,1026,2024-08-01T12:00:00.000Z,CUST01,John Doe,
-ORD002,5,"[{""quantity"":1,""menuItem"":{""id"":""4""}},{""quantity"":1,""menuItem"":{""id"":""1""}}]",received,440,0,440,2024-08-01T12:05:00.000Z,,,
 ORD004,8,"[{""quantity"":4,""menuItem"":{""id"":""6""}}]",ready,400,0,400,2024-08-01T11:55:00.000Z,CUST02,Jane Smith,

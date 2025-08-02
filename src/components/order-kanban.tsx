@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { PlusCircle, ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent, User } from "lucide-react";
+import { PlusCircle, ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent, User, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
@@ -18,6 +18,7 @@ import { Label } from "./ui/label";
 import { getActiveOrders, getArchivedOrders, getCustomers, getMenuItems, saveAllOrders, createNewOrder, getTables, saveTables } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { appConfig } from "@/lib/config";
+import { cn } from "@/lib/utils";
 
 const statusConfig: Record<
   OrderStatus,
@@ -105,6 +106,28 @@ export function OrderKanban() {
 
     setSheetOpen(false);
   }, [orders, archivedOrders, allCustomers, toast]);
+  
+  const handleCancelOrder = React.useCallback((orderToCancel: Order) => {
+    const newActiveOrders = orders.filter(o => o.id !== orderToCancel.id);
+    setOrders(newActiveOrders);
+
+    const newTables = allTables.map(table => 
+        table.id === orderToCancel.tableNumber 
+        ? { ...table, status: 'available', orderId: undefined } 
+        : table
+    );
+    setAllTables(newTables);
+    saveTables(newTables);
+
+    saveAllOrders(newActiveOrders, archivedOrders);
+
+    toast({
+        title: "Order Cancelled",
+        description: `Order ${orderToCancel.id} has been cancelled.`,
+        variant: "destructive",
+    });
+  }, [orders, archivedOrders, allTables, toast]);
+
 
   const handleApplyDiscount = React.useCallback(() => {
     if (!discountOrder) return;
@@ -161,7 +184,7 @@ export function OrderKanban() {
         {KANBAN_STATUSES.map((status) => (
           <div key={status} className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
-               <span className={`w-3 h-3 rounded-full ${statusConfig[status].color}`}></span>
+               <span className={cn("w-3 h-3 rounded-full", statusConfig[status].color)}></span>
               <h2 className="font-semibold font-headline text-lg">
                 {statusConfig[status].title}
               </h2>
@@ -172,7 +195,30 @@ export function OrderKanban() {
                 <Card key={order.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col">
                   <CardHeader>
                     <CardTitle className="flex flex-wrap justify-between items-center gap-2">
-                      <span>{order.id} - Table {order.tableNumber}</span>
+                        <div className="flex items-center gap-x-3">
+                             <span>{order.id} - Table {order.tableNumber}</span>
+                             {(order.status === 'received' || order.status === 'preparing') && (
+                                 <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive">
+                                             <Trash2 className="h-4 w-4" />
+                                         </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will permanently cancel order {order.id}. This action cannot be undone.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Keep Order</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleCancelOrder(order)}>Cancel Order</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                             )}
+                        </div>
                       <span className="text-sm font-normal text-muted-foreground whitespace-nowrap">
                         {formatDistanceToNow(order.createdAt, { addSuffix: true })}
                       </span>

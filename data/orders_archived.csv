@@ -1,4 +1,5 @@
 id,tableNumber,items,status,subtotal,discount,total,createdAt,customerId,customerName,pointsEarned
+ORD002,5,"[{""quantity"":1,""menuItem"":{""id"":""4""}},{""quantity"":1,""menuItem"":{""id"":""1""}}]",archived,440,0,440,2024-08-01T12:05:00.000Z,,,
 ORD003,1,"[{""quantity"":2,""menuItem"":{""id"":""1""}},{""quantity"":1,""menuItem"":{""id"":""5""}},{""quantity"":2,""menuItem"":{""id"":""9""}}]",archived,470,0,470,2024-08-01T12:08:00.000Z,,,
 ORD005,10,"[{""quantity"":2,""menuItem"":{""id"":""8""}}]",archived,300,0,300,2024-08-01T10:00:00.000Z,,,
 ORD006,2,"[{""quantity"":1,""menuItem"":{""id"":""3""}},{""quantity"":2,""menuItem"":{""id"":""1""}}]",archived,570,10,513,2024-07-31T18:30:00.000Z,,,

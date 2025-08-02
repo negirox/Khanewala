@@ -53,7 +53,8 @@ export async function createNewOrder(newOrderData: Omit<Order, 'id' | 'createdAt
 
     const newOrder: Order = {
         ...finalOrderData,
-        id: `ORD${(Math.random() * 1000).toFixed(0).padStart(3, '0')}`,
+        // Using timestamp and random number for a more unique ID
+        id: `ORD-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`,
         createdAt: new Date(),
     };
     const newActiveOrders = [newOrder, ...activeOrders];
