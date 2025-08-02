@@ -201,11 +201,11 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
                     )}
                  </div>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col p-0 min-h-0">
+            <CardContent className="flex-1 p-0 min-h-0">
               <ScrollArea className="h-full">
-              <div className="p-6 pt-0">
+              <div className="p-6 pt-0 space-y-4">
                 {orderItems.length > 0 ? (
-                  <div className="space-y-4">
+                  <>
                     {orderItems.map((item) => (
                       <div key={item.menuItem.id} className="flex items-center gap-4">
                         <div className="flex-1">
@@ -221,11 +221,11 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
                         <Button variant="ghost" size="icon" className="text-destructive h-6 w-6" onClick={() => handleRemoveItem(item.menuItem.id)}><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     ))}
-                  </div>
+                  </>
                 ) : (
-                  <p className="text-muted-foreground text-center py-10">
-                    No items added yet.
-                  </p>
+                  <div className="flex items-center justify-center h-full text-muted-foreground text-center py-10">
+                    <p>No items added yet.</p>
+                  </div>
                 )}
                 </div>
               </ScrollArea>
@@ -283,5 +283,3 @@ function CustomerSearchPopover({ customers, onSelectCustomer }: { customers: Cus
         </Popover>
     );
 }
-
-    
