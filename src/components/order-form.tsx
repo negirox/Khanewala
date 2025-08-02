@@ -140,12 +140,12 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
         {/* Left Side: Menu */}
         <div className="flex flex-col h-full min-h-0">
-          <h3 className="font-semibold font-headline text-lg mb-2">Menu</h3>
+          <h3 className="font-semibold font-headline text-base mb-2">Menu</h3>
            <ScrollArea className="flex-1 pr-4 -mr-4 border rounded-md">
             <Accordion type="multiple" defaultValue={Object.keys(menuByCategory)} className="w-full">
             {Object.entries(menuByCategory).map(([category, items]) => (
                 <AccordionItem value={category} key={category}>
-                    <AccordionTrigger className="font-semibold text-md sticky top-0 bg-background/95 backdrop-blur-sm py-2 px-2">
+                    <AccordionTrigger className="font-semibold text-base sticky top-0 bg-background/95 backdrop-blur-sm py-2 px-2">
                         {category}
                     </AccordionTrigger>
                     <AccordionContent className="p-1">
@@ -154,7 +154,7 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
                                 <Card key={item.id} className="flex p-2 items-center gap-2 cursor-pointer hover:bg-accent/50" onClick={() => handleAddItem(item)}>
                                     {item.image && <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md object-cover" />}
                                     <div className="flex-1">
-                                        <p className="font-semibold">{item.name}</p>
+                                        <p className="font-semibold text-sm">{item.name}</p>
                                         <p className="text-sm text-muted-foreground">{appConfig.currency}{item.price.toFixed(2)}</p>
                                     </div>
                                     <div className="p-2">
@@ -172,7 +172,7 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
 
         {/* Right Side: Order Summary */}
         <div className="flex flex-col h-full min-h-0">
-          <h3 className="font-semibold font-headline text-lg mb-2">Current Order</h3>
+          <h3 className="font-semibold font-headline text-base mb-2">Current Order</h3>
           <Card className="flex-1 flex flex-col min-h-0">
             <CardHeader className="space-y-4">
                 <div className="space-y-1">
@@ -220,22 +220,22 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
                     {orderItems.map((item) => (
                       <div key={item.menuItem.id} className="flex items-center gap-4">
                         <div className="flex-1">
-                          <p className="font-medium">{item.menuItem.name}</p>
+                          <p className="font-medium text-sm">{item.menuItem.name}</p>
                           <p className="text-sm text-muted-foreground">{appConfig.currency}{item.menuItem.price.toFixed(2)}</p>
                         </div>
                         <div className="flex items-center gap-2">
                             <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleUpdateQuantity(item.menuItem.id, item.quantity - 1)}><MinusCircle className="h-4 w-4" /></Button>
-                            <span>{item.quantity}</span>
+                            <span className="text-sm">{item.quantity}</span>
                             <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleUpdateQuantity(item.menuItem.id, item.quantity + 1)}><PlusCircle className="h-4 w-4" /></Button>
                         </div>
-                        <p className="w-16 text-right font-medium">{appConfig.currency}{(item.menuItem.price * item.quantity).toFixed(2)}</p>
+                        <p className="w-16 text-right font-medium text-sm">{appConfig.currency}{(item.menuItem.price * item.quantity).toFixed(2)}</p>
                         <Button variant="ghost" size="icon" className="text-destructive h-6 w-6" onClick={() => handleRemoveItem(item.menuItem.id)}><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     ))}
                   </>
                 ) : (
                   <div className="flex items-center justify-center h-full text-muted-foreground text-center py-10">
-                    <p>No items added yet.</p>
+                    <p className="text-sm">No items added yet.</p>
                   </div>
                 )}
                 </div>
@@ -245,7 +245,7 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
                 <>
                     <Separator />
                     <CardFooter className="flex flex-col gap-4 p-6">
-                        <div className="flex justify-between w-full font-bold text-lg">
+                        <div className="flex justify-between w-full font-bold text-base">
                             <span>Total</span>
                             <span>{appConfig.currency}{subtotal.toFixed(2)}</span>
                         </div>
@@ -258,3 +258,5 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
     </>
   );
 }
+
+    
