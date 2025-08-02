@@ -1,4 +1,5 @@
 import type { MenuItem, Order, Table, StaffMember, Customer } from "./types";
+import { subDays } from 'date-fns';
 
 export const menuItems: MenuItem[] = [
   { id: "1", name: "Samosa", price: 5.99, category: "Appetizers", description: "Crispy pastry filled with spiced potatoes and peas.", image: "https://placehold.co/600x400.png" },
@@ -71,20 +72,39 @@ export let initialOrders: Order[] = [
   },
 ];
 
+const generatePastOrder = (daysAgo: number, id: string): Order => {
+    const itemsCount = Math.floor(Math.random() * 3) + 1;
+    const orderItems = Array.from({ length: itemsCount }, () => {
+        const menuItem = menuItems[Math.floor(Math.random() * menuItems.length)];
+        return { menuItem, quantity: Math.floor(Math.random() * 2) + 1 };
+    });
+    const subtotal = orderItems.reduce((acc, item) => acc + item.menuItem.price * item.quantity, 0);
+    const discount = Math.random() > 0.8 ? 10 : 0;
+    const total = subtotal * (1 - discount / 100);
+
+    return {
+        id,
+        tableNumber: Math.floor(Math.random() * 12) + 1,
+        items: orderItems,
+        status: "archived",
+        subtotal,
+        discount,
+        total,
+        createdAt: subDays(new Date(), daysAgo),
+    };
+};
+
 export let initialArchivedOrders: Order[] = [
-    {
-    id: "ORD005",
-    tableNumber: 2,
-    items: [
-      { menuItem: menuItems[1], quantity: 1 },
-      { menuItem: menuItems[3], quantity: 1 },
-    ],
-    status: "archived",
-    subtotal: 21.98,
-    discount: 0,
-    total: 21.98,
-    createdAt: new Date(Date.now() - 30 * 60000), // 30 minutes ago
-  },
+    generatePastOrder(0, "ORD005"),
+    generatePastOrder(0, "ORD006"),
+    generatePastOrder(1, "ORD007"),
+    generatePastOrder(1, "ORD008"),
+    generatePastOrder(2, "ORD009"),
+    generatePastOrder(3, "ORD010"),
+    generatePastOrder(4, "ORD011"),
+    generatePastOrder(5, "ORD012"),
+    generatePastOrder(6, "ORD013"),
+    generatePastOrder(6, "ORD014"),
 ];
 
 
