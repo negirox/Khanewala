@@ -38,12 +38,23 @@ export async function createNewOrder(newOrderData: Omit<Order, 'id' | 'createdAt
     if (newOrderData.customerId) {
         const customer = allCustomers.find(c => c.id === newOrderData.customerId);
         if (customer) {
-            const { updatedCustomer, pointsEarned } = loyaltyService.addPointsForOrder(customer, newOrderData.total);
+            // Redeem points if any
+            let tempCustomer = {...customer};
+            if(finalOrderData.pointsRedeemed && finalOrderData.pointsRedeemed > 0) {
+                const { updatedCustomer, redeemedValue } = loyaltyService.redeemPoints(customer, finalOrderData.pointsRedeemed);
+                tempCustomer = updatedCustomer;
+                finalOrderData.redeemedValue = redeemedValue;
+                // Apply redemption as a discount to the total
+                finalOrderData.total = Math.max(0, finalOrderData.total - redeemedValue);
+            }
+
+            // Earn points on the final total
+            const { updatedCustomer, pointsEarned } = loyaltyService.addPointsForOrder(tempCustomer, finalOrderData.total);
             finalOrderData.pointsEarned = pointsEarned;
             
             // Send WhatsApp confirmation
             const tempOrder = { ...finalOrderData, id: 'temp', createdAt: new Date() }
-            whatsappService.sendOrderConfirmation(customer, tempOrder as Order);
+            whatsappService.sendOrderConfirmation(updatedCustomer, tempOrder as Order);
 
             // Update customer in state and save
             updatedCustomers = allCustomers.map(c => c.id === customer.id ? updatedCustomer : c);

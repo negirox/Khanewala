@@ -47,6 +47,10 @@ const formSchema = z.object({
   gstNumber: z.string().optional(),
   currency: z.string().min(1, "Currency symbol is required"),
   maxDiscount: z.coerce.number().min(0, "Max discount cannot be negative.").max(100, "Max discount cannot be over 100."),
+  loyalty: z.object({
+      pointsPerCurrencyUnit: z.coerce.number().min(0, "Value must be positive."),
+      currencyUnitPerPoint: z.coerce.number().min(0, "Value must be positive."),
+  }),
 });
 
 export function SuperAdminSettings() {
@@ -70,6 +74,7 @@ export function SuperAdminSettings() {
       gstNumber: appConfig.gstNumber || "",
       currency: appConfig.currency,
       maxDiscount: appConfig.maxDiscount,
+      loyalty: appConfig.loyalty,
     },
   });
 
@@ -258,6 +263,46 @@ export function SuperAdminSettings() {
                     />
                 </div>
               </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="text-lg font-medium mb-4">Loyalty Program</h3>
+                <div className="space-y-4">
+                     <FormField
+                        control={form.control}
+                        name="loyalty.pointsPerCurrencyUnit"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Points per Currency Unit</FormLabel>
+                            <FormControl>
+                                <Input type="number" step="0.01" {...field} />
+                            </FormControl>
+                             <FormDescription>
+                                How many points are earned for each unit of currency spent? (e.g., 0.01 for 1 point per 100).
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="loyalty.currencyUnitPerPoint"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Currency Value of One Point</FormLabel>
+                            <FormControl>
+                                <Input type="number" step="0.01" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                                How much is one loyalty point worth when redeemed? (e.g., 1 for Rs. 1 per point).
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </div>
+              </div>
               
               <Separator />
 
@@ -299,5 +344,3 @@ export function SuperAdminSettings() {
     </div>
   );
 }
-
-    

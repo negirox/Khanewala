@@ -11,9 +11,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent as DialogPrimitiveContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -23,6 +26,7 @@ import {
   MinusCircle,
   Trash2,
   X,
+  Star,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { MenuItem, OrderItem, Order, Customer, Table } from "@/lib/types";
@@ -30,6 +34,7 @@ import Image from "next/image";
 import { appConfig } from "@/lib/config";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
+import { Input } from "./ui/input";
 
 interface OrderFormProps {
   allMenuItems: MenuItem[];
@@ -43,6 +48,9 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
   const [orderItems, setOrderItems] = React.useState<OrderItem[]>([]);
   const [tableNumber, setTableNumber] = React.useState<string>("takeaway");
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
+  const [isRedeemDialogOpen, setRedeemDialogOpen] = React.useState(false);
+  const [pointsToRedeem, setPointsToRedeem] = React.useState(0);
+  const [redeemedValue, setRedeemedValue] = React.useState(0);
 
   const { toast } = useToast();
 
@@ -54,6 +62,8 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
       ),
     [orderItems]
   );
+  
+  const total = subtotal - redeemedValue;
 
   const handleAddItem = React.useCallback((menuItem: MenuItem) => {
     setOrderItems((prev) => {
@@ -94,15 +104,17 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
     }
     onSubmit({
         items: orderItems,
-        tableNumber: tableNumber && tableNumber !== 'takeaway' ? Number(tableNumber) : undefined,
+        tableNumber: tableNumber !== 'takeaway' ? Number(tableNumber) : undefined,
         status: "received",
         subtotal: subtotal,
-        discount: 0,
-        total: subtotal,
+        discount: 0, // Manual discount is now handled separately
+        total: total,
         customerId: selectedCustomer?.id,
         customerName: selectedCustomer?.name || 'WOW Users',
+        pointsRedeemed: pointsToRedeem,
+        redeemedValue: redeemedValue,
     });
-  }, [orderItems, tableNumber, onSubmit, subtotal, selectedCustomer, toast]);
+  }, [orderItems, tableNumber, onSubmit, subtotal, total, selectedCustomer, toast, pointsToRedeem, redeemedValue]);
   
   const menuByCategory = React.useMemo(() => {
     return allMenuItems.reduce((acc, item) => {
@@ -122,7 +134,18 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
           const customer = allCustomers.find(c => c.id === customerId);
           setSelectedCustomer(customer || null);
       }
+      // Reset redemption when customer changes
+      setPointsToRedeem(0);
+      setRedeemedValue(0);
   };
+  
+  const handleRedeem = () => {
+    if (!selectedCustomer) return;
+    const redeemablePoints = Math.min(pointsToRedeem, selectedCustomer.loyaltyPoints);
+    const value = redeemablePoints * appConfig.loyalty.currencyUnitPerPoint;
+    setRedeemedValue(value);
+    setRedeemDialogOpen(false);
+  }
 
 
   return (
@@ -196,20 +219,33 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
                     </Select>
                 </div>
                  <div className="space-y-1">
-                    <Label>Customer (Optional)</Label>
-                    <Select onValueChange={handleCustomerSelect} value={selectedCustomer?.id || "walk-in"}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a customer" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="walk-in">Walk-in / New Customer</SelectItem>
-                             {allCustomers.map((customer) => (
-                                <SelectItem key={customer.id} value={customer.id}>
-                                    {customer.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Label>Customer</Label>
+                     <div className="flex items-center gap-2">
+                        <Select onValueChange={handleCustomerSelect} value={selectedCustomer?.id || "walk-in"} className="flex-1">
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a customer" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="walk-in">Walk-in / New Customer</SelectItem>
+                                {allCustomers.map((customer) => (
+                                    <SelectItem key={customer.id} value={customer.id}>
+                                        {customer.name} ({customer.loyaltyPoints} points)
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Button 
+                            variant="outline"
+                            size="icon"
+                            disabled={!selectedCustomer || selectedCustomer.loyaltyPoints === 0}
+                            onClick={() => {
+                                setPointsToRedeem(0); // Reset on open
+                                setRedeemDialogOpen(true);
+                            }}
+                        >
+                            <Star className="h-4 w-4" />
+                        </Button>
+                     </div>
                  </div>
             </CardHeader>
             <CardContent className="flex-1 p-0 min-h-0">
@@ -244,10 +280,20 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
             {orderItems.length > 0 && (
                 <>
                     <Separator />
-                    <CardFooter className="flex flex-col gap-4 p-6">
+                    <CardFooter className="flex flex-col gap-2 p-6">
+                        <div className="flex justify-between w-full text-sm">
+                            <span>Subtotal</span>
+                            <span>{appConfig.currency}{subtotal.toFixed(2)}</span>
+                        </div>
+                        {redeemedValue > 0 && (
+                            <div className="flex justify-between w-full text-sm text-destructive">
+                                <span>Points Redeemed</span>
+                                <span>-{appConfig.currency}{redeemedValue.toFixed(2)}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between w-full font-bold text-base">
                             <span>Total</span>
-                            <span>{appConfig.currency}{subtotal.toFixed(2)}</span>
+                            <span>{appConfig.currency}{total.toFixed(2)}</span>
                         </div>
                     </CardFooter>
                 </>
@@ -255,8 +301,35 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
           </Card>
         </div>
       </div>
+
+      <Dialog open={isRedeemDialogOpen} onOpenChange={setRedeemDialogOpen}>
+        <DialogPrimitiveContent>
+            <DialogHeader>
+                <DialogTitle>Redeem Loyalty Points</DialogTitle>
+                <DialogDescription>
+                    {selectedCustomer?.name} has {selectedCustomer?.loyaltyPoints} points available.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+                <Label htmlFor="points">Points to Redeem</Label>
+                <Input 
+                    id="points"
+                    type="number"
+                    value={pointsToRedeem}
+                    onChange={(e) => setPointsToRedeem(Number(e.target.value))}
+                    max={selectedCustomer?.loyaltyPoints}
+                    placeholder="0"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                    Value: {appConfig.currency}{(pointsToRedeem * appConfig.loyalty.currencyUnitPerPoint).toFixed(2)}
+                </p>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setRedeemDialogOpen(false)}>Cancel</Button>
+                <Button onClick={handleRedeem}>Redeem</Button>
+            </DialogFooter>
+        </DialogPrimitiveContent>
+      </Dialog>
     </>
   );
 }
-
-    

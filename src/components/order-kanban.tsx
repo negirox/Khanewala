@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { PlusCircle, ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent, User, Trash2 } from "lucide-react";
+import { PlusCircle, ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent, User, Trash2, Star, BadgePercent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle as DialogTitlePrimitive } from "@/components/ui/dialog";
@@ -237,9 +237,15 @@ export function OrderKanban() {
                     <div className="border-t my-2" />
                     <div className="space-y-1 text-xs">
                         <div className="flex justify-between"><span>Subtotal:</span> <span>{appConfig.currency}{order.subtotal.toFixed(2)}</span></div>
-                        {order.discount > 0 && <div className="flex justify-between text-destructive"><span>Discount:</span> <span>-{order.discount}%</span></div>}
+                        {order.discount > 0 && <div className="flex justify-between text-destructive"><span>Discount ({order.discount}%):</span> <span>-{appConfig.currency}{(order.subtotal - (order.subtotal * (1 - order.discount/100))).toFixed(2)}</span></div>}
+                         {order.redeemedValue && order.redeemedValue > 0 && <div className="flex justify-between text-destructive"><span>Points Redeemed:</span> <span>-{appConfig.currency}{order.redeemedValue.toFixed(2)}</span></div>}
                         <div className="flex justify-between font-bold text-sm"><span>Total:</span> <span>{appConfig.currency}{order.total.toFixed(2)}</span></div>
-                        {order.pointsEarned && order.pointsEarned > 0 && <div className="flex justify-between text-yellow-500 text-xs"><span>Points Earned:</span> <span>+{order.pointsEarned}</span></div>}
+                         {(order.pointsEarned !== undefined && order.pointsEarned > 0) && (
+                            <div className="flex justify-between items-center text-yellow-500">
+                                <span className="flex items-center gap-1"><Star className="h-3 w-3"/> Points Earned:</span> 
+                                <span>+{order.pointsEarned}</span>
+                            </div>
+                         )}
                     </div>
                   </CardContent>
                    <CardFooter className="flex flex-col gap-2">
@@ -314,5 +320,3 @@ export function OrderKanban() {
 
     </div>
   );
-
-    

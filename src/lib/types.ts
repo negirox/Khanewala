@@ -30,6 +30,8 @@ export type Order = {
   customerId?: string;
   customerName?: string;
   pointsEarned?: number;
+  pointsRedeemed?: number;
+  redeemedValue?: number;
 };
 
 export type Table = {

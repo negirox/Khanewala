@@ -14,6 +14,10 @@ type AppConfig = {
         staff: boolean;
         customers: boolean;
         settings: boolean;
+    },
+    loyalty: {
+        pointsPerCurrencyUnit: number; // e.g., 0.01 means 1 point per 100 currency units
+        currencyUnitPerPoint: number; // e.g., 1 means 1 currency unit (e.g. Rs. 1) per point
     }
 }
 
@@ -29,5 +33,9 @@ export const appConfig: AppConfig = {
         staff: true,
         customers: true,
         settings: true,
+    },
+    loyalty: {
+        pointsPerCurrencyUnit: 0.01,
+        currencyUnitPerPoint: 1,
     }
 };
