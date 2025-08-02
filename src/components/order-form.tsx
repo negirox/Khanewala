@@ -14,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -23,7 +22,6 @@ import {
   PlusCircle,
   MinusCircle,
   Trash2,
-  Loader2,
   X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -203,7 +201,7 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
                     )}
                  </div>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col p-0">
+            <CardContent className="flex-1 flex flex-col p-0 min-h-0">
               <ScrollArea className="h-full">
               <div className="p-6 pt-0">
                 {orderItems.length > 0 ? (
