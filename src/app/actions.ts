@@ -2,9 +2,11 @@
 'use server';
 
 import { csvRepository } from '@/services/csv-repository';
-import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction } from '@/lib/types';
+import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction, StaffTransactionType } from '@/lib/types';
 import { loyaltyService } from '@/services/loyalty-service';
 import { whatsappService } from '@/services/whatsapp-service';
+import Papa from 'papaparse';
+
 
 // Menu Items
 export async function getMenuItems(): Promise<MenuItem[]> {
@@ -76,8 +78,14 @@ export async function getStaffTransactions(): Promise<StaffTransaction[]> {
     return csvRepository.getStaffTransactions();
 }
 
-export async function addStaffTransaction(transaction: Omit<StaffTransaction, 'id' | 'date'>): Promise<StaffTransaction> {
+export async function addStaffTransaction(
+    transaction: Omit<StaffTransaction, 'id' | 'date'>, 
+    staffMember: StaffMember, 
+    currentMonthNetPayable: number
+): Promise<{newTransaction: StaffTransaction, updatedStaffMember: StaffMember}> {
     const allTransactions = await getStaffTransactions();
+    const allStaff = await getStaff();
+
     const newTransaction: StaffTransaction = {
         ...transaction,
         id: `TXN_${Date.now()}`,
@@ -85,8 +93,58 @@ export async function addStaffTransaction(transaction: Omit<StaffTransaction, 'i
     };
     const updatedTransactions = [...allTransactions, newTransaction];
     await csvRepository.saveStaffTransactions(updatedTransactions);
-    return newTransaction;
+
+    let updatedStaffMember = { ...staffMember };
+
+    // If a salary payment was made, update the carry forward balance
+    if (transaction.type === 'Salary') {
+        const remainingBalance = currentMonthNetPayable - transaction.amount;
+        updatedStaffMember.carryForwardBalance = remainingBalance;
+        
+        const updatedStaffList = allStaff.map(s => s.id === staffMember.id ? updatedStaffMember : s);
+        await csvRepository.saveStaff(updatedStaffList);
+    }
+    
+    return { newTransaction, updatedStaffMember };
 }
+
+export async function generateStaffTransactionReport(
+    staffId: string, 
+    transactions: StaffTransaction[],
+    summary: { 
+        grossSalary: number, 
+        carryForward: number, 
+        totalDeductions: number, 
+        bonuses: number,
+        salariesPaid: number,
+        netPayable: number
+    }
+): Promise<string> {
+    const transactionData = transactions.map(tx => ({
+        "Transaction ID": tx.id,
+        "Date": tx.date.toISOString().split('T')[0],
+        "Type": tx.type,
+        "Amount": tx.amount,
+        "Payment Mode": tx.paymentMode,
+        "Notes": tx.notes || ''
+    }));
+
+    const reportCsv = Papa.unparse(transactionData);
+
+    const summaryData = [
+        {"Key": "Gross Salary", "Value": summary.grossSalary},
+        {"Key": "Carry Forward from Last Month", "Value": summary.carryForward},
+        {"Key": "Total Bonus", "Value": summary.bonuses},
+        {"Key": "Total Deductions (Advance + Daily)", "Value": summary.totalDeductions},
+        {"Key": "Total Salary Paid this month", "Value": summary.salariesPaid},
+        {"Key": "Final Net Payable this month", "Value": summary.netPayable},
+    ];
+
+    const summaryCsv = Papa.unparse(summaryData, { header: false });
+
+    return `${reportCsv}\n\nTransaction Summary\n${summaryCsv}`;
+}
+
 
 
 // Tables

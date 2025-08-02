@@ -51,6 +51,7 @@ export type StaffMember = {
   aadharCard?: string;
   panCard?: string;
   voterId?: string;
+  carryForwardBalance: number;
 };
 
 export type Customer = {
