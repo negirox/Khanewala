@@ -21,10 +21,12 @@ import { Badge } from "@/components/ui/badge";
 import { initialArchivedOrders, menuItems as allMenuItems } from "@/lib/data";
 import type { Order, MenuItem } from "@/lib/types";
 import { format, subDays, startOfDay } from "date-fns";
-import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart } from "lucide-react";
+import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart, ArrowUpDown } from "lucide-react";
 import { appConfig } from "@/lib/config";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 
 const chartColors = ["#2563eb", "#f97316", "#22c55e", "#ef4444", "#8b5cf6"];
 
@@ -32,6 +34,9 @@ const chartColors = ["#2563eb", "#f97316", "#22c55e", "#ef4444", "#8b5cf6"];
 export function Dashboard() {
   const [archivedOrders, setArchivedOrders] =
     React.useState<Order[]>(initialArchivedOrders);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [sortConfig, setSortConfig] = React.useState<{ key: keyof Order; direction: 'ascending' | 'descending' } | null>({ key: 'createdAt', direction: 'descending' });
+
 
   const stats = React.useMemo(() => {
     const totalSales = archivedOrders.reduce((sum, order) => sum + order.total, 0);
@@ -77,6 +82,48 @@ export function Dashboard() {
     })).sort((a,b) => b.value - a.value);
 
   }, [archivedOrders]);
+
+  const sortedAndFilteredOrders = React.useMemo(() => {
+    let sortableItems = [...archivedOrders];
+
+    if (searchTerm) {
+      sortableItems = sortableItems.filter(order =>
+        order.id.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return sortableItems;
+  }, [archivedOrders, searchTerm, sortConfig]);
+
+  const requestSort = (key: keyof Order) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key: keyof Order) => {
+    if (!sortConfig || sortConfig.key !== key) {
+      return <ArrowUpDown className="h-4 w-4" />;
+    }
+    if (sortConfig.direction === 'ascending') {
+      return <ArrowUpDown className="h-4 w-4 text-primary" />;
+    }
+    return <ArrowUpDown className="h-4 w-4 text-primary" />;
+  }
 
 
   return (
@@ -178,21 +225,45 @@ export function Dashboard() {
           <CardDescription>
             A list of the most recent orders completed today.
           </CardDescription>
+          <div className="pt-4">
+             <Input 
+                placeholder="Search by Order ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Table</TableHead>
-                <TableHead>Time</TableHead>
+                <TableHead>
+                   <Button variant="ghost" onClick={() => requestSort('id')}>
+                        Order ID {getSortIcon('id')}
+                    </Button>
+                </TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('tableNumber')}>
+                        Table {getSortIcon('tableNumber')}
+                    </Button>
+                </TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('createdAt')}>
+                        Time {getSortIcon('createdAt')}
+                    </Button>
+                </TableHead>
                 <TableHead>Items</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="text-right">
+                    <Button variant="ghost" onClick={() => requestSort('total')}>
+                        Amount {getSortIcon('total')}
+                    </Button>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {archivedOrders.length > 0 ? (
-                archivedOrders.slice(0, 5).map((order) => (
+              {sortedAndFilteredOrders.length > 0 ? (
+                sortedAndFilteredOrders.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">{order.id}</TableCell>
                     <TableCell>{order.tableNumber}</TableCell>
@@ -210,7 +281,7 @@ export function Dashboard() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">
-                    No completed orders yet.
+                    No matching orders found.
                   </TableCell>
                 </TableRow>
               )}
@@ -221,4 +292,3 @@ export function Dashboard() {
     </div>
   );
 }
-
