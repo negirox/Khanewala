@@ -169,7 +169,7 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
           <Card className="flex-1 flex flex-col min-h-0">
             <CardHeader className="space-y-4">
                 <div className="space-y-1">
-                    <Label htmlFor="tableNumber">Table Number (Optional)</Label>
+                    <Label htmlFor="tableNumber">Table Number</Label>
                      <Select value={tableNumber} onValueChange={setTableNumber}>
                         <SelectTrigger id="tableNumber">
                             <SelectValue placeholder="Select an available table" />
@@ -252,6 +252,11 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
 function CustomerSearchPopover({ customers, onSelectCustomer }: { customers: Customer[], onSelectCustomer: (customer: Customer) => void }) {
     const [open, setOpen] = React.useState(false);
 
+    const handleSelect = (customer: Customer) => {
+        onSelectCustomer(customer);
+        setOpen(false);
+    }
+
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -269,10 +274,7 @@ function CustomerSearchPopover({ customers, onSelectCustomer }: { customers: Cus
                                 <CommandItem
                                     key={customer.id}
                                     value={`${customer.name} ${customer.email}`}
-                                    onSelect={() => {
-                                        onSelectCustomer(customer);
-                                        setOpen(false);
-                                    }}
+                                    onSelect={() => handleSelect(customer)}
                                 >
                                     {customer.name}
                                 </CommandItem>
