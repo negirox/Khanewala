@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import type { Table as TableType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { User, Check, Ban } from "lucide-react";
-import { csvRepository } from "@/services/csv-repository";
+import { getTables, saveTables } from "@/app/actions";
 
 const statusConfig = {
   available: {
@@ -30,7 +31,7 @@ export function TableLayout() {
   const [tables, setTables] = React.useState<TableType[]>([]);
 
   React.useEffect(() => {
-    csvRepository.getTables().then(setTables);
+    getTables().then(setTables);
   }, []);
 
   const toggleStatus = (tableId: number) => {
@@ -44,7 +45,7 @@ export function TableLayout() {
       return table;
     });
     setTables(updatedTables);
-    csvRepository.saveTables(updatedTables);
+    saveTables(updatedTables);
   };
 
   return (

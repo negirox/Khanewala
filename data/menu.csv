@@ -1,10 +1,10 @@
-id,name,price,category,description,image
-1,Samosa,5.99,Appetizers,"Crispy pastry filled with spiced potatoes and peas.",https://placehold.co/600x400.png
-2,Pakora,6.99,Appetizers,"Mixed vegetables dipped in gram flour batter and deep-fried.",https://placehold.co/600x400.png
-3,Butter Chicken,15.99,Main Courses,"Grilled chicken simmered in a creamy tomato sauce.",https://placehold.co/600x400.png
-4,Palak Paneer,14.99,Main Courses,"Indian cheese cubes in a smooth spinach sauce.",https://placehold.co/600x400.png
-5,Chole Bhature,13.99,Main Courses,"Spicy chickpea curry served with fluffy fried bread.",https://placehold.co/600x400.png
-6,Gulab Jamun,4.99,Desserts,"Soft, spongy balls made of milk solids, soaked in rose-scented syrup.",https://placehold.co/600x400.png
-7,Rasmalai,5.99,Desserts,"Cottage cheese dumplings soaked in sweetened, thickened milk.",https://placehold.co/600x400.png
-8,Mango Lassi,4.50,Beverages,"A refreshing yogurt-based drink with mango pulp.",https://placehold.co/600x400.png
-9,Masala Chai,2.99,Beverages,"Spiced milk tea with a blend of aromatic herbs.",https://placehold.co/600x400.png
+id,name,price,category,description,image,data-ai-hint
+1,Samosa,60,Appetizers,"Crispy pastry filled with spiced potatoes and peas.","https://placehold.co/600x400.png","samosa pastry"
+2,Pakora,80,Appetizers,"Mixed vegetables dipped in gram flour batter and deep-fried.","https://placehold.co/600x400.png","pakora fritter"
+3,"Butter Chicken",450,"Main Courses","Grilled chicken simmered in a creamy tomato sauce.","https://placehold.co/600x400.png","butter chicken"
+4,"Palak Paneer",380,"Main Courses","Indian cheese cubes in a smooth spinach sauce.","https://placehold.co/600x400.png","palak paneer"
+5,"Chole Bhature",250,"Main Courses","Spicy chickpea curry served with fluffy fried bread.","https://placehold.co/600x400.png","chole bhature"
+6,"Gulab Jamun",100,Desserts,"Soft, spongy balls made of milk solids, soaked in rose-scented syrup.","https://placehold.co/600x400.png","gulab jamun"
+7,Rasmalai,120,Desserts,"Cottage cheese dumplings soaked in sweetened, thickened milk.","https://placehold.co/600x400.png","rasmalai dessert"
+8,"Mango Lassi",150,Beverages,"A refreshing yogurt-based drink with mango pulp.","https://placehold.co/600x400.png","mango lassi"
+9,"Masala Chai",50,Beverages,"Spiced milk tea with a blend of aromatic herbs.","https://placehold.co/600x400.png","masala chai"

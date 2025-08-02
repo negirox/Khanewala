@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import * as React from "react";
@@ -17,7 +16,7 @@ import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { csvRepository } from "@/services/csv-repository";
+import { getStaff, saveStaff } from "@/app/actions";
 import { appConfig } from "@/lib/config";
 
 const roleColors: Record<StaffMember['role'], string> = {
@@ -35,7 +34,7 @@ export function StaffManagement() {
   const [editingStaff, setEditingStaff] = React.useState<StaffMember | null>(null);
 
   React.useEffect(() => {
-    csvRepository.getStaff().then(setStaff);
+    getStaff().then(setStaff);
   }, []);
 
   const handleEdit = (member: StaffMember) => {
@@ -51,7 +50,7 @@ export function StaffManagement() {
   const handleDelete = (staffId: string) => {
     const updatedStaff = staff.filter(member => member.id !== staffId);
     setStaff(updatedStaff);
-    csvRepository.saveStaff(updatedStaff);
+    saveStaff(updatedStaff);
   }
 
   const handleSave = (staffData: StaffMember) => {
@@ -62,7 +61,7 @@ export function StaffManagement() {
       updatedStaff = [...staff, { ...staffData, id: `STAFF${staff.length + 1}` }];
     }
     setStaff(updatedStaff);
-    csvRepository.saveStaff(updatedStaff);
+    saveStaff(updatedStaff);
     setDialogOpen(false);
     setEditingStaff(null);
   };

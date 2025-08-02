@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import * as React from "react";
@@ -19,7 +18,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { initialArchivedOrders, menuItems as allMenuItems } from "@/lib/data";
 import type { Order, MenuItem } from "@/lib/types";
 import { format, subDays, startOfDay } from "date-fns";
 import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart, ArrowUpDown } from "lucide-react";
@@ -28,15 +26,19 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { getArchivedOrders } from "@/app/actions";
 
 const chartColors = ["#2563eb", "#f97316", "#22c55e", "#ef4444", "#8b5cf6", "#14b8a6", "#d946ef"];
 
 
 export function Dashboard() {
-  const [archivedOrders, setArchivedOrders] =
-    React.useState<Order[]>(initialArchivedOrders);
+  const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof Order; direction: 'ascending' | 'descending' } | null>({ key: 'createdAt', direction: 'descending' });
+
+  React.useEffect(() => {
+    getArchivedOrders().then(orders => setArchivedOrders(orders.map(o => ({...o, createdAt: new Date(o.createdAt)}))));
+  }, []);
 
 
   const stats = React.useMemo(() => {
@@ -59,7 +61,7 @@ export function Dashboard() {
         const dayString = format(dayStart, "MMM d");
         
         const total = archivedOrders
-            .filter(order => format(order.createdAt, "MMM d") === dayString)
+            .filter(order => format(new Date(order.createdAt), "MMM d") === dayString)
             .reduce((sum, order) => sum + order.total, 0);
 
         data.push({ date: format(dayStart, "eee"), total });
@@ -95,10 +97,13 @@ export function Dashboard() {
     
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+
+        if (aValue < bValue) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (aValue > bValue) {
           return sortConfig.direction === 'ascending' ? 1 : -1;
         }
         return 0;
@@ -273,7 +278,7 @@ export function Dashboard() {
                     <TableCell className="font-medium">{order.id}</TableCell>
                     <TableCell>{order.tableNumber}</TableCell>
                     <TableCell>
-                      {format(order.createdAt, "HH:mm")}
+                      {format(new Date(order.createdAt), "HH:mm")}
                     </TableCell>
                     <TableCell>
                       {order.items.map(i => i.quantity).reduce((a, b) => a + b, 0)}
@@ -297,5 +302,3 @@ export function Dashboard() {
     </div>
   );
 }
-
-    

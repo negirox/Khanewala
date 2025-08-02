@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Mail, Phone, PlusCircle, Edit, Trash2, Star, Upload } from "lucide-react";
-import { csvRepository } from "@/services/csv-repository";
+import { getCustomers, saveCustomers } from "@/app/actions";
 import { cn } from "@/lib/utils";
 
 
@@ -26,7 +26,7 @@ export function CustomerManagement() {
   const [searchTerm, setSearchTerm] = React.useState("");
 
   React.useEffect(() => {
-    csvRepository.getCustomers().then(setCustomers);
+    getCustomers().then(setCustomers);
   }, []);
 
   const handleEdit = (customer: Customer) => {
@@ -42,7 +42,7 @@ export function CustomerManagement() {
   const handleDelete = (customerId: string) => {
     const updatedCustomers = customers.filter(customer => customer.id !== customerId);
     setCustomers(updatedCustomers);
-    csvRepository.saveCustomers(updatedCustomers);
+    saveCustomers(updatedCustomers);
   }
 
   const handleSave = (customerData: Customer) => {
@@ -53,7 +53,7 @@ export function CustomerManagement() {
       updatedCustomers = [...customers, { ...customerData, id: `CUST${customers.length + 1}` }];
     }
     setCustomers(updatedCustomers);
-    csvRepository.saveCustomers(updatedCustomers);
+    saveCustomers(updatedCustomers);
     setDialogOpen(false);
     setEditingCustomer(null);
   };

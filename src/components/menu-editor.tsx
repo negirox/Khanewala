@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import * as React from "react";
@@ -20,7 +19,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,11 +29,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { menuItems as initialMenuItems } from "@/lib/data";
 import type { MenuItem } from "@/lib/types";
 import { PlusCircle, Edit, Trash2, Upload } from "lucide-react";
 import { Textarea } from "./ui/textarea";
-import { csvRepository } from "@/services/csv-repository";
+import { getMenuItems, saveMenuItems } from "@/app/actions";
 import { appConfig } from "@/lib/config";
 import { useToast } from "@/hooks/use-toast";
 
@@ -50,7 +47,7 @@ export function MenuEditor() {
   const { toast } = useToast();
 
   React.useEffect(() => {
-    csvRepository.getMenuItems().then(setMenuItems);
+    getMenuItems().then(setMenuItems);
   }, []);
 
   const handleEdit = (item: MenuItem) => {
@@ -66,7 +63,7 @@ export function MenuEditor() {
   const handleDelete = (itemId: string) => {
     const updatedItems = menuItems.filter(item => item.id !== itemId);
     setMenuItems(updatedItems);
-    csvRepository.saveMenuItems(updatedItems);
+    saveMenuItems(updatedItems);
   }
 
   const handleSave = (itemData: MenuItem) => {
@@ -77,7 +74,7 @@ export function MenuEditor() {
       updatedItems = [...menuItems, { ...itemData, id: `ITEM${Date.now()}` }];
     }
     setMenuItems(updatedItems);
-    csvRepository.saveMenuItems(updatedItems);
+    saveMenuItems(updatedItems);
     setDialogOpen(false);
     setEditingItem(null);
   };
@@ -89,8 +86,6 @@ export function MenuEditor() {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          // Note: This is a basic import. For production, you'd want
-          // robust validation (e.g., with Zod) on the parsed data.
           const newItems = results.data.map((row: any) => ({
             id: `ITEM${Date.now()}_${Math.random()}`,
             name: row.name || "Unnamed Item",
@@ -102,7 +97,7 @@ export function MenuEditor() {
 
           const updatedMenuItems = [...menuItems, ...newItems];
           setMenuItems(updatedMenuItems);
-          csvRepository.saveMenuItems(updatedMenuItems);
+          saveMenuItems(updatedMenuItems);
           
           toast({
             title: "Menu Imported",

@@ -1,15 +1,9 @@
 /**
  * @fileoverview
  * This file contains the CsvRepository class, which is responsible for
- * handling all data operations by reading from and writing to CSV files.
- *
- * NOTE: This is a placeholder implementation. It currently uses mock data
- * for demonstration purposes and does not perform actual file I/O.
- * You will need to install `papaparse` and `@types/papaparse`.
- * You will also need to add file system access logic using Node.js `fs` module.
+ * handling all data operations by reading from and writing to CSV files
+ * stored in the `/data` directory.
  */
-
-import { menuItems, initialOrders, initialArchivedOrders, tables, initialStaff, initialCustomers } from '@/lib/data';
 import type { MenuItem, Order, Table, StaffMember, Customer } from '@/lib/types';
 import Papa from 'papaparse';
 import fs from 'fs/promises';
@@ -18,128 +12,132 @@ import path from 'path';
 // Helper function to get the path to the CSV file in the `data` directory.
 const getCSVPath = (fileName: string) => path.join(process.cwd(), 'data', fileName);
 
+// Helper function to read and parse a CSV file.
+async function readCsv<T>(fileName: string): Promise<T[]> {
+  try {
+    const filePath = getCSVPath(fileName);
+    const fileContent = await fs.readFile(filePath, 'utf8');
+    const parsed = Papa.parse<T>(fileContent, { 
+      header: true, 
+      dynamicTyping: true,
+      skipEmptyLines: true,
+    });
+    if (parsed.errors.length > 0) {
+      console.error(`Errors parsing ${fileName}:`, parsed.errors);
+    }
+    return parsed.data;
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
+      console.warn(`CSV file not found: ${fileName}. Returning empty array.`);
+      return [];
+    }
+    console.error(`Error reading CSV file ${fileName}:`, error);
+    throw error;
+  }
+}
+
+// Helper function to write data to a CSV file.
+async function writeCsv<T extends object>(fileName: string, data: T[]): Promise<void> {
+  try {
+    const filePath = getCSVPath(fileName);
+    const csvString = Papa.unparse(data);
+    await fs.writeFile(filePath, csvString, 'utf8');
+  } catch (error) {
+    console.error(`Error writing CSV file ${fileName}:`, error);
+    throw error;
+  }
+}
+
+
 class CsvRepository {
+  private allMenuItems: Promise<MenuItem[]>;
+
+  constructor() {
+    this.allMenuItems = this.getMenuItems();
+  }
+
   // Menu Items
   async getMenuItems(): Promise<MenuItem[]> {
-    console.log('Fetching menu items from CSV...');
-    /*
-     * TODO: Implement file reading logic.
-     * Example:
-     * const filePath = getCSVPath('menu.csv');
-     * const fileContent = await fs.readFile(filePath, 'utf8');
-     * const parsed = Papa.parse(fileContent, { header: true, dynamicTyping: true });
-     * return parsed.data as MenuItem[];
-    */
-    return Promise.resolve(menuItems);
+    return readCsv<MenuItem>('menu.csv');
   }
 
   async saveMenuItems(items: MenuItem[]): Promise<void> {
-    console.log('Saving menu items to CSV...', items);
-    /*
-     * TODO: Implement file writing logic.
-     * Example:
-     * const filePath = getCSVPath('menu.csv');
-     * const csvString = Papa.unparse(items);
-     * await fs.writeFile(filePath, csvString, 'utf8');
-    */
-    return Promise.resolve();
+    await writeCsv('menu.csv', items);
+    this.allMenuItems = Promise.resolve(items); // Update cached menu items
+  }
+  
+  private async mapOrderItems(order: any): Promise<Order> {
+      const menuItems = await this.allMenuItems;
+      
+      let parsedItems;
+      try {
+        // The 'items' field is stored as a JSON string in the CSV.
+        parsedItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+      } catch (e) {
+        console.error(`Failed to parse items for order ${order.id}:`, order.items);
+        parsedItems = [];
+      }
+
+      const items = parsedItems.map((item: any) => {
+        const menuItem = menuItems.find(m => m.id == item.menuItem.id);
+        return {
+            ...item,
+            menuItem: menuItem || item.menuItem, // Fallback to stored item if not in current menu
+        };
+      });
+      return { ...order, items, createdAt: new Date(order.createdAt) };
   }
 
   // Orders
   async getActiveOrders(): Promise<Order[]> {
-    console.log('Fetching active orders from CSV...');
-     /*
-     * TODO: Implement file reading logic for active orders.
-     * Note: You will need to handle the JSON string in the 'items' column.
-    */
-    return Promise.resolve(initialOrders);
+    const rawOrders = await readCsv<any>('orders_active.csv');
+    return Promise.all(rawOrders.map(o => this.mapOrderItems(o)));
   }
   
   async getArchivedOrders(): Promise<Order[]> {
-    console.log('Fetching archived orders from CSV...');
-    /*
-     * TODO: Implement file reading logic for archived orders.
-    */
-    return Promise.resolve(initialArchivedOrders);
+    const rawOrders = await readCsv<any>('orders_archived.csv');
+    return Promise.all(rawOrders.map(o => this.mapOrderItems(o)));
   }
 
   async saveAllOrders(activeOrders: Order[], archivedOrders: Order[]): Promise<void> {
-    console.log('Saving all orders to CSV...', { activeOrders, archivedOrders });
-     /*
-     * TODO: Implement file writing logic for both active and archived orders.
-     * You will likely write to two separate files.
-     * Note: You will need to stringify the 'items' array.
-    */
-    return Promise.resolve();
+    const sanitizeOrderForCsv = (order: Order) => ({
+      ...order,
+      // Stringify the 'items' array for CSV storage.
+      items: JSON.stringify(order.items.map(item => ({
+        quantity: item.quantity,
+        menuItem: { id: item.menuItem.id } // Only store ID to reduce redundancy
+      }))),
+    });
+
+    await writeCsv('orders_active.csv', activeOrders.map(sanitizeOrderForCsv));
+    await writeCsv('orders_archived.csv', archivedOrders.map(sanitizeOrderForCsv));
   }
 
   // Staff
   async getStaff(): Promise<StaffMember[]> {
-    console.log('Fetching staff from CSV...');
-    /*
-     * TODO: Implement file reading logic.
-     * Example:
-     * const filePath = getCSVPath('staff.csv');
-     * const fileContent = await fs.readFile(filePath, 'utf8');
-     * const parsed = Papa.parse(fileContent, { header: true });
-     * return parsed.data as StaffMember[];
-    */
-    return Promise.resolve(initialStaff);
+    return readCsv<StaffMember>('staff.csv');
   }
 
   async saveStaff(staff: StaffMember[]): Promise<void> {
-    console.log('Saving staff to CSV...', staff);
-    /*
-     * TODO: Implement file writing logic.
-     * Example:
-     * const filePath = getCSVPath('staff.csv');
-     * const csvString = Papa.unparse(staff);
-     * await fs.writeFile(filePath, csvString, 'utf8');
-    */
-    return Promise.resolve();
+    await writeCsv('staff.csv', staff);
   }
   
   // Tables
   async getTables(): Promise<Table[]> {
-      console.log('Fetching tables from CSV...');
-    /*
-     * TODO: Implement file reading logic.
-     * Example:
-     * const filePath = getCSVPath('tables.csv');
-     * const fileContent = await fs.readFile(filePath, 'utf8');
-     * const parsed = Papa.parse(fileContent, { header: true, dynamicTyping: true });
-     * return parsed.data as Table[];
-    */
-      return Promise.resolve(tables);
+    return readCsv<Table>('tables.csv');
   }
 
   async saveTables(tables: Table[]): Promise<void> {
-    console.log('Saving tables to CSV...', tables);
-    /*
-     * TODO: Implement file writing logic.
-     * Example:
-     * const filePath = getCSVPath('tables.csv');
-     * const csvString = Papa.unparse(tables);
-     * await fs.writeFile(filePath, csvString, 'utf8');
-    */
-    return Promise.resolve();
+    await writeCsv('tables.csv', tables);
   }
 
   // Customers
   async getCustomers(): Promise<Customer[]> {
-    console.log('Fetching customers from CSV...');
-    /*
-     * TODO: Implement file reading logic.
-    */
-    return Promise.resolve(initialCustomers);
+    return readCsv<Customer>('customers.csv');
   }
 
   async saveCustomers(customers: Customer[]): Promise<void> {
-    console.log('Saving customers to CSV...', customers);
-    /*
-     * TODO: Implement file writing logic.
-    */
-    return Promise.resolve();
+    await writeCsv('customers.csv', customers);
   }
 }
 
