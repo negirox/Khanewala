@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   BookOpen,
   ClipboardList,
@@ -39,9 +39,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { OrderForm } from "./order-form";
-import { createNewOrder, getCustomers, getMenuItems, getTables, getActiveOrders, getArchivedOrders, saveTables } from "@/app/actions";
-import type { Customer, MenuItem, Order, Table } from "@/lib/types";
+import { createNewOrder, saveTables } from "@/app/actions";
+import type { Order } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { useAppData } from "@/hooks/use-app-data";
 
 const operationalNavItems = [
   { href: "/orders", icon: ClipboardList, label: "Orders" },
@@ -125,35 +126,12 @@ function AdminMenu() {
 
 function NewOrderDialog() {
   const [isNewOrderDialogOpen, setNewOrderDialogOpen] = React.useState(false);
-  const [allCustomers, setAllCustomers] = React.useState<Customer[]>([]);
-  const [allMenuItems, setAllMenuItems] = React.useState<MenuItem[]>([]);
-  const [allTables, setAllTables] = React.useState<Table[]>([]);
-  const [orders, setOrders] = React.useState<Order[]>([]);
-  const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
+  const { allCustomers, allMenuItems, allTables, activeOrders, archivedOrders, refreshData } = useAppData();
   const { toast } = useToast();
-  const router = useRouter();
-
-   React.useEffect(() => {
-    // We only need to fetch this data when the dialog can be opened.
-    if (isNewOrderDialogOpen) {
-      Promise.all([
-        getCustomers(),
-        getMenuItems(),
-        getTables(),
-        getActiveOrders(),
-        getArchivedOrders(),
-      ]).then(([customers, menuItems, tables, active, archived]) => {
-        setAllCustomers(customers);
-        setAllMenuItems(menuItems);
-        setAllTables(tables);
-        setOrders(active);
-        setArchivedOrders(archived);
-      })
-    }
-  }, [isNewOrderDialogOpen]);
 
   const handleNewOrder = React.useCallback(async (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
-    const { newActiveOrders, updatedCustomers, newOrder } = await createNewOrder(newOrderData, orders, archivedOrders, allCustomers);
+    
+    const { newOrder } = await createNewOrder(newOrderData, activeOrders, archivedOrders, allCustomers);
     
     // Also update table status to occupied
     if (newOrder.tableNumber) {
@@ -178,9 +156,9 @@ function NewOrderDialog() {
     });
 
     setNewOrderDialogOpen(false);
-    router.refresh();
+    await refreshData(); // This will re-fetch all data and update the context
 
-  }, [orders, archivedOrders, allCustomers, allTables, toast, router]);
+  }, [activeOrders, archivedOrders, allCustomers, allTables, toast, refreshData]);
 
   return (
     <Dialog open={isNewOrderDialogOpen} onOpenChange={setNewOrderDialogOpen}>

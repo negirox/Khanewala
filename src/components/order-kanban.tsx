@@ -6,19 +6,20 @@ import { ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent, Us
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle as DialogTitlePrimitive, DialogDescription } from "@/components/ui/dialog";
-import type { Order, OrderStatus, Customer, Table as TableType } from "@/lib/types";
+import type { Order, OrderStatus } from "@/lib/types";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { BillView } from "./bill-view";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { getActiveOrders, getArchivedOrders, saveAllOrders, saveTables, getTables, getCustomers, saveCustomers } from "@/app/actions";
+import { saveAllOrders, saveTables, saveCustomers } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { appConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { loyaltyService } from "@/services/loyalty-service";
+import { useAppData } from "@/hooks/use-app-data";
 
 const statusConfig: Record<
   OrderStatus,
@@ -34,10 +35,16 @@ const statusConfig: Record<
 const KANBAN_STATUSES: OrderStatus[] = ["received", "preparing", "ready"];
 
 export function OrderKanban() {
-  const [orders, setOrders] = React.useState<Order[]>([]);
-  const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
-  const [allTables, setAllTables] = React.useState<TableType[]>([]);
-  const [allCustomers, setAllCustomers] = React.useState<Customer[]>([]);
+  const { 
+    activeOrders, 
+    archivedOrders, 
+    allTables, 
+    allCustomers, 
+    setActiveOrders, 
+    setArchivedOrders, 
+    setAllTables, 
+    setAllCustomers 
+  } = useAppData();
 
   const [printingOrder, setPrintingOrder] = React.useState<Order | null>(null);
   const [discountOrder, setDiscountOrder] = React.useState<Order | null>(null);
@@ -48,22 +55,8 @@ export function OrderKanban() {
   
   const { toast } = useToast();
 
-  React.useEffect(() => {
-    Promise.all([
-      getActiveOrders(),
-      getArchivedOrders(),
-      getTables(),
-      getCustomers()
-    ]).then(([active, archived, tables, customers]) => {
-      setOrders(active.map(o => ({...o, createdAt: new Date(o.createdAt)})));
-      setArchivedOrders(archived.map(o => ({...o, createdAt: new Date(o.createdAt)})));
-      setAllTables(tables);
-      setAllCustomers(customers);
-    })
-  }, []);
-
   const handleUpdateStatus = React.useCallback(async (orderId: string, newStatus: OrderStatus) => {
-    let newActiveOrders = [...orders];
+    let newActiveOrders = [...activeOrders];
     let newArchivedOrders = [...archivedOrders];
     let newTables = [...allTables];
 
@@ -88,14 +81,14 @@ export function OrderKanban() {
             order.id === orderId ? { ...order, status: newStatus } : order
         );
     }
-    setOrders(newActiveOrders);
+    setActiveOrders(newActiveOrders);
     setArchivedOrders(newArchivedOrders);
     await saveAllOrders(newActiveOrders, newArchivedOrders);
-  }, [orders, archivedOrders, allTables]);
+  }, [activeOrders, archivedOrders, allTables, setActiveOrders, setArchivedOrders, setAllTables]);
   
   const handleCancelOrder = React.useCallback(async (orderToCancel: Order) => {
-    const newActiveOrders = orders.filter(o => o.id !== orderToCancel.id);
-    setOrders(newActiveOrders);
+    const newActiveOrders = activeOrders.filter(o => o.id !== orderToCancel.id);
+    setActiveOrders(newActiveOrders);
 
     if (orderToCancel.tableNumber) {
       const newTables = allTables.map(table => 
@@ -114,7 +107,7 @@ export function OrderKanban() {
         description: `Order ${orderToCancel.id} has been cancelled.`,
         variant: "destructive",
     });
-  }, [orders, archivedOrders, allTables, toast]);
+  }, [activeOrders, archivedOrders, allTables, setActiveOrders, setAllTables, toast]);
 
 
   const handleApplyDiscount = React.useCallback(async () => {
@@ -130,7 +123,7 @@ export function OrderKanban() {
         return;
     }
 
-    const newActiveOrders = orders.map(o => {
+    const newActiveOrders = activeOrders.map(o => {
         if (o.id === discountOrder.id) {
             const discountedSubtotal = o.subtotal * (1 - discountValue / 100);
             const newTotal = discountedSubtotal - (o.redeemedValue || 0);
@@ -139,7 +132,7 @@ export function OrderKanban() {
         return o;
     });
 
-    setOrders(newActiveOrders);
+    setActiveOrders(newActiveOrders);
     await saveAllOrders(newActiveOrders, archivedOrders);
     
     toast({
@@ -149,7 +142,7 @@ export function OrderKanban() {
 
     setDiscountOrder(null);
     setDiscountPercentage(0);
-}, [discountOrder, discountPercentage, orders, archivedOrders, toast]);
+}, [discountOrder, discountPercentage, activeOrders, archivedOrders, toast, setActiveOrders]);
 
   const handleRedeemPoints = React.useCallback(async () => {
     if (!redeemOrder || !redeemOrder.customerId) return;
@@ -167,7 +160,7 @@ export function OrderKanban() {
       setAllCustomers(newCustomers);
       await saveCustomers(newCustomers);
       
-      const newActiveOrders = orders.map(o => {
+      const newActiveOrders = activeOrders.map(o => {
         if (o.id === redeemOrder.id) {
             const currentRedeemedValue = o.redeemedValue || 0;
             const newTotal = o.total - (redeemedValue - currentRedeemedValue);
@@ -181,7 +174,7 @@ export function OrderKanban() {
         return o;
       });
 
-      setOrders(newActiveOrders);
+      setActiveOrders(newActiveOrders);
       await saveAllOrders(newActiveOrders, archivedOrders);
       
       toast({
@@ -193,7 +186,7 @@ export function OrderKanban() {
     setRedeemOrder(null);
     setPointsToRedeem(0);
 
-  }, [redeemOrder, pointsToRedeem, orders, archivedOrders, allCustomers, toast]);
+  }, [redeemOrder, pointsToRedeem, activeOrders, archivedOrders, allCustomers, toast, setActiveOrders, setAllCustomers]);
   
   const handleRevertRedemption = React.useCallback(async (orderToUpdate: Order) => {
     if (!orderToUpdate.customerId || !orderToUpdate.pointsRedeemed) return;
@@ -210,7 +203,7 @@ export function OrderKanban() {
     setAllCustomers(newCustomers);
     await saveCustomers(newCustomers);
     
-    const newActiveOrders = orders.map(o => {
+    const newActiveOrders = activeOrders.map(o => {
         if (o.id === orderToUpdate.id) {
             const newTotal = o.total + (o.redeemedValue || 0);
             return {
@@ -223,22 +216,22 @@ export function OrderKanban() {
         return o;
     });
 
-    setOrders(newActiveOrders);
+    setActiveOrders(newActiveOrders);
     await saveAllOrders(newActiveOrders, archivedOrders);
 
     toast({
         title: "Redemption Reverted",
         description: `${orderToUpdate.pointsRedeemed} points returned to ${customer.name}.`,
     });
-  }, [orders, archivedOrders, allCustomers, toast]);
+  }, [activeOrders, archivedOrders, allCustomers, toast, setActiveOrders, setAllCustomers]);
 
 
   const groupedOrders = React.useMemo(() => {
-    return orders.reduce((acc, order) => {
+    return activeOrders.reduce((acc, order) => {
       (acc[order.status] = acc[order.status] || []).push(order);
       return acc;
     }, {} as Record<OrderStatus, Order[]>);
-  }, [orders]);
+  }, [activeOrders]);
 
 
   return (
