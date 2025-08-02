@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import * as React from "react";
@@ -15,12 +14,12 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign, Upload, HandCoins, Download } from "lucide-react";
+import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign, Upload, HandCoins, Download, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStaff, saveStaff, getStaffTransactions, addStaffTransaction, generateStaffTransactionReport } from "@/app/actions";
 import { appConfig } from "@/lib/config";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
-import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "./ui/separator";
 import { DateRange } from "react-day-picker";
@@ -210,7 +209,6 @@ function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: { isOpen
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        {/* ... other fields ... */}
                         <FormField control={form.control} name="name" render={({ field }) => (
                             <FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
@@ -259,7 +257,6 @@ function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: { isOpen
     );
 }
 
-
 const transactionTypes: StaffTransactionType[] = ["Advance", "Daily Wage", "Bonus", "Salary"];
 const paymentModes: PaymentMode[] = ["Cash", "Online"];
 
@@ -283,23 +280,8 @@ function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transaction
         resolver: zodResolver(transactionFormSchema),
         defaultValues: { amount: 0, type: "Advance", paymentMode: "Cash", notes: "" },
     });
+    const [isHistoryOpen, setHistoryOpen] = React.useState(false);
     
-    const today = new Date();
-    const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
-        from: startOfMonth(today),
-        to: endOfMonth(today),
-    });
-    const [transactionTypeFilter, setTransactionTypeFilter] = React.useState<StaffTransactionType | "All">("All");
-
-    const filteredTransactions = React.useMemo(() => {
-        return transactions.filter(tx => {
-            const txDate = new Date(tx.date);
-            const inRange = dateRange?.from && dateRange?.to && txDate >= dateRange.from && txDate <= dateRange.to;
-            const typeMatch = transactionTypeFilter === "All" || tx.type === transactionTypeFilter;
-            return inRange && typeMatch;
-        });
-    }, [transactions, dateRange, transactionTypeFilter]);
-
     const monthlyReport = React.useMemo(() => {
         const currentMonthTxs = transactions.filter(tx => {
             const txDate = new Date(tx.date);
@@ -318,7 +300,7 @@ function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transaction
         const totalDeductions = advances + dailyWages;
         const netPayable = grossSalary + carryForward + bonuses - totalDeductions - salariesPaid;
 
-        return { currentMonthTxs, grossSalary, carryForward, totalDeductions, bonuses, salariesPaid, netPayable };
+        return { grossSalary, carryForward, totalDeductions, bonuses, salariesPaid, netPayable };
     }, [transactions, staffMember]);
 
     async function onSubmit(values: z.infer<typeof transactionFormSchema>) {
@@ -334,17 +316,116 @@ function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transaction
         form.reset();
     }
     
+    if (!staffMember) return null;
+
+    return (
+        <>
+            <Dialog open={isOpen} onOpenChange={onOpenChange}>
+                <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>Salary Report: {staffMember.name}</DialogTitle>
+                        <DialogDescription>View salary summary and add transactions.</DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="grid md:grid-cols-2 gap-x-8 flex-1 min-h-0">
+                        {/* Left: Report */}
+                        <div className="flex flex-col gap-4">
+                            <Card>
+                                <CardHeader><CardTitle className="text-xl">Current Month Summary</CardTitle></CardHeader>
+                                <CardContent className="text-sm space-y-2">
+                                    <div className="flex justify-between"><span>Gross Salary:</span> <span className="font-medium">{appConfig.currency}{monthlyReport.grossSalary.toFixed(2)}</span></div>
+                                    <div className="flex justify-between"><span>Carry Forward (Last Month):</span> <span className={cn("font-medium", monthlyReport.carryForward >= 0 ? 'text-green-600' : 'text-red-600')}>{appConfig.currency}{monthlyReport.carryForward.toFixed(2)}</span></div>
+                                    <div className="flex justify-between"><span>Bonus:</span> <span className="font-medium text-green-600">+{appConfig.currency}{monthlyReport.bonuses.toFixed(2)}</span></div>
+                                    <div className="flex justify-between"><span>Deductions (Advance/Daily):</span> <span className="font-medium text-red-600">-{appConfig.currency}{monthlyReport.totalDeductions.toFixed(2)}</span></div>
+                                    <div className="flex justify-between"><span>Salary Paid this month:</span> <span className="font-medium">-{appConfig.currency}{monthlyReport.salariesPaid.toFixed(2)}</span></div>
+                                    <Separator />
+                                    <div className="flex justify-between font-bold text-base"><span>Net Payable:</span> <span>{appConfig.currency}{monthlyReport.netPayable.toFixed(2)}</span></div>
+                                </CardContent>
+                                <CardFooter>
+                                    <Button variant="outline" className="w-full" onClick={() => setHistoryOpen(true)}>
+                                        <History className="mr-2 h-4 w-4" /> View Full History
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        </div>
+
+                        {/* Right: Add Transaction */}
+                        <div className="flex flex-col gap-4 mt-4 md:mt-0">
+                            <h3 className="font-semibold text-lg">Add New Transaction</h3>
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 border rounded-md bg-muted/50">
+                                    <FormField control={form.control} name="type" render={({ field }) => (
+                                        <FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{transactionTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="amount" render={({ field }) => (
+                                        <FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="paymentMode" render={({ field }) => (
+                                        <FormItem><FormLabel>Payment Mode</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select mode" /></SelectTrigger></FormControl><SelectContent>{paymentModes.map(mode => <SelectItem key={mode} value={mode}>{mode}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="notes" render={({ field }) => (
+                                        <FormItem><FormLabel>Notes (Optional)</FormLabel><FormControl><Input placeholder="e.g. for personal use" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )} />
+                                    <Button type="submit" className="w-full">Add Transaction</Button>
+                                </form>
+                            </Form>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <TransactionHistoryDialog 
+                isOpen={isHistoryOpen} 
+                onOpenChange={setHistoryOpen}
+                staffMember={staffMember}
+                transactions={transactions}
+                summary={{
+                    grossSalary: monthlyReport.grossSalary,
+                    carryForward: monthlyReport.carryForward,
+                    totalDeductions: monthlyReport.totalDeductions,
+                    bonuses: monthlyReport.bonuses,
+                    salariesPaid: monthlyReport.salariesPaid,
+                    netPayable: monthlyReport.netPayable,
+                }}
+            />
+        </>
+    );
+}
+
+function TransactionHistoryDialog({
+    isOpen, onOpenChange, staffMember, transactions, summary
+} : {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    staffMember: StaffMember | null;
+    transactions: StaffTransaction[];
+    summary: { 
+        grossSalary: number, 
+        carryForward: number, 
+        totalDeductions: number, 
+        bonuses: number,
+        salariesPaid: number,
+        netPayable: number
+    }
+}) {
+    const today = new Date();
+    const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
+        from: startOfMonth(today),
+        to: endOfMonth(today),
+    });
+    const [transactionTypeFilter, setTransactionTypeFilter] = React.useState<StaffTransactionType | "All">("All");
+
+    const filteredTransactions = React.useMemo(() => {
+        return transactions.filter(tx => {
+            const txDate = new Date(tx.date);
+            const inRange = dateRange?.from && dateRange?.to && txDate >= dateRange.from && txDate <= dateRange.to;
+            const typeMatch = transactionTypeFilter === "All" || tx.type === transactionTypeFilter;
+            return inRange && typeMatch;
+        });
+    }, [transactions, dateRange, transactionTypeFilter]);
+
     const handleExport = async () => {
         if (!staffMember) return;
-
-        const summary = {
-            grossSalary: monthlyReport.grossSalary,
-            carryForward: monthlyReport.carryForward,
-            totalDeductions: monthlyReport.totalDeductions,
-            bonuses: monthlyReport.bonuses,
-            salariesPaid: monthlyReport.salariesPaid,
-            netPayable: monthlyReport.netPayable,
-        };
 
         const csvString = await generateStaffTransactionReport(staffMember.id, filteredTransactions, summary);
         const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
@@ -364,87 +445,61 @@ function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transaction
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>Salary Report: {staffMember.name}</DialogTitle>
-                    <DialogDescription>View transactions, manage salary, and export reports.</DialogDescription>
+                    <DialogTitle>Transaction History: {staffMember.name}</DialogTitle>
+                    <DialogDescription>View, filter, and export all transactions.</DialogDescription>
                 </DialogHeader>
-                
-                <div className="grid md:grid-cols-5 gap-x-8 flex-1 min-h-0">
-                    {/* Left: Report */}
-                    <div className="md:col-span-3 flex flex-col gap-4">
-                         <Card>
-                            <CardHeader><CardTitle>Current Month Summary</CardTitle></CardHeader>
-                            <CardContent className="text-sm space-y-2">
-                                <div className="flex justify-between"><span>Gross Salary:</span> <span className="font-medium">{appConfig.currency}{monthlyReport.grossSalary.toFixed(2)}</span></div>
-                                <div className="flex justify-between"><span>Carry Forward (Last Month):</span> <span className={cn("font-medium", monthlyReport.carryForward >= 0 ? 'text-green-600' : 'text-red-600')}>{appConfig.currency}{monthlyReport.carryForward.toFixed(2)}</span></div>
-                                <div className="flex justify-between"><span>Bonus:</span> <span className="font-medium text-green-600">+{appConfig.currency}{monthlyReport.bonuses.toFixed(2)}</span></div>
-                                <div className="flex justify-between"><span>Deductions (Advance/Daily):</span> <span className="font-medium text-red-600">-{appConfig.currency}{monthlyReport.totalDeductions.toFixed(2)}</span></div>
-                                <div className="flex justify-between"><span>Salary Paid this month:</span> <span className="font-medium">-{appConfig.currency}{monthlyReport.salariesPaid.toFixed(2)}</span></div>
-                                <Separator />
-                                <div className="flex justify-between font-bold text-lg"><span>Net Payable:</span> <span>{appConfig.currency}{monthlyReport.netPayable.toFixed(2)}</span></div>
-                            </CardContent>
-                        </Card>
-                         <div className="flex-1 flex flex-col min-h-0">
-                            <h4 className="font-semibold mb-2">Transaction History</h4>
-                            {/* Filters */}
-                            <div className="flex flex-wrap gap-2 mb-2">
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className="w-full md:w-[280px] justify-start text-left font-normal">
-                                            {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`: format(dateRange.from, "LLL dd, y")) : "Pick a date range"}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0"><Calendar mode="range" selected={dateRange} onSelect={setDateRange} initialFocus /></PopoverContent>
-                                </Popover>
-                                <Select value={transactionTypeFilter} onValueChange={(v) => setTransactionTypeFilter(v as any)}>
-                                    <SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Filter by type" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="All">All Types</SelectItem>
-                                        {transactionTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export</Button>
-                            </div>
-                            <div className="overflow-y-auto border rounded-md flex-1">
-                                <Table>
-                                    <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Notes</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
-                                    <TableBody>
-                                        {filteredTransactions.map(tx => (
-                                            <TableRow key={tx.id}>
-                                                <TableCell className="whitespace-nowrap">{format(new Date(tx.date), "dd-MMM-yy")}</TableCell>
-                                                <TableCell><Badge variant="outline">{tx.type}</Badge></TableCell>
-                                                <TableCell className="text-xs text-muted-foreground truncate max-w-[100px]">{tx.notes}</TableCell>
-                                                <TableCell className={cn("text-right font-medium whitespace-nowrap", tx.type === 'Bonus' ? 'text-green-600' : 'text-red-600')}>{appConfig.currency}{tx.amount.toFixed(2)}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </div>
+
+                <div className="flex-1 flex flex-col min-h-0 gap-4">
+                    {/* Filters */}
+                    <div className="flex flex-wrap gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className="w-full md:w-[280px] justify-start text-left font-normal">
+                                    {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`: format(dateRange.from, "LLL dd, y")) : "Pick a date range"}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0"><Calendar mode="range" selected={dateRange} onSelect={setDateRange} initialFocus /></PopoverContent>
+                        </Popover>
+                        <Select value={transactionTypeFilter} onValueChange={(v) => setTransactionTypeFilter(v as any)}>
+                            <SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Filter by type" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="All">All Types</SelectItem>
+                                {transactionTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export</Button>
                     </div>
 
-                    {/* Right: Add Transaction */}
-                    <div className="md:col-span-2 flex flex-col gap-4 mt-4 md:mt-0">
-                         <h3 className="font-semibold">Add New Transaction</h3>
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 border rounded-md bg-muted/50">
-                                <FormField control={form.control} name="type" render={({ field }) => (
-                                    <FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{transactionTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={form.control} name="amount" render={({ field }) => (
-                                    <FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={form.control} name="paymentMode" render={({ field }) => (
-                                    <FormItem><FormLabel>Payment Mode</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select mode" /></SelectTrigger></FormControl><SelectContent>{paymentModes.map(mode => <SelectItem key={mode} value={mode}>{mode}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={form.control} name="notes" render={({ field }) => (
-                                    <FormItem><FormLabel>Notes (Optional)</FormLabel><FormControl><Input placeholder="e.g. for personal use" {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <Button type="submit" className="w-full">Add Transaction</Button>
-                            </form>
-                        </Form>
+                    {/* Table */}
+                    <div className="overflow-y-auto border rounded-md flex-1">
+                        <Table>
+                            <TableHeader className="sticky top-0 bg-secondary">
+                                <TableRow>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Type</TableHead>
+                                    <TableHead>Notes</TableHead>
+                                    <TableHead className="text-right">Amount</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredTransactions.length > 0 ? filteredTransactions.map(tx => (
+                                    <TableRow key={tx.id}>
+                                        <TableCell className="whitespace-nowrap">{format(new Date(tx.date), "dd-MMM-yy")}</TableCell>
+                                        <TableCell><Badge variant="outline">{tx.type}</Badge></TableCell>
+                                        <TableCell className="text-xs text-muted-foreground truncate max-w-[100px] sm:max-w-[200px]">{tx.notes}</TableCell>
+                                        <TableCell className={cn("text-right font-medium whitespace-nowrap", ['Advance', 'Daily Wage', 'Salary'].includes(tx.type)  ? 'text-red-600' : 'text-green-600')}>{appConfig.currency}{tx.amount.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                )) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">No transactions found for the selected filters.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
                     </div>
                 </div>
             </DialogContent>
         </Dialog>
     );
 }
+
