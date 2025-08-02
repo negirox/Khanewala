@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from "react";
@@ -230,10 +231,10 @@ export function SuperAdminSettings() {
                         <FormItem>
                             <FormLabel>Currency Symbol</FormLabel>
                             <FormControl>
-                                <Input placeholder="e.g. ₹" {...field} />
+                                <Input placeholder="e.g. Rs." {...field} />
                             </FormControl>
                              <FormDescription>
-                                The currency symbol to be used across the application (e.g. $, €, ₹).
+                                The currency symbol to be used across the application (e.g. $, €, Rs.).
                             </FormDescription>
                             <FormMessage />
                         </FormItem>

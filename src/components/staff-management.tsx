@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from "react";
@@ -240,7 +241,7 @@ function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: { isOpen
                          <FormField control={form.control} name="salary" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Salary</FormLabel>
-                                <FormControl><Input type="number" step="0.01" placeholder="3000.00" {...field} /></FormControl>
+                                <FormControl><Input type="number" step="0.01" placeholder="30000.00" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />

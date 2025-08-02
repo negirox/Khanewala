@@ -1,3 +1,4 @@
+
 import { UtensilsCrossed } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -19,7 +20,7 @@ type AppConfig = {
 export const appConfig: AppConfig = {
     title: "KhaneWala",
     logo: UtensilsCrossed,
-    currency: "₹",
+    currency: "Rs.",
     gstNumber: "27ABCDE1234F1Z5",
     maxDiscount: 25,
     enabledAdminSections: {
