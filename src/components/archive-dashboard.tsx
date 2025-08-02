@@ -23,10 +23,58 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { appConfig } from "@/lib/config";
-import { getArchivedOrders } from "@/app/actions";
-import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { getArchivedOrders, getArchiveFileSize } from "@/app/actions";
+import { ArrowUpDown, ChevronLeft, ChevronRight, AlertTriangle, Archive } from "lucide-react";
+import { Progress } from "./ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 const ITEMS_PER_PAGE = 10;
+
+function ArchiveCapacityIndicator() {
+  const [fileStats, setFileStats] = React.useState<{size: number; limit: number} | null>(null);
+
+  React.useEffect(() => {
+    getArchiveFileSize().then(setFileStats);
+  }, []);
+
+  if (!fileStats || appConfig.dataSource !== 'csv') {
+    return null; // Don't show indicator if not using CSV or stats not loaded
+  }
+
+  const percentage = (fileStats.size / fileStats.limit) * 100;
+  const sizeInMB = (fileStats.size / (1024 * 1024)).toFixed(2);
+  const limitInMB = (fileStats.limit / (1024 * 1024)).toFixed(2);
+  
+  return (
+    <Card className="mb-6">
+       <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg"><Archive className="h-5 w-5"/> Archive Storage</CardTitle>
+       </CardHeader>
+       <CardContent>
+          <div className="space-y-2">
+            <Progress value={percentage} />
+            <div className="flex justify-between text-sm text-muted-foreground">
+                <span>
+                    Using {sizeInMB} MB / {limitInMB} MB
+                </span>
+                <span>{percentage.toFixed(2)}% Full</span>
+            </div>
+          </div>
+          {percentage > 90 && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Warning: Archive Capacity Approaching Limit</AlertTitle>
+              <AlertDescription>
+                The current archive file is nearly full. It will be automatically rotated into a new file soon.
+              </AlertDescription>
+            </Alert>
+          )}
+       </CardContent>
+    </Card>
+  )
+
+}
+
 
 export function ArchiveDashboard() {
   const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
@@ -97,6 +145,7 @@ export function ArchiveDashboard() {
 
   return (
     <div className="flex flex-col gap-6">
+       <ArchiveCapacityIndicator />
       <Card>
         <CardHeader>
           <CardTitle>Archived Orders</CardTitle>

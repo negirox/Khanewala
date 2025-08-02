@@ -19,7 +19,8 @@ type AppConfig = {
     loyalty: {
         pointsPerCurrencyUnit: number; // e.g., 0.01 means 1 point per 100 currency units
         currencyUnitPerPoint: number; // e.g., 1 means 1 currency unit (e.g. Rs. 1) per point
-    }
+    },
+    archiveFileLimit: number; // in bytes
 }
 
 export const appConfig: AppConfig = {
@@ -39,5 +40,6 @@ export const appConfig: AppConfig = {
     loyalty: {
         pointsPerCurrencyUnit: 0.01,
         currencyUnitPerPoint: 1,
-    }
+    },
+    archiveFileLimit: 5 * 1024 * 1024, // 5MB
 };

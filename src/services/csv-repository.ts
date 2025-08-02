@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview
  * This file contains the CsvRepository class, which is responsible for
@@ -8,6 +9,7 @@ import type { MenuItem, Order, Table, StaffMember, Customer, StaffTransaction } 
 import Papa from 'papaparse';
 import fs from 'fs/promises';
 import path from 'path';
+import { appConfig } from '@/lib/config';
 
 // Helper function to get the path to the CSV file in the `data` directory.
 const getCSVPath = (fileName: string) => path.join(process.cwd(), 'data', fileName);
@@ -57,9 +59,14 @@ async function writeCsv<T extends object>(fileName: string, data: T[]): Promise<
 
 class CsvRepository {
   private allMenuItems: Promise<MenuItem[]>;
+  private archiveFilePath = getCSVPath('orders_archived.csv');
 
   constructor() {
     this.allMenuItems = this.getMenuItems();
+  }
+
+  getArchivePath(): string {
+      return this.archiveFilePath;
   }
 
   // Menu Items
@@ -117,6 +124,31 @@ class CsvRepository {
 
     await writeCsv('orders_active.csv', activeOrders.map(sanitizeOrderForCsv));
     await writeCsv('orders_archived.csv', archivedOrders.map(sanitizeOrderForCsv));
+  }
+
+  async checkAndRotateArchive(): Promise<void> {
+    try {
+      const stats = await fs.stat(this.archiveFilePath);
+      if (stats.size > appConfig.archiveFileLimit) {
+        console.log(`Archive file size (${stats.size}) exceeds limit (${appConfig.archiveFileLimit}). Rotating file.`);
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const newArchivePath = getCSVPath(`orders_archived_${timestamp}.csv`);
+        
+        await fs.rename(this.archiveFilePath, newArchivePath);
+        console.log(`Renamed ${this.archiveFilePath} to ${newArchivePath}`);
+        
+        // Create a new empty archive file
+        await writeCsv('orders_archived.csv', []);
+        console.log('Created new empty archive file.');
+      }
+    } catch (error: any) {
+      if (error.code === 'ENOENT') {
+        // File doesn't exist, no need to rotate. It will be created on the next save.
+        return;
+      }
+      console.error("Error during archive rotation check:", error);
+    }
   }
 
   // Staff
