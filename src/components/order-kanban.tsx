@@ -2,22 +2,23 @@
 "use client";
 
 import * as React from "react";
-import { PlusCircle, ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent, User, Trash2, Star, BadgePercent } from "lucide-react";
+import { ArrowRight, Clock, CheckCircle, Utensils, Archive, Printer, Percent, User, Trash2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle as DialogTitlePrimitive } from "@/components/ui/dialog";
-import type { Order, OrderStatus, Customer, MenuItem, Table as TableType } from "@/lib/types";
+import { Dialog, DialogContent, DialogHeader, DialogTitle as DialogTitlePrimitive, DialogDescription } from "@/components/ui/dialog";
+import type { Order, OrderStatus, Customer, Table as TableType } from "@/lib/types";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { BillView } from "./bill-view";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { getActiveOrders, getArchivedOrders, saveAllOrders, saveTables, getTables } from "@/app/actions";
+import { getActiveOrders, getArchivedOrders, saveAllOrders, saveTables, getTables, getCustomers, saveCustomers } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { appConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { loyaltyService } from "@/services/loyalty-service";
 
 const statusConfig: Record<
   OrderStatus,
@@ -36,20 +37,28 @@ export function OrderKanban() {
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
   const [allTables, setAllTables] = React.useState<TableType[]>([]);
+  const [allCustomers, setAllCustomers] = React.useState<Customer[]>([]);
+
   const [printingOrder, setPrintingOrder] = React.useState<Order | null>(null);
   const [discountOrder, setDiscountOrder] = React.useState<Order | null>(null);
   const [discountPercentage, setDiscountPercentage] = React.useState<number>(0);
+
+  const [redeemOrder, setRedeemOrder] = React.useState<Order | null>(null);
+  const [pointsToRedeem, setPointsToRedeem] = React.useState<number>(0);
+  
   const { toast } = useToast();
 
   React.useEffect(() => {
     Promise.all([
       getActiveOrders(),
       getArchivedOrders(),
-      getTables()
-    ]).then(([active, archived, tables]) => {
+      getTables(),
+      getCustomers()
+    ]).then(([active, archived, tables, customers]) => {
       setOrders(active.map(o => ({...o, createdAt: new Date(o.createdAt)})));
       setArchivedOrders(archived.map(o => ({...o, createdAt: new Date(o.createdAt)})));
       setAllTables(tables);
+      setAllCustomers(customers);
     })
   }, []);
 
@@ -64,7 +73,6 @@ export function OrderKanban() {
             newArchivedOrders = [{...orderToArchive, status: 'archived'}, ...newArchivedOrders];
             newActiveOrders = newActiveOrders.filter(o => o.id !== orderId);
             
-            // Update table status to available
             if (orderToArchive.tableNumber) {
               newTables = newTables.map(table => 
                   table.id === orderToArchive.tableNumber 
@@ -134,6 +142,50 @@ export function OrderKanban() {
     setDiscountOrder(null);
     setDiscountPercentage(0);
   }, [discountOrder, discountPercentage, orders, archivedOrders, toast]);
+
+  const handleRedeemPoints = React.useCallback(async () => {
+    if (!redeemOrder || !redeemOrder.customerId) return;
+    
+    const customer = allCustomers.find(c => c.id === redeemOrder.customerId);
+    if (!customer) {
+        toast({ variant: "destructive", title: "Customer not found." });
+        return;
+    }
+
+    const { updatedCustomer, redeemedValue, pointsRedeemed } = loyaltyService.redeemPoints(customer, pointsToRedeem);
+    
+    if (pointsRedeemed > 0) {
+      // Update the customer's point balance in the main list
+      const newCustomers = allCustomers.map(c => c.id === updatedCustomer.id ? updatedCustomer : c);
+      setAllCustomers(newCustomers);
+      await saveCustomers(newCustomers);
+      
+      // Update the order with the redeemed value
+      const newActiveOrders = orders.map(o => {
+        if (o.id === redeemOrder.id) {
+          return { 
+            ...o, 
+            pointsRedeemed: (o.pointsRedeemed || 0) + pointsRedeemed,
+            redeemedValue: (o.redeemedValue || 0) + redeemedValue,
+            total: o.total - redeemedValue,
+          };
+        }
+        return o;
+      });
+
+      setOrders(newActiveOrders);
+      await saveAllOrders(newActiveOrders, archivedOrders);
+      
+      toast({
+        title: "Points Redeemed!",
+        description: `${pointsRedeemed} points redeemed for a ${appConfig.currency}${redeemedValue.toFixed(2)} discount.`,
+      });
+    }
+
+    setRedeemOrder(null);
+    setPointsToRedeem(0);
+
+  }, [redeemOrder, pointsToRedeem, orders, archivedOrders, allCustomers, toast]);
   
   const groupedOrders = React.useMemo(() => {
     return orders.reduce((acc, order) => {
@@ -173,23 +225,35 @@ export function OrderKanban() {
                         <div className="flex items-center">
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                                        setDiscountOrder(order);
-                                        setDiscountPercentage(order.discount);
-                                    }}>
-                                        <Percent className="h-4 w-4" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Apply Discount</TooltipContent>
-                            </Tooltip>
-                             <Tooltip>
-                                <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPrintingOrder(order)}>
                                         <Printer className="h-4 w-4" />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Print Bill</TooltipContent>
                             </Tooltip>
+                            {status === 'ready' && (
+                                <>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                                            setDiscountOrder(order);
+                                            setDiscountPercentage(order.discount);
+                                        }}>
+                                            <Percent className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Apply Discount</TooltipContent>
+                                </Tooltip>
+                                 <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" disabled={!order.customerId} onClick={() => setRedeemOrder(order)}>
+                                            <Star className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Redeem Points</TooltipContent>
+                                </Tooltip>
+                                </>
+                            )}
                              {(order.status === 'received' || order.status === 'preparing') && (
                                  <AlertDialog>
                                     <AlertDialogTrigger asChild>
@@ -237,7 +301,7 @@ export function OrderKanban() {
                     <div className="border-t my-2" />
                     <div className="space-y-1 text-xs">
                         <div className="flex justify-between"><span>Subtotal:</span> <span>{appConfig.currency}{order.subtotal.toFixed(2)}</span></div>
-                        {order.discount > 0 && <div className="flex justify-between text-destructive"><span>Discount ({order.discount}%):</span> <span>-{appConfig.currency}{(order.subtotal - (order.subtotal * (1 - order.discount/100))).toFixed(2)}</span></div>}
+                        {order.discount > 0 && <div className="flex justify-between text-destructive"><span>Discount ({order.discount}%):</span> <span>-{appConfig.currency}{(order.subtotal * (order.discount/100)).toFixed(2)}</span></div>}
                          {order.redeemedValue && order.redeemedValue > 0 && <div className="flex justify-between text-destructive"><span>Points Redeemed:</span> <span>-{appConfig.currency}{order.redeemedValue.toFixed(2)}</span></div>}
                         <div className="flex justify-between font-bold text-sm"><span>Total:</span> <span>{appConfig.currency}{order.total.toFixed(2)}</span></div>
                          {(order.pointsEarned !== undefined && order.pointsEarned > 0) && (
@@ -318,5 +382,35 @@ export function OrderKanban() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={!!redeemOrder} onOpenChange={(open) => !open && setRedeemOrder(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Redeem Loyalty Points</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Customer has {allCustomers.find(c => c.id === redeemOrder?.customerId)?.loyaltyPoints || 0} points available.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4">
+                <Label htmlFor="points">Points to Redeem</Label>
+                <Input
+                    id="points"
+                    type="number"
+                    value={pointsToRedeem}
+                    onChange={(e) => setPointsToRedeem(Number(e.target.value))}
+                    placeholder="0"
+                    max={allCustomers.find(c => c.id === redeemOrder?.customerId)?.loyaltyPoints || 0}
+                />
+                 <p className="text-xs text-muted-foreground mt-2">
+                    Value: {appConfig.currency}{(pointsToRedeem * appConfig.loyalty.currencyUnitPerPoint).toFixed(2)}
+                </p>
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleRedeemPoints}>Redeem</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
+}
