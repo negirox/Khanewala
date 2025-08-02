@@ -254,7 +254,7 @@ export function OrderKanban() {
                                 </Tooltip>
                                 </>
                             )}
-                             {(order.status === 'received' || order.status === 'preparing') && (
+                             {order.status === 'received' && (
                                  <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Tooltip>
