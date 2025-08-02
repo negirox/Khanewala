@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from "react";
@@ -110,28 +111,28 @@ export function StaffManagement() {
                     <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 pt-2">
-                    <CardTitle>{member.name}</CardTitle>
+                    <CardTitle className="text-xl">{member.name}</CardTitle>
                     <Badge className={cn("mt-1", roleColors[member.role])}>{member.role}</Badge>
                 </div>
             </CardHeader>
-            <CardContent className="flex-grow space-y-3">
+            <CardContent className="flex-grow space-y-3 text-sm">
               <div className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <a href={`mailto:${member.email}`} className="text-sm hover:underline truncate">
+                <a href={`mailto:${member.email}`} className="hover:underline truncate">
                   {member.email}
                 </a>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">{member.phone}</span>
+                <span>{member.phone}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Shift: {member.shift}</span>
+                <span>Shift: {member.shift}</span>
               </div>
                <div className="flex items-center gap-3">
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Salary: {appConfig.currency}{member.salary?.toFixed(2) ?? 'N/A'}</span>
+                <span>Salary: {appConfig.currency}{member.salary?.toFixed(2) ?? 'N/A'}</span>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-2 border-t pt-2">
@@ -367,9 +368,9 @@ function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transaction
                     <DialogDescription>View transactions, manage salary, and export reports.</DialogDescription>
                 </DialogHeader>
                 
-                <div className="grid grid-cols-5 gap-x-8 flex-1 min-h-0">
+                <div className="grid md:grid-cols-5 gap-x-8 flex-1 min-h-0">
                     {/* Left: Report */}
-                    <div className="col-span-3 flex flex-col gap-4">
+                    <div className="md:col-span-3 flex flex-col gap-4">
                          <Card>
                             <CardHeader><CardTitle>Current Month Summary</CardTitle></CardHeader>
                             <CardContent className="text-sm space-y-2">
@@ -385,17 +386,17 @@ function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transaction
                          <div className="flex-1 flex flex-col min-h-0">
                             <h4 className="font-semibold mb-2">Transaction History</h4>
                             {/* Filters */}
-                            <div className="flex gap-2 mb-2">
+                            <div className="flex flex-wrap gap-2 mb-2">
                                 <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className="w-[280px] justify-start text-left font-normal">
+                                        <Button variant="outline" className="w-full md:w-[280px] justify-start text-left font-normal">
                                             {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`: format(dateRange.from, "LLL dd, y")) : "Pick a date range"}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0"><Calendar mode="range" selected={dateRange} onSelect={setDateRange} initialFocus /></PopoverContent>
                                 </Popover>
                                 <Select value={transactionTypeFilter} onValueChange={(v) => setTransactionTypeFilter(v as any)}>
-                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by type" /></SelectTrigger>
+                                    <SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Filter by type" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="All">All Types</SelectItem>
                                         {transactionTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -409,10 +410,10 @@ function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transaction
                                     <TableBody>
                                         {filteredTransactions.map(tx => (
                                             <TableRow key={tx.id}>
-                                                <TableCell>{format(new Date(tx.date), "dd-MMM-yy")}</TableCell>
+                                                <TableCell className="whitespace-nowrap">{format(new Date(tx.date), "dd-MMM-yy")}</TableCell>
                                                 <TableCell><Badge variant="outline">{tx.type}</Badge></TableCell>
-                                                <TableCell className="text-xs text-muted-foreground">{tx.notes}</TableCell>
-                                                <TableCell className={cn("text-right font-medium", tx.type === 'Bonus' ? 'text-green-600' : 'text-red-600')}>{appConfig.currency}{tx.amount.toFixed(2)}</TableCell>
+                                                <TableCell className="text-xs text-muted-foreground truncate max-w-[100px]">{tx.notes}</TableCell>
+                                                <TableCell className={cn("text-right font-medium whitespace-nowrap", tx.type === 'Bonus' ? 'text-green-600' : 'text-red-600')}>{appConfig.currency}{tx.amount.toFixed(2)}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -422,7 +423,7 @@ function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transaction
                     </div>
 
                     {/* Right: Add Transaction */}
-                    <div className="col-span-2 flex flex-col gap-4">
+                    <div className="md:col-span-2 flex flex-col gap-4 mt-4 md:mt-0">
                          <h3 className="font-semibold">Add New Transaction</h3>
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 border rounded-md bg-muted/50">
