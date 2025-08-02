@@ -43,6 +43,7 @@ export type StaffMember = {
   phone: string;
   shift: "Morning" | "Afternoon" | "Night";
   avatar?: string;
+  salary?: number;
 };
 
 export type Customer = {

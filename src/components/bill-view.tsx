@@ -51,7 +51,7 @@ export function BillView({ order }: { order: Order }) {
                         <tr key={index}>
                             <td>{item.quantity}</td>
                             <td>{item.menuItem.name}</td>
-                            <td className="text-right">${(item.menuItem.price * item.quantity).toFixed(2)}</td>
+                            <td className="text-right">{appConfig.currency}{(item.menuItem.price * item.quantity).toFixed(2)}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -60,17 +60,17 @@ export function BillView({ order }: { order: Order }) {
             <div className="space-y-1">
                 <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span className="text-right">${order.subtotal.toFixed(2)}</span>
+                    <span className="text-right">{appConfig.currency}{order.subtotal.toFixed(2)}</span>
                 </div>
                 {order.discount > 0 && (
                      <div className="flex justify-between">
                         <span>Discount ({order.discount}%):</span>
-                        <span className="text-right">-${(order.subtotal - order.total).toFixed(2)}</span>
+                        <span className="text-right">-{appConfig.currency}{(order.subtotal - order.total).toFixed(2)}</span>
                     </div>
                 )}
                 <div className="flex justify-between font-bold text-lg">
                     <span>Total:</span>
-                    <span className="text-right">${order.total.toFixed(2)}</span>
+                    <span className="text-right">{appConfig.currency}{order.total.toFixed(2)}</span>
                 </div>
             </div>
             <Separator className="my-2 border-dashed border-black" />

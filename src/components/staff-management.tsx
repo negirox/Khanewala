@@ -13,9 +13,10 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Mail, Phone, Clock, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csvRepository } from "@/services/csv-repository";
+import { appConfig } from "@/lib/config";
 
 const roleColors: Record<StaffMember['role'], string> = {
     Manager: "bg-red-500 text-white",
@@ -24,7 +25,7 @@ const roleColors: Record<StaffMember['role'], string> = {
     Busboy: "bg-green-500 text-white",
 };
 
-const emptyStaffMember: StaffMember = { id: "", name: "", role: "Waiter", email: "", phone: "", shift: "Morning", avatar: "" };
+const emptyStaffMember: StaffMember = { id: "", name: "", role: "Waiter", email: "", phone: "", shift: "Morning", avatar: "", salary: 0 };
 
 export function StaffManagement() {
   const [staff, setStaff] = React.useState<StaffMember[]>([]);
@@ -101,6 +102,10 @@ export function StaffManagement() {
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">Shift: {member.shift}</span>
               </div>
+               <div className="flex items-center gap-3">
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">Salary: {appConfig.currency}{member.salary?.toFixed(2) ?? 'N/A'}</span>
+              </div>
             </CardContent>
             <div className="flex justify-end p-2 border-t">
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(member)}>
@@ -132,6 +137,7 @@ const formSchema = z.object({
     phone: z.string().min(10, "Invalid phone number"),
     shift: z.enum(["Morning", "Afternoon", "Night"]),
     avatar: z.string().url().optional().or(z.literal('')),
+    salary: z.coerce.number().min(0, "Salary cannot be negative.").optional(),
 });
 
 function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, staffMember: StaffMember | null, onSave: (data: StaffMember) => void}) {
@@ -210,6 +216,13 @@ function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: { isOpen
                             <FormItem>
                                 <FormLabel>Avatar URL</FormLabel>
                                 <FormControl><Input placeholder="https://placehold.co/100x100.png" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                         <FormField control={form.control} name="salary" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Salary</FormLabel>
+                                <FormControl><Input type="number" step="0.01" placeholder="3000.00" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />

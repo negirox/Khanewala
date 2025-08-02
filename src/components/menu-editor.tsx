@@ -33,6 +33,7 @@ import type { MenuItem } from "@/lib/types";
 import { PlusCircle, Edit, Trash2 } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import { csvRepository } from "@/services/csv-repository";
+import { appConfig } from "@/lib/config";
 
 
 const emptyMenuItem: MenuItem = { id: "", name: "", price: 0, category: "Main Courses", description: "" };
@@ -100,7 +101,7 @@ export function MenuEditor() {
               <TableRow key={item.id}>
                 <TableCell className="font-medium">{item.name}</TableCell>
                 <TableCell>{item.category}</TableCell>
-                <TableCell>${item.price.toFixed(2)}</TableCell>
+                <TableCell>{appConfig.currency}{item.price.toFixed(2)}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
                     <Edit className="h-4 w-4" />

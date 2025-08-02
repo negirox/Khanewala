@@ -21,6 +21,7 @@ import type { Order } from "@/lib/types";
 import { format } from "date-fns";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
+import { appConfig } from "@/lib/config";
 
 export function ArchiveDashboard() {
   const [archivedOrders, setArchivedOrders] = React.useState<Order[]>(initialArchivedOrders);
@@ -79,7 +80,7 @@ export function ArchiveDashboard() {
                         {order.discount > 0 ? <Badge variant="secondary">{order.discount}%</Badge> : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      ${order.total.toFixed(2)}
+                      {appConfig.currency}{order.total.toFixed(2)}
                     </TableCell>
                   </TableRow>
                 ))

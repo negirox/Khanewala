@@ -104,11 +104,11 @@ export const tables: Table[] = [
 ];
 
 export const initialStaff: StaffMember[] = [
-  { id: "STAFF01", name: "Alice Johnson", role: "Manager", email: "alice@khanewala.com", phone: "123-456-7890", shift: "Morning", avatar: "https://placehold.co/100x100.png" },
-  { id: "STAFF02", name: "Bob Williams", role: "Chef", email: "bob@khanewala.com", phone: "123-456-7891", shift: "Afternoon", avatar: "https://placehold.co/100x100.png" },
-  { id: "STAFF03", name: "Charlie Brown", role: "Waiter", email: "charlie@khanewala.com", phone: "123-456-7892", shift: "Morning", avatar: "https://placehold.co/100x100.png" },
-  { id: "STAFF04", name: "Diana Prince", role: "Waiter", email: "diana@khanewala.com", phone: "123-456-7893", shift: "Night", avatar: "https://placehold.co/100x100.png" },
-  { id: "STAFF05", name: "Eve Adams", role: "Busboy", email: "eve@khanewala.com", phone: "123-456-7894", shift: "Afternoon", avatar: "https://placehold.co/100x100.png" },
+  { id: "STAFF01", name: "Alice Johnson", role: "Manager", email: "alice@khanewala.com", phone: "123-456-7890", shift: "Morning", avatar: "https://placehold.co/100x100.png", salary: 50000 },
+  { id: "STAFF02", name: "Bob Williams", role: "Chef", email: "bob@khanewala.com", phone: "123-456-7891", shift: "Afternoon", avatar: "https://placehold.co/100x100.png", salary: 45000 },
+  { id: "STAFF03", name: "Charlie Brown", role: "Waiter", email: "charlie@khanewala.com", phone: "123-456-7892", shift: "Morning", avatar: "https://placehold.co/100x100.png", salary: 30000 },
+  { id: "STAFF04", name: "Diana Prince", role: "Waiter", email: "diana@khanewala.com", phone: "123-456-7893", shift: "Night", avatar: "https://placehold.co/100x100.png", salary: 32000 },
+  { id: "STAFF05", name: "Eve Adams", role: "Busboy", email: "eve@khanewala.com", phone: "123-456-7894", shift: "Afternoon", avatar: "https://placehold.co/100x100.png", salary: 25000 },
 ];
 
 export const initialCustomers: Customer[] = [

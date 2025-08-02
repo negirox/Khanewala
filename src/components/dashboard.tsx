@@ -21,6 +21,7 @@ import { initialArchivedOrders } from "@/lib/data";
 import type { Order } from "@/lib/types";
 import { format } from "date-fns";
 import { DollarSign, ShoppingBag, Receipt } from "lucide-react";
+import { appConfig } from "@/lib/config";
 
 export function Dashboard() {
   const [archivedOrders, setArchivedOrders] =
@@ -50,7 +51,7 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${stats.totalSales.toFixed(2)}
+              {appConfig.currency}{stats.totalSales.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
               from {stats.totalOrders} orders
@@ -80,7 +81,7 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${stats.avgOrderValue.toFixed(2)}
+              {appConfig.currency}{stats.avgOrderValue.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">per order</p>
           </CardContent>
@@ -119,7 +120,7 @@ export function Dashboard() {
                       {order.items.map(i => i.quantity).reduce((a, b) => a + b, 0)}
                     </TableCell>
                     <TableCell className="text-right">
-                      ${order.total.toFixed(2)}
+                      {appConfig.currency}{order.total.toFixed(2)}
                     </TableCell>
                   </TableRow>
                 ))

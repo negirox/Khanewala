@@ -8,6 +8,7 @@
  * You would replace this with a real WhatsApp API provider like Twilio.
  */
 
+import { appConfig } from '@/lib/config';
 import type { Customer, Order } from '@/lib/types';
 
 class WhatsappService {
@@ -27,14 +28,14 @@ class WhatsappService {
 =================================================
 -- SIMULATING WHATSAPP MESSAGE --
 To: ${customer.phone}
-From: KhaneWala Restaurant
+From: ${appConfig.title} Restaurant
 
 Hello ${customer.name},
 
 Thank you for your order! This is a digital confirmation to help save paper.
 
 Order ID: ${order.id}
-Total: $${order.total.toFixed(2)}
+Total: ${appConfig.currency}${order.total.toFixed(2)}
 Points Earned: ${order.pointsEarned || 0}
 
 We've received your order and will have it ready for you shortly.
