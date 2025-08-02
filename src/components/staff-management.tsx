@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign, Upload, HandCoins, Download, History } from "lucide-react";
+import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign, Upload, HandCoins, Download, History, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStaff, saveStaff, getStaffTransactions, addStaffTransaction, generateStaffTransactionReport } from "@/app/actions";
 import { appConfig } from "@/lib/config";
@@ -392,6 +392,8 @@ function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, transaction
     );
 }
 
+const ITEMS_PER_PAGE = 10;
+
 function TransactionHistoryDialog({
     isOpen, onOpenChange, staffMember, transactions, summary
 } : {
@@ -414,15 +416,27 @@ function TransactionHistoryDialog({
         to: endOfMonth(today),
     });
     const [transactionTypeFilter, setTransactionTypeFilter] = React.useState<StaffTransactionType | "All">("All");
+    const [currentPage, setCurrentPage] = React.useState(1);
 
     const filteredTransactions = React.useMemo(() => {
         return transactions.filter(tx => {
             const txDate = new Date(tx.date);
-            const inRange = dateRange?.from && dateRange?.to && txDate >= dateRange.from && txDate <= dateRange.to;
+            const inRange = dateRange?.from && dateRange?.to && txDate >= startOfMonth(dateRange.from) && txDate <= endOfMonth(dateRange.to);
             const typeMatch = transactionTypeFilter === "All" || tx.type === transactionTypeFilter;
             return inRange && typeMatch;
-        });
+        }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [transactions, dateRange, transactionTypeFilter]);
+
+    const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
+    const paginatedTransactions = React.useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredTransactions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    }, [filteredTransactions, currentPage]);
+
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [dateRange, transactionTypeFilter]);
+
 
     const handleExport = async () => {
         if (!staffMember) return;
@@ -443,7 +457,7 @@ function TransactionHistoryDialog({
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+            <DialogContent className="max-w-4xl w-full max-h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>Transaction History: {staffMember.name}</DialogTitle>
                     <DialogDescription>View, filter, and export all transactions.</DialogDescription>
@@ -451,29 +465,29 @@ function TransactionHistoryDialog({
 
                 <div className="flex-1 flex flex-col min-h-0 gap-4">
                     {/* Filters */}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <Popover>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" className="w-full md:w-[280px] justify-start text-left font-normal">
+                                <Button variant="outline" className="w-full sm:w-auto justify-start text-left font-normal">
                                     {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`: format(dateRange.from, "LLL dd, y")) : "Pick a date range"}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0"><Calendar mode="range" selected={dateRange} onSelect={setDateRange} initialFocus /></PopoverContent>
+                            <PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={dateRange} onSelect={setDateRange} initialFocus /></PopoverContent>
                         </Popover>
                         <Select value={transactionTypeFilter} onValueChange={(v) => setTransactionTypeFilter(v as any)}>
-                            <SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Filter by type" /></SelectTrigger>
+                            <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter by type" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="All">All Types</SelectItem>
                                 {transactionTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                             </SelectContent>
                         </Select>
-                        <Button variant="outline" onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export</Button>
+                        <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto"><Download className="mr-2 h-4 w-4" /> Export</Button>
                     </div>
 
                     {/* Table */}
-                    <div className="overflow-y-auto border rounded-md flex-1">
+                    <div className="relative flex-1 overflow-auto border rounded-md">
                         <Table>
-                            <TableHeader className="sticky top-0 bg-secondary">
+                            <TableHeader className="sticky top-0 bg-secondary z-10">
                                 <TableRow>
                                     <TableHead>Date</TableHead>
                                     <TableHead>Type</TableHead>
@@ -482,7 +496,7 @@ function TransactionHistoryDialog({
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredTransactions.length > 0 ? filteredTransactions.map(tx => (
+                                {paginatedTransactions.length > 0 ? paginatedTransactions.map(tx => (
                                     <TableRow key={tx.id}>
                                         <TableCell className="whitespace-nowrap">{format(new Date(tx.date), "dd-MMM-yy")}</TableCell>
                                         <TableCell><Badge variant="outline">{tx.type}</Badge></TableCell>
@@ -497,9 +511,34 @@ function TransactionHistoryDialog({
                             </TableBody>
                         </Table>
                     </div>
+                     {/* Pagination */}
+                    <div className="flex items-center justify-end space-x-2 py-4">
+                        <div className="flex-1 text-sm text-muted-foreground">
+                            Page {currentPage} of {totalPages}
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                        >
+                             <ChevronLeft className="h-4 w-4" />
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Next
+                             <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>
     );
 }
 
+    
