@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import type { Table as TableType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { User, Check, Ban } from "lucide-react";
-import { csvRepository } from "@/services/csv-repository";
+import { getTables, saveTables } from "@/app/actions";
 
 const statusConfig = {
   available: {
@@ -30,22 +31,24 @@ export function TableLayout() {
   const [tables, setTables] = React.useState<TableType[]>([]);
 
   React.useEffect(() => {
-    csvRepository.getTables().then(setTables);
+    getTables().then(setTables);
   }, []);
 
-  const toggleStatus = (tableId: number) => {
-    const updatedTables = tables.map(table => {
-      if (table.id === tableId) {
-        const statuses: TableType['status'][] = ['available', 'occupied', 'reserved'];
-        const currentIndex = statuses.indexOf(table.status);
-        const nextIndex = (currentIndex + 1) % statuses.length;
-        return { ...table, status: statuses[nextIndex], orderId: statuses[nextIndex] === 'available' ? undefined : table.orderId };
-      }
-      return table;
+  const toggleStatus = React.useCallback((tableId: number) => {
+    setTables(prevTables => {
+        const updatedTables = prevTables.map(table => {
+          if (table.id === tableId) {
+            const statuses: TableType['status'][] = ['available', 'occupied', 'reserved'];
+            const currentIndex = statuses.indexOf(table.status);
+            const nextIndex = (currentIndex + 1) % statuses.length;
+            return { ...table, status: statuses[nextIndex], orderId: statuses[nextIndex] === 'available' ? undefined : table.orderId };
+          }
+          return table;
+        });
+        saveTables(updatedTables);
+        return updatedTables;
     });
-    setTables(updatedTables);
-    csvRepository.saveTables(updatedTables);
-  };
+  }, []);
 
   return (
     <div className="flex flex-col">

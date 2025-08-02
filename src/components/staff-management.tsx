@@ -16,7 +16,7 @@ import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { csvRepository } from "@/services/csv-repository";
+import { getStaff, saveStaff } from "@/app/actions";
 import { appConfig } from "@/lib/config";
 
 const roleColors: Record<StaffMember['role'], string> = {
@@ -34,37 +34,41 @@ export function StaffManagement() {
   const [editingStaff, setEditingStaff] = React.useState<StaffMember | null>(null);
 
   React.useEffect(() => {
-    csvRepository.getStaff().then(setStaff);
+    getStaff().then(setStaff);
   }, []);
 
-  const handleEdit = (member: StaffMember) => {
+  const handleEdit = React.useCallback((member: StaffMember) => {
     setEditingStaff(member);
     setDialogOpen(true);
-  };
+  }, []);
   
-  const handleAddNew = () => {
+  const handleAddNew = React.useCallback(() => {
     setEditingStaff(null);
     setDialogOpen(true);
-  };
+  }, []);
   
-  const handleDelete = (staffId: string) => {
-    const updatedStaff = staff.filter(member => member.id !== staffId);
-    setStaff(updatedStaff);
-    csvRepository.saveStaff(updatedStaff);
-  }
+  const handleDelete = React.useCallback((staffId: string) => {
+    setStaff(prevStaff => {
+        const updatedStaff = prevStaff.filter(member => member.id !== staffId);
+        saveStaff(updatedStaff);
+        return updatedStaff;
+    });
+  }, []);
 
-  const handleSave = (staffData: StaffMember) => {
-    let updatedStaff;
-    if (editingStaff) {
-      updatedStaff = staff.map(member => member.id === staffData.id ? staffData : member);
-    } else {
-      updatedStaff = [...staff, { ...staffData, id: `STAFF${staff.length + 1}` }];
-    }
-    setStaff(updatedStaff);
-    csvRepository.saveStaff(updatedStaff);
+  const handleSave = React.useCallback((staffData: StaffMember) => {
+    setStaff(prevStaff => {
+        let updatedStaff;
+        if (editingStaff) {
+          updatedStaff = prevStaff.map(member => member.id === staffData.id ? staffData : member);
+        } else {
+          updatedStaff = [...prevStaff, { ...staffData, id: `STAFF${prevStaff.length + 1}` }];
+        }
+        saveStaff(updatedStaff);
+        return updatedStaff;
+    });
     setDialogOpen(false);
     setEditingStaff(null);
-  };
+  }, [editingStaff]);
 
   return (
     <div className="flex flex-col">
@@ -240,7 +244,7 @@ function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: { isOpen
                          <FormField control={form.control} name="salary" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Salary</FormLabel>
-                                <FormControl><Input type="number" step="0.01" placeholder="3000.00" {...field} /></FormControl>
+                                <FormControl><Input type="number" step="0.01" placeholder="30000.00" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />

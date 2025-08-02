@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -16,22 +17,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { initialArchivedOrders } from "@/lib/data";
 import type { Order } from "@/lib/types";
 import { format } from "date-fns";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { appConfig } from "@/lib/config";
+import { getArchivedOrders } from "@/app/actions";
 
 export function ArchiveDashboard() {
-  const [archivedOrders, setArchivedOrders] = React.useState<Order[]>(initialArchivedOrders);
+  const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
   const [searchTerm, setSearchTerm] = React.useState("");
+
+  React.useEffect(() => {
+    getArchivedOrders().then(setArchivedOrders);
+  }, []);
 
   const filteredOrders = React.useMemo(() => {
     if (!searchTerm) return archivedOrders;
     return archivedOrders.filter(order => 
         order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.tableNumber.toString().includes(searchTerm)
+        String(order.tableNumber).includes(searchTerm)
     );
   }, [searchTerm, archivedOrders]);
 
@@ -71,7 +76,7 @@ export function ArchiveDashboard() {
                     <TableCell className="font-medium">{order.id}</TableCell>
                     <TableCell>{order.tableNumber}</TableCell>
                     <TableCell>
-                      {format(order.createdAt, "PPP p")}
+                      {format(new Date(order.createdAt), "PPP p")}
                     </TableCell>
                     <TableCell>
                       {order.items.map(i => i.quantity).reduce((a, b) => a + b, 0)}

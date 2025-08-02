@@ -1,11 +1,13 @@
 
 export type OrderStatus = "received" | "preparing" | "ready" | "served" | "archived";
 
+export type MenuCategory = "Appetizers" | "Main Courses" | "Desserts" | "Beverages" | "Breads" | "Rice & Biryani" | "Indian Chinese";
+
 export type MenuItem = {
   id: string;
   name: string;
   price: number;
-  category: "Appetizers" | "Main Courses" | "Desserts" | "Beverages";
+  category: MenuCategory;
   description?: string;
   image?: string;
   "data-ai-hint"?: string;

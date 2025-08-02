@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview
  * This file contains the LoyaltyService, which is responsible for
@@ -6,7 +7,7 @@
 
 import type { Customer } from '@/lib/types';
 
-const POINTS_PER_DOLLAR = 0.1; // 1 point for every $10 spent
+const POINTS_PER_CURRENCY_UNIT = 0.01; // 1 point for every ₹100 spent
 
 class LoyaltyService {
   /**
@@ -18,7 +19,7 @@ class LoyaltyService {
    * @returns An object containing the updated customer and the points earned.
    */
   addPointsForOrder(customer: Customer, orderTotal: number): { updatedCustomer: Customer; pointsEarned: number } {
-    const pointsEarned = Math.floor(orderTotal * POINTS_PER_DOLLAR);
+    const pointsEarned = Math.floor(orderTotal * POINTS_PER_CURRENCY_UNIT);
     
     if (pointsEarned <= 0) {
       return { updatedCustomer: customer, pointsEarned: 0 };
@@ -36,3 +37,5 @@ class LoyaltyService {
 }
 
 export const loyaltyService = new LoyaltyService();
+
+    

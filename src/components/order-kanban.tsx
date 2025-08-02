@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { OrderForm } from "@/components/order-form";
-import { menuItems as allMenuItems } from "@/lib/data";
-import type { Order, OrderStatus, Customer } from "@/lib/types";
+import type { Order, OrderStatus, Customer, MenuItem } from "@/lib/types";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,9 +15,7 @@ import { BillView } from "./bill-view";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { csvRepository } from "@/services/csv-repository";
-import { loyaltyService } from "@/services/loyalty-service";
-import { whatsappService } from "@/services/whatsapp-service";
+import { getActiveOrders, getArchivedOrders, getCustomers, getMenuItems, saveAllOrders, createNewOrder } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { appConfig } from "@/lib/config";
 
@@ -29,7 +26,7 @@ const statusConfig: Record<
   received: { title: "Received", icon: Clock, nextStatus: "preparing", color: "bg-blue-500" },
   preparing: { title: "Preparing", icon: Utensils, nextStatus: "ready", color: "bg-yellow-500" },
   ready: { title: "Ready for Pickup", icon: CheckCircle, nextStatus: "archived", color: "bg-green-500" },
-  served: { title: "Served", icon: Archive, color: "bg-gray-500" }, // This is now effectively the archived state
+  served: { title: "Served", icon: Archive, color: "bg-gray-500" },
   archived: { title: "Archived", icon: Archive, color: "bg-gray-500" },
 };
 
@@ -39,6 +36,7 @@ export function OrderKanban() {
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
   const [allCustomers, setAllCustomers] = React.useState<Customer[]>([]);
+  const [allMenuItems, setAllMenuItems] = React.useState<MenuItem[]>([]);
   const [isSheetOpen, setSheetOpen] = React.useState(false);
   const [printingOrder, setPrintingOrder] = React.useState<Order | null>(null);
   const [discountOrder, setDiscountOrder] = React.useState<Order | null>(null);
@@ -47,73 +45,55 @@ export function OrderKanban() {
 
   React.useEffect(() => {
     Promise.all([
-      csvRepository.getActiveOrders(),
-      csvRepository.getArchivedOrders(),
-      csvRepository.getCustomers()
-    ]).then(([active, archived, customers]) => {
-      setOrders(active);
-      setArchivedOrders(archived);
+      getActiveOrders(),
+      getArchivedOrders(),
+      getCustomers(),
+      getMenuItems()
+    ]).then(([active, archived, customers, menuItems]) => {
+      setOrders(active.map(o => ({...o, createdAt: new Date(o.createdAt)})));
+      setArchivedOrders(archived.map(o => ({...o, createdAt: new Date(o.createdAt)})));
       setAllCustomers(customers);
+      setAllMenuItems(menuItems);
     })
   }, []);
 
-  const handleUpdateStatus = (orderId: string, newStatus: OrderStatus) => {
+  const handleUpdateStatus = React.useCallback((orderId: string, newStatus: OrderStatus) => {
+    let newActiveOrders = [...orders];
+    let newArchivedOrders = [...archivedOrders];
+
     if (newStatus === 'archived') {
-        const orderToArchive = orders.find(o => o.id === orderId);
+        const orderToArchive = newActiveOrders.find(o => o.id === orderId);
         if(orderToArchive) {
-            const newArchivedOrders = [{...orderToArchive, status: 'archived'}, ...archivedOrders];
-            const newActiveOrders = orders.filter(o => o.id !== orderId);
-            setArchivedOrders(newArchivedOrders);
-            setOrders(newActiveOrders);
-            csvRepository.saveAllOrders(newActiveOrders, newArchivedOrders);
+            newArchivedOrders = [{...orderToArchive, status: 'archived'}, ...newArchivedOrders];
+            newActiveOrders = newActiveOrders.filter(o => o.id !== orderId);
         }
     } else {
-        const newActiveOrders = orders.map((order) =>
+        newActiveOrders = newActiveOrders.map((order) =>
             order.id === orderId ? { ...order, status: newStatus } : order
         );
-        setOrders(newActiveOrders);
-        csvRepository.saveAllOrders(newActiveOrders, archivedOrders);
     }
-  };
-
-  const handleNewOrder = async (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
-    let finalOrderData = { ...newOrderData };
-    let updatedCustomers = [...allCustomers];
-    
-    // Handle Loyalty Points
-    if (newOrderData.customerId) {
-        const customer = allCustomers.find(c => c.id === newOrderData.customerId);
-        if (customer) {
-            const { updatedCustomer, pointsEarned } = loyaltyService.addPointsForOrder(customer, newOrderData.total);
-            finalOrderData.pointsEarned = pointsEarned;
-            
-            // Send WhatsApp confirmation
-            whatsappService.sendOrderConfirmation(customer, finalOrderData as Order);
-
-            // Update customer in state and save
-            updatedCustomers = allCustomers.map(c => c.id === customer.id ? updatedCustomer : c);
-            setAllCustomers(updatedCustomers);
-            await csvRepository.saveCustomers(updatedCustomers);
-
-             toast({
-                title: "Loyalty Points Added!",
-                description: `${customer.name} earned ${pointsEarned} points.`,
-            });
-        }
-    }
-
-    const newOrder: Order = {
-        ...finalOrderData,
-        id: `ORD${(Math.random() * 1000).toFixed(0).padStart(3, '0')}`,
-        createdAt: new Date(),
-    };
-    const newActiveOrders = [newOrder, ...orders];
     setOrders(newActiveOrders);
-    csvRepository.saveAllOrders(newActiveOrders, archivedOrders);
-    setSheetOpen(false);
-  }
+    setArchivedOrders(newArchivedOrders);
+    saveAllOrders(newActiveOrders, newArchivedOrders);
+  }, [orders, archivedOrders]);
 
-  const handleApplyDiscount = () => {
+  const handleNewOrder = React.useCallback(async (newOrderData: Omit<Order, 'id' | 'createdAt'>) => {
+    const { newActiveOrders, updatedCustomers, newOrder } = await createNewOrder(newOrderData, orders, archivedOrders, allCustomers);
+
+    setOrders(newActiveOrders.map(o => ({...o, createdAt: new Date(o.createdAt)})));
+    setAllCustomers(updatedCustomers);
+    
+    if (newOrder.pointsEarned) {
+         toast({
+            title: "Loyalty Points Added!",
+            description: `${newOrder.customerName} earned ${newOrder.pointsEarned} points.`,
+        });
+    }
+
+    setSheetOpen(false);
+  }, [orders, archivedOrders, allCustomers, toast]);
+
+  const handleApplyDiscount = React.useCallback(() => {
     if (!discountOrder) return;
     const discountValue = Math.max(0, Math.min(appConfig.maxDiscount, discountPercentage));
     
@@ -134,10 +114,10 @@ export function OrderKanban() {
         return o;
     });
     setOrders(newActiveOrders);
-    csvRepository.saveAllOrders(newActiveOrders, archivedOrders);
+    saveAllOrders(newActiveOrders, archivedOrders);
     setDiscountOrder(null);
     setDiscountPercentage(0);
-  }
+  }, [discountOrder, discountPercentage, orders, archivedOrders, toast]);
   
   const groupedOrders = React.useMemo(() => {
     return orders.reduce((acc, order) => {
@@ -175,7 +155,7 @@ export function OrderKanban() {
               <Badge variant="secondary">{groupedOrders[status]?.length || 0}</Badge>
             </div>
             <div className="space-y-4 h-full min-h-[200px] bg-muted/50 rounded-lg p-4">
-              {groupedOrders[status]?.map((order) => (
+              {groupedOrders[status]?.sort((a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((order) => (
                 <Card key={order.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col">
                   <CardHeader>
                     <CardTitle className="flex flex-wrap justify-between items-center gap-2">
@@ -300,4 +280,3 @@ export function OrderKanban() {
 
     </div>
   );
-

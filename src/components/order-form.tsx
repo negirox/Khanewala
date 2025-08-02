@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -70,7 +71,7 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
     [orderItems]
   );
 
-  const handleAddItem = (menuItem: MenuItem) => {
+  const handleAddItem = React.useCallback((menuItem: MenuItem) => {
     setOrderItems((prev) => {
       const existingItem = prev.find(
         (item) => item.menuItem.id === menuItem.id
@@ -84,21 +85,21 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
       }
       return [...prev, { menuItem, quantity: 1 }];
     });
-  };
+  }, []);
 
-  const handleRemoveItem = (menuItemId: string) => {
+  const handleRemoveItem = React.useCallback((menuItemId: string) => {
      setOrderItems((prev) => prev.filter(item => item.menuItem.id !== menuItemId));
-  }
+  }, []);
 
-  const handleUpdateQuantity = (menuItemId: string, quantity: number) => {
+  const handleUpdateQuantity = React.useCallback((menuItemId: string, quantity: number) => {
     if (quantity < 1) {
         handleRemoveItem(menuItemId);
     } else {
         setOrderItems((prev) => prev.map(item => item.menuItem.id === menuItemId ? { ...item, quantity } : item));
     }
-  }
+  }, [handleRemoveItem]);
 
-  const handleGetAiSuggestions = async () => {
+  const handleGetAiSuggestions = React.useCallback(async () => {
     if (orderItems.length === 0) {
       toast({
         variant: "destructive",
@@ -113,21 +114,30 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
       .map((item) => `${item.quantity}x ${item.menuItem.name}`)
       .join(", ");
 
-    const result = await getMenuRecommendations({ orderSummary });
-    setIsAiLoading(false);
-
-    if (result.success && result.data) {
-        setAiSuggestion(result.data);
-    } else {
-      toast({
-        variant: "destructive",
-        title: "AI Suggestion Error",
-        description: result.error,
-      });
+    try {
+        const result = await getMenuRecommendations({ orderSummary });
+        if (result.success && result.data) {
+            setAiSuggestion(result.data);
+        } else {
+          toast({
+            variant: "destructive",
+            title: "AI Suggestion Error",
+            description: result.error,
+          });
+        }
+    } catch (error) {
+        console.error("AI Suggestion failed:", error);
+        toast({
+            variant: "destructive",
+            title: "AI Suggestion Error",
+            description: "An unexpected error occurred.",
+        });
+    } finally {
+        setIsAiLoading(false);
     }
-  };
+  }, [orderItems, toast]);
 
-  const handleSubmit = () => {
+  const handleSubmit = React.useCallback(() => {
     if (orderItems.length === 0 || tableNumber === "") {
         toast({
             variant: "destructive",
@@ -146,12 +156,14 @@ export function OrderForm({ allMenuItems, allCustomers, onSubmit }: OrderFormPro
         customerId: selectedCustomer?.id,
         customerName: selectedCustomer?.name,
     });
-  }
+  }, [orderItems, tableNumber, onSubmit, subtotal, selectedCustomer, toast]);
   
-  const menuByCategory = allMenuItems.reduce((acc, item) => {
-    (acc[item.category] = acc[item.category] || []).push(item);
-    return acc;
-  }, {} as Record<string, MenuItem[]>);
+  const menuByCategory = React.useMemo(() => {
+    return allMenuItems.reduce((acc, item) => {
+      (acc[item.category] = acc[item.category] || []).push(item);
+      return acc;
+    }, {} as Record<string, MenuItem[]>);
+  }, [allMenuItems]);
 
 
   return (

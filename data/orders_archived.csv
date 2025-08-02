@@ -1,2 +1,3 @@
-id,tableNumber,items,status,subtotal,discount,total,createdAt
-ORD005,2,"[{""menuItem"":{""id"":""2"",""name"":""Pakora"",""price"":6.99,""category"":""Appetizers"",""description"":""Mixed vegetables dipped in gram flour batter and deep-fried."",""image"":""https://placehold.co/600x400.png""},""quantity"":1},{""menuItem"":{""id"":""4"",""name"":""Palak Paneer"",""price"":14.99,""category"":""Main Courses"",""description"":""Indian cheese cubes in a smooth spinach sauce."",""image"":""https://placehold.co/600x400.png""},""quantity"":1}]",archived,21.98,0,21.98,
+id,tableNumber,items,status,subtotal,discount,total,createdAt,customerId,customerName,pointsEarned
+ORD005,10,"[{""menuItem"":{""id"":""8"",""name"":""Mango Lassi"",""price"":150,""category"":""Beverages""},""quantity"":2}]",archived,300,0,300,2024-08-01T10:00:00.000Z,,,
+ORD006,2,"[{""menuItem"":{""id"":""3"",""name"":""Butter Chicken"",""price"":450,""category"":""Main Courses""},""quantity"":1},{""menuItem"":{""id"":""1"",""name"":""Samosa"",""price"":60,""category"":""Appetizers""},""quantity"":2}]",archived,570,10,513,2024-07-31T18:30:00.000Z,,,

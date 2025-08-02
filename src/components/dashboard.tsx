@@ -18,24 +18,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { initialArchivedOrders, menuItems as allMenuItems } from "@/lib/data";
 import type { Order, MenuItem } from "@/lib/types";
 import { format, subDays, startOfDay } from "date-fns";
 import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart, ArrowUpDown } from "lucide-react";
 import { appConfig } from "@/lib/config";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { getArchivedOrders } from "@/app/actions";
 
-const chartColors = ["#2563eb", "#f97316", "#22c55e", "#ef4444", "#8b5cf6"];
+const chartColors = ["#2563eb", "#f97316", "#22c55e", "#ef4444", "#8b5cf6", "#14b8a6", "#d946ef"];
 
 
 export function Dashboard() {
-  const [archivedOrders, setArchivedOrders] =
-    React.useState<Order[]>(initialArchivedOrders);
+  const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof Order; direction: 'ascending' | 'descending' } | null>({ key: 'createdAt', direction: 'descending' });
+
+  React.useEffect(() => {
+    getArchivedOrders().then(orders => setArchivedOrders(orders.map(o => ({...o, createdAt: new Date(o.createdAt)}))));
+  }, []);
 
 
   const stats = React.useMemo(() => {
@@ -58,7 +61,7 @@ export function Dashboard() {
         const dayString = format(dayStart, "MMM d");
         
         const total = archivedOrders
-            .filter(order => format(order.createdAt, "MMM d") === dayString)
+            .filter(order => format(new Date(order.createdAt), "MMM d") === dayString)
             .reduce((sum, order) => sum + order.total, 0);
 
         data.push({ date: format(dayStart, "eee"), total });
@@ -83,6 +86,14 @@ export function Dashboard() {
 
   }, [archivedOrders]);
 
+  const requestSort = React.useCallback((key: keyof Order) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  }, [sortConfig]);
+
   const sortedAndFilteredOrders = React.useMemo(() => {
     let sortableItems = [...archivedOrders];
 
@@ -94,10 +105,13 @@ export function Dashboard() {
     
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+
+        if (aValue < bValue) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (aValue > bValue) {
           return sortConfig.direction === 'ascending' ? 1 : -1;
         }
         return 0;
@@ -107,15 +121,7 @@ export function Dashboard() {
     return sortableItems;
   }, [archivedOrders, searchTerm, sortConfig]);
 
-  const requestSort = (key: keyof Order) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const getSortIcon = (key: keyof Order) => {
+  const getSortIcon = React.useCallback((key: keyof Order) => {
     if (!sortConfig || sortConfig.key !== key) {
       return <ArrowUpDown className="h-4 w-4" />;
     }
@@ -123,7 +129,7 @@ export function Dashboard() {
       return <ArrowUpDown className="h-4 w-4 text-primary" />;
     }
     return <ArrowUpDown className="h-4 w-4 text-primary" />;
-  }
+  }, [sortConfig]);
 
 
   return (
@@ -188,7 +194,11 @@ export function Dashboard() {
                         <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `${appConfig.currency}${value}`} />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="total" fill="var(--color-primary)" radius={4} />
+                        <Bar dataKey="total" radius={4}>
+                            {dailyRevenue.map((_entry, index) => (
+                                <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                            ))}
+                        </Bar>
                     </RechartsBarChart>
                 </ChartContainer>
             </CardContent>
@@ -268,7 +278,7 @@ export function Dashboard() {
                     <TableCell className="font-medium">{order.id}</TableCell>
                     <TableCell>{order.tableNumber}</TableCell>
                     <TableCell>
-                      {format(order.createdAt, "HH:mm")}
+                      {format(new Date(order.createdAt), "HH:mm")}
                     </TableCell>
                     <TableCell>
                       {order.items.map(i => i.quantity).reduce((a, b) => a + b, 0)}
