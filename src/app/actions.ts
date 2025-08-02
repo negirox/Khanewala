@@ -34,6 +34,10 @@ export async function getArchivedOrders(): Promise<Order[]> {
 }
 
 export async function saveAllOrders(activeOrders: Order[], archivedOrders: Order[]): Promise<void> {
+    // Before saving, check if the CSV archive needs to be rotated.
+    if (appConfig.dataSource === 'csv') {
+        await csvRepository.checkAndRotateArchive();
+    }
     return dataRepository.saveAllOrders(activeOrders, archivedOrders);
 }
 
@@ -201,5 +205,24 @@ export async function validateSuperAdminLogin(credentials: {username: string, pa
     } catch (error) {
         console.error("Error reading admin config:", error);
         return { success: false };
+    }
+}
+
+// Archive File Size
+export async function getArchiveFileSize(): Promise<{size: number; limit: number}> {
+    if (appConfig.dataSource !== 'csv') {
+        return { size: 0, limit: appConfig.archiveFileLimit };
+    }
+    try {
+        const stats = await fs.stat(csvRepository.getArchivePath());
+        return { size: stats.size, limit: appConfig.archiveFileLimit };
+    } catch (error: any) {
+        // If the file doesn't exist, its size is 0.
+        if (error.code === 'ENOENT') {
+            return { size: 0, limit: appConfig.archiveFileLimit };
+        }
+        console.error("Error getting archive file size:", error);
+        // Return a non-zero limit to avoid division by zero errors on the client.
+        return { size: 0, limit: appConfig.archiveFileLimit };
     }
 }
