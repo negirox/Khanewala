@@ -27,8 +27,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import type { MenuItem, OrderItem, Order, Customer, Table } from "@/lib/types";
 import Image from "next/image";
-import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
-import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "./ui/command";
 import { appConfig } from "@/lib/config";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
@@ -116,6 +114,15 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
   const availableTables = React.useMemo(() => {
     return allTables.filter(table => table.status === 'available');
   }, [allTables]);
+  
+  const handleCustomerSelect = (customerId: string) => {
+      if (customerId === "walk-in") {
+          setSelectedCustomer(null);
+      } else {
+          const customer = allCustomers.find(c => c.id === customerId);
+          setSelectedCustomer(customer || null);
+      }
+  };
 
 
   return (
@@ -190,16 +197,19 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
                 </div>
                  <div className="space-y-1">
                     <Label>Customer (Optional)</Label>
-                    {selectedCustomer ? (
-                        <div className="flex items-center justify-between p-2 rounded-md bg-muted">
-                            <span className="font-medium">{selectedCustomer.name}</span>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedCustomer(null)}>
-                                <X className="h-4 w-4"/>
-                            </Button>
-                        </div>
-                    ) : (
-                        <CustomerSearchPopover customers={allCustomers} onSelectCustomer={setSelectedCustomer} />
-                    )}
+                    <Select onValueChange={handleCustomerSelect} value={selectedCustomer?.id || "walk-in"}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a customer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="walk-in">Walk-in / New Customer</SelectItem>
+                             {allCustomers.map((customer) => (
+                                <SelectItem key={customer.id} value={customer.id}>
+                                    {customer.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                  </div>
             </CardHeader>
             <CardContent className="flex-1 p-0 min-h-0">
@@ -247,42 +257,4 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
       </div>
     </>
   );
-}
-
-function CustomerSearchPopover({ customers, onSelectCustomer }: { customers: Customer[], onSelectCustomer: (customer: Customer) => void }) {
-    const [open, setOpen] = React.useState(false);
-
-    const handleSelect = (customer: Customer) => {
-        onSelectCustomer(customer);
-        setOpen(false);
-    }
-
-    return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-start">
-                    Search for a customer...
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                <Command>
-                    <CommandInput placeholder="Search by name, email..." />
-                    <CommandList>
-                        <CommandEmpty>No customer found.</CommandEmpty>
-                        <CommandGroup>
-                            {customers.map((customer) => (
-                                <CommandItem
-                                    key={customer.id}
-                                    value={`${customer.name} ${customer.email}`}
-                                    onSelect={() => handleSelect(customer)}
-                                >
-                                    {customer.name}
-                                </CommandItem>
-                            ))}
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
-            </PopoverContent>
-        </Popover>
-    );
 }
