@@ -2,7 +2,6 @@
 "use client";
 
 import * as React from "react";
-import dynamic from "next/dynamic";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -26,9 +25,6 @@ import { Separator } from "./ui/separator";
 import { DateRange } from "react-day-picker";
 import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-
-const EditStaffDialog = dynamic(() => import('./staff-management').then(mod => mod.EditStaffDialog), { ssr: false });
-const StaffTransactionDialog = dynamic(() => import('./staff-management').then(mod => mod.StaffTransactionDialog), { ssr: false });
 
 const roleColors: Record<StaffMember['role'], string> = {
     Manager: "bg-red-500 text-white",

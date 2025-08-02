@@ -2,7 +2,6 @@
 "use client";
 
 import * as React from "react";
-import dynamic from "next/dynamic";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -17,8 +16,6 @@ import { Mail, Phone, PlusCircle, Edit, Trash2, Star, Upload } from "lucide-reac
 import { getCustomers, saveCustomers } from "@/app/actions";
 import { cn } from "@/lib/utils";
 
-
-const EditCustomerDialog = dynamic(() => import('./customer-management').then(mod => mod.EditCustomerDialog), { ssr: false });
 
 const emptyCustomer: Customer = { id: "", name: "", email: "", phone: "", avatar: "", loyaltyPoints: 0 };
 
@@ -147,7 +144,7 @@ const formSchema = z.object({
     loyaltyPoints: z.coerce.number().min(0, "Loyalty points cannot be negative."),
 });
 
-export function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, customer: Customer | null, onSave: (data: Customer) => void}) {
+function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, customer: Customer | null, onSave: (data: Customer) => void}) {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: customer || emptyCustomer,
