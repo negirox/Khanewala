@@ -24,9 +24,11 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { appConfig } from "@/lib/config";
 import { getArchivedOrders, getArchiveFileSize } from "@/app/actions";
-import { ArrowUpDown, ChevronLeft, ChevronRight, AlertTriangle, Archive } from "lucide-react";
+import { ArrowUpDown, ChevronLeft, ChevronRight, AlertTriangle, Archive, Printer } from "lucide-react";
 import { Progress } from "./ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle as DialogTitlePrimitive } from "./ui/dialog";
+import { BillView } from "./bill-view";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -81,6 +83,7 @@ export function ArchiveDashboard() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof Order; direction: 'ascending' | 'descending' } | null>({ key: 'createdAt', direction: 'descending' });
   const [currentPage, setCurrentPage] = React.useState(1);
+  const [printingOrder, setPrintingOrder] = React.useState<Order | null>(null);
 
   React.useEffect(() => {
     getArchivedOrders().then(orders => setArchivedOrders(orders.map(o => ({ ...o, createdAt: new Date(o.createdAt) }))));
@@ -182,6 +185,7 @@ export function ArchiveDashboard() {
                   <TableHead className="text-right">
                     <Button variant="ghost" onClick={() => requestSort('total')}>Total Amount {getSortIcon('total')}</Button>
                   </TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -202,11 +206,16 @@ export function ArchiveDashboard() {
                       <TableCell className="text-right font-medium">
                         {appConfig.currency}{order.total.toFixed(2)}
                       </TableCell>
+                      <TableCell className="text-right">
+                         <Button variant="ghost" size="icon" onClick={() => setPrintingOrder(order)}>
+                            <Printer className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       No matching orders found.
                     </TableCell>
                   </TableRow>
@@ -240,6 +249,15 @@ export function ArchiveDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!printingOrder} onOpenChange={(open) => !open && setPrintingOrder(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitlePrimitive>Print Bill</DialogTitlePrimitive>
+          </DialogHeader>
+          {printingOrder && <BillView order={printingOrder} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
