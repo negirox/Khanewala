@@ -1,3 +1,4 @@
-id,tableNumber,items,status,subtotal,discount,total,createdAt,customerId,customerName,pointsEarned
-ORD001,3,"[{""quantity"":2,""menuItem"":{""id"":""3""}},{""quantity"":2,""menuItem"":{""id"":""7""}}]",preparing,1140,10,1026,2024-08-01T12:00:00.000Z,CUST01,John Doe,
-ORD004,8,"[{""quantity"":4,""menuItem"":{""id"":""6""}}]",ready,400,0,400,2024-08-01T11:55:00.000Z,CUST02,Jane Smith,
+items,tableNumber,status,subtotal,discount,total,id,createdAt
+"[{""quantity"":2,""menuItem"":{""id"":""ITEM002""}},{""quantity"":1,""menuItem"":{""id"":""ITEM003""}}]",5,received,950,0,950,ORD-1754137054606-121,2025-08-02T12:17:34.606Z
+"[{""quantity"":2,""menuItem"":{""id"":""3""}},{""quantity"":2,""menuItem"":{""id"":""7""}}]",3,preparing,1140,10,1026,ORD001,2024-08-01T12:00:00.000Z
+"[{""quantity"":4,""menuItem"":{""id"":""6""}}]",8,ready,400,0,400,ORD004,2024-08-01T11:55:00.000Z

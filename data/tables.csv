@@ -3,7 +3,7 @@ id,status,capacity,orderId
 2,reserved,2,
 3,occupied,4,ORD001
 4,available,6,
-5,available,2,
+5,occupied,2,ORD-1754137054606-121
 6,available,4,
 7,reserved,8,
 8,occupied,2,ORD004

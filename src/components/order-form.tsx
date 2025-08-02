@@ -203,7 +203,7 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
                     )}
                  </div>
             </CardHeader>
-            <CardContent className="flex-1 p-0">
+            <CardContent className="flex-1 flex flex-col p-0">
               <ScrollArea className="h-full">
               <div className="p-6 pt-0">
                 {orderItems.length > 0 ? (
@@ -285,3 +285,5 @@ function CustomerSearchPopover({ customers, onSelectCustomer }: { customers: Cus
         </Popover>
     );
 }
+
+    
