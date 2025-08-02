@@ -183,7 +183,7 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
       </DialogHeader>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
         {/* Left Side: Menu */}
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full min-h-0">
           <h3 className="font-semibold font-headline text-lg mb-2">Menu</h3>
            <ScrollArea className="flex-1 pr-4 -mr-4 border rounded-md">
             <Accordion type="multiple" defaultValue={Object.keys(menuByCategory)} className="w-full">
@@ -215,7 +215,7 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
         </div>
 
         {/* Right Side: Order Summary */}
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full min-h-0">
           <h3 className="font-semibold font-headline text-lg mb-2">Current Order</h3>
           <Card className="flex-1 flex flex-col">
             <CardHeader className="space-y-4">
