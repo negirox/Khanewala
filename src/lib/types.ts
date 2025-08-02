@@ -8,6 +8,7 @@ export type MenuItem = {
   category: "Appetizers" | "Main Courses" | "Desserts" | "Beverages";
   description?: string;
   image?: string;
+  "data-ai-hint"?: string;
 };
 
 export type OrderItem = {
