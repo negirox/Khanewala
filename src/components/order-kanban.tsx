@@ -162,9 +162,9 @@ export function OrderKanban() {
               {groupedOrders[status]?.sort((a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((order) => (
                 <Card key={order.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col">
                   <CardHeader>
-                    <CardTitle className="flex flex-wrap justify-between items-center gap-2">
+                    <CardTitle className="flex flex-wrap justify-between items-center gap-2 text-base">
                         <div className="flex items-center gap-x-3">
-                             <span>{order.id}{order.tableNumber && ` - Table ${order.tableNumber}`}</span>
+                             <span className="font-bold">{order.id}{order.tableNumber && ` - T${order.tableNumber}`}</span>
                              {(order.status === 'received' || order.status === 'preparing') && (
                                  <AlertDialog>
                                     <AlertDialogTrigger asChild>
@@ -187,7 +187,7 @@ export function OrderKanban() {
                                 </AlertDialog>
                              )}
                         </div>
-                      <span className="text-sm font-normal text-muted-foreground whitespace-nowrap">
+                      <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
                         {formatDistanceToNow(order.createdAt, { addSuffix: true })}
                       </span>
                     </CardTitle>
@@ -199,7 +199,7 @@ export function OrderKanban() {
                     )}
                   </CardHeader>
                   <CardContent className="flex-grow">
-                    <ul>
+                    <ul className="text-xs space-y-1">
                       {order.items.map((item, index) => (
                         <li key={index} className="flex justify-between">
                           <span className='pr-2'>{item.menuItem.name}</span>
@@ -208,17 +208,18 @@ export function OrderKanban() {
                       ))}
                     </ul>
                     <div className="border-t my-2" />
-                    <div className="space-y-1 text-sm">
+                    <div className="space-y-1 text-xs">
                         <div className="flex justify-between"><span>Subtotal:</span> <span>{appConfig.currency}{order.subtotal.toFixed(2)}</span></div>
                         {order.discount > 0 && <div className="flex justify-between text-destructive"><span>Discount:</span> <span>-{order.discount}%</span></div>}
-                        <div className="flex justify-between font-bold text-base"><span>Total:</span> <span>{appConfig.currency}{order.total.toFixed(2)}</span></div>
-                        {order.pointsEarned && order.pointsEarned > 0 && <div className="flex justify-between text-yellow-500"><span>Points Earned:</span> <span>+{order.pointsEarned}</span></div>}
+                        <div className="flex justify-between font-bold text-sm"><span>Total:</span> <span>{appConfig.currency}{order.total.toFixed(2)}</span></div>
+                        {order.pointsEarned && order.pointsEarned > 0 && <div className="flex justify-between text-yellow-500 text-xs"><span>Points Earned:</span> <span>+{order.pointsEarned}</span></div>}
                     </div>
                   </CardContent>
                    <CardFooter className="flex flex-col gap-2">
                      <div className="flex w-full flex-col sm:flex-row gap-2">
                          <Button
                           variant="outline"
+                          size="sm"
                           className="flex-1"
                           onClick={() => {
                             setDiscountOrder(order);
@@ -230,6 +231,7 @@ export function OrderKanban() {
                         </Button>
                         <Button
                           variant="outline"
+                           size="sm"
                           className="flex-1"
                           onClick={() => setPrintingOrder(order)}
                         >
@@ -239,6 +241,7 @@ export function OrderKanban() {
                      </div>
                     {statusConfig[status].nextStatus && (
                       <Button
+                        size="sm"
                         variant="secondary"
                         className="w-full"
                         onClick={() =>
@@ -307,3 +310,5 @@ export function OrderKanban() {
 
     </div>
   );
+
+    
