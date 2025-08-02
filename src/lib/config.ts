@@ -7,6 +7,7 @@ type AppConfig = {
     logo: LucideIcon;
     currency: string;
     gstNumber?: string;
+    dataSource: 'csv' | 'api';
     maxDiscount: number;
     enabledAdminSections: {
         dashboard: boolean;
@@ -26,6 +27,7 @@ export const appConfig: AppConfig = {
     logo: UtensilsCrossed,
     currency: "Rs.",
     gstNumber: "27ABCDE1234F1Z5",
+    dataSource: "csv",
     maxDiscount: 25,
     enabledAdminSections: {
         dashboard: true,

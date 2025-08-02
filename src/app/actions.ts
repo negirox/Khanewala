@@ -1,35 +1,40 @@
 
 'use server';
 
-import { csvRepository } from '@/services/csv-repository';
 import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction, StaffTransactionType } from '@/lib/types';
 import { loyaltyService } from '@/services/loyalty-service';
 import { whatsappService } from '@/services/whatsapp-service';
 import Papa from 'papaparse';
 import fs from 'fs/promises';
 import path from 'path';
+import { csvRepository } from '@/services/csv-repository';
+import { apiRepository } from '@/services/api-repository';
+import { appConfig } from '@/lib/config';
+
+// Data Repository Switch
+const dataRepository = appConfig.dataSource === 'csv' ? csvRepository : apiRepository;
 
 
 // Menu Items
 export async function getMenuItems(): Promise<MenuItem[]> {
-  return csvRepository.getMenuItems();
+  return dataRepository.getMenuItems();
 }
 
 export async function saveMenuItems(items: MenuItem[]): Promise<void> {
-  return csvRepository.saveMenuItems(items);
+  return dataRepository.saveMenuItems(items);
 }
 
 // Orders
 export async function getActiveOrders(): Promise<Order[]> {
-  return csvRepository.getActiveOrders();
+  return dataRepository.getActiveOrders();
 }
 
 export async function getArchivedOrders(): Promise<Order[]> {
-    return csvRepository.getArchivedOrders();
+    return dataRepository.getArchivedOrders();
 }
 
 export async function saveAllOrders(activeOrders: Order[], archivedOrders: Order[]): Promise<void> {
-    return csvRepository.saveAllOrders(activeOrders, archivedOrders);
+    return dataRepository.saveAllOrders(activeOrders, archivedOrders);
 }
 
 export async function createNewOrder(newOrderData: Omit<Order, 'id' | 'createdAt'>, activeOrders: Order[], archivedOrders: Order[], allCustomers: Customer[]) {
@@ -50,7 +55,7 @@ export async function createNewOrder(newOrderData: Omit<Order, 'id' | 'createdAt
 
             // Update customer in state and save
             updatedCustomers = allCustomers.map(c => c.id === customer.id ? updatedCustomer : c);
-            await csvRepository.saveCustomers(updatedCustomers);
+            await dataRepository.saveCustomers(updatedCustomers);
         }
     }
 
@@ -61,7 +66,7 @@ export async function createNewOrder(newOrderData: Omit<Order, 'id' | 'createdAt
         createdAt: new Date(),
     };
     const newActiveOrders = [newOrder, ...activeOrders];
-    await csvRepository.saveAllOrders(newActiveOrders, archivedOrders);
+    await dataRepository.saveAllOrders(newActiveOrders, archivedOrders);
 
     // Return the state that the client needs to update itself
     return { newActiveOrders, updatedCustomers, newOrder };
@@ -70,16 +75,16 @@ export async function createNewOrder(newOrderData: Omit<Order, 'id' | 'createdAt
 
 // Staff
 export async function getStaff(): Promise<StaffMember[]> {
-    return csvRepository.getStaff();
+    return dataRepository.getStaff();
 }
 
 export async function saveStaff(staff: StaffMember[]): Promise<void> {
-    return csvRepository.saveStaff(staff);
+    return dataRepository.saveStaff(staff);
 }
 
 // Staff Transactions
 export async function getStaffTransactions(): Promise<StaffTransaction[]> {
-    return csvRepository.getStaffTransactions();
+    return dataRepository.getStaffTransactions();
 }
 
 export async function addStaffTransaction(
@@ -96,7 +101,7 @@ export async function addStaffTransaction(
         date: new Date(),
     };
     const updatedTransactions = [...allTransactions, newTransaction];
-    await csvRepository.saveStaffTransactions(updatedTransactions);
+    await dataRepository.saveStaffTransactions(updatedTransactions);
 
     let updatedStaffMember = { ...staffMember };
 
@@ -106,7 +111,7 @@ export async function addStaffTransaction(
         updatedStaffMember.carryForwardBalance = remainingBalance;
         
         const updatedStaffList = allStaff.map(s => s.id === staffMember.id ? updatedStaffMember : s);
-        await csvRepository.saveStaff(updatedStaffList);
+        await dataRepository.saveStaff(updatedStaffList);
     }
     
     return { newTransaction, updatedStaffMember };
@@ -153,20 +158,20 @@ export async function generateStaffTransactionReport(
 
 // Tables
 export async function getTables(): Promise<Table[]> {
-    return csvRepository.getTables();
+    return dataRepository.getTables();
 }
 
 export async function saveTables(tables: Table[]): Promise<void> {
-    return csvRepository.saveTables(tables);
+    return dataRepository.saveTables(tables);
 }
 
 // Customers
 export async function getCustomers(): Promise<Customer[]> {
-    return csvRepository.getCustomers();
+    return dataRepository.getCustomers();
 }
 
 export async function saveCustomers(customers: Customer[]): Promise<void> {
-    return csvRepository.saveCustomers(customers);
+    return dataRepository.saveCustomers(customers);
 }
 
 // This was in the old actions file, keeping it here.

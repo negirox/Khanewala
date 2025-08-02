@@ -6,61 +6,91 @@
  * NOTE: This is a placeholder implementation. It currently uses mock data
  * for demonstration purposes and does not perform actual API calls.
  */
-import { menuItems, initialOrders, initialArchivedOrders, tables, initialStaff } from '@/lib/data';
-import type { MenuItem, Order, Table, StaffMember } from '@/lib/types';
+import type { MenuItem, Order, Table, StaffMember, Customer, StaffTransaction } from '@/lib/types';
 
-const API_BASE_URL = '/api'; // Example base URL
+// In-memory store for the mock API
+let mockMenuItems: MenuItem[] = [];
+let mockActiveOrders: Order[] = [];
+let mockArchivedOrders: Order[] = [];
+let mockTables: Table[] = [];
+let mockStaff: StaffMember[] = [];
+let mockCustomers: Customer[] = [];
+let mockStaffTransactions: StaffTransaction[] = [];
+
 
 class ApiRepository {
   // Menu Items
   async getMenuItems(): Promise<MenuItem[]> {
-    console.log('Fetching menu items from API...');
-    // Example: const response = await fetch(`${API_BASE_URL}/menu`);
-    // const data = await response.json();
-    // return data;
-    return Promise.resolve(menuItems);
+    console.log('API: Fetching menu items...');
+    return Promise.resolve(mockMenuItems);
   }
-
-  async addMenuItem(item: Omit<MenuItem, 'id'>): Promise<MenuItem> {
-    console.log('Adding menu item via API...', item);
-    const newItem = { ...item, id: `API_ITEM_${Date.now()}`};
-    // Example: const response = await fetch(`${API_BASE_URL}/menu`, { method: 'POST', body: JSON.stringify(item) });
-    return Promise.resolve(newItem);
+  async saveMenuItems(items: MenuItem[]): Promise<void> {
+    console.log('API: Saving menu items...');
+    mockMenuItems = items;
+    return Promise.resolve();
   }
 
   // Orders
   async getActiveOrders(): Promise<Order[]> {
-    console.log('Fetching active orders from API...');
-    return Promise.resolve(initialOrders);
+    console.log('API: Fetching active orders...');
+    return Promise.resolve(mockActiveOrders);
   }
   
   async getArchivedOrders(): Promise<Order[]> {
-    console.log('Fetching archived orders from API...');
-    return Promise.resolve(initialArchivedOrders);
+    console.log('API: Fetching archived orders...');
+    return Promise.resolve(mockArchivedOrders);
   }
 
-  async createOrder(order: Omit<Order, 'id' | 'createdAt'>): Promise<Order> {
-    console.log('Creating order via API...', order);
-    const newOrder: Order = {
-        ...order,
-        id: `API_ORD_${Date.now()}`,
-        createdAt: new Date(),
-    }
-    // Example: const response = await fetch(`${API_BASE_URL}/orders`, { method: 'POST', body: JSON.stringify(order) });
-    return Promise.resolve(newOrder);
+  async saveAllOrders(activeOrders: Order[], archivedOrders: Order[]): Promise<void> {
+      console.log('API: Saving all orders...');
+      mockActiveOrders = activeOrders;
+      mockArchivedOrders = archivedOrders;
+      return Promise.resolve();
   }
 
   // Staff
   async getStaff(): Promise<StaffMember[]> {
-    console.log('Fetching staff from API...');
-    return Promise.resolve(initialStaff);
+    console.log('API: Fetching staff...');
+    return Promise.resolve(mockStaff);
+  }
+  async saveStaff(staff: StaffMember[]): Promise<void> {
+      console.log('API: Saving staff...');
+      mockStaff = staff;
+      return Promise.resolve();
+  }
+
+  // Staff Transactions
+  async getStaffTransactions(): Promise<StaffTransaction[]> {
+      console.log('API: Fetching staff transactions...');
+      return Promise.resolve(mockStaffTransactions);
+  }
+  async saveStaffTransactions(transactions: StaffTransaction[]): Promise<void> {
+      console.log('API: Saving staff transactions...');
+      mockStaffTransactions = transactions;
+      return Promise.resolve();
   }
   
   // Tables
   async getTables(): Promise<Table[]> {
-      console.log('Fetching tables from API...');
-      return Promise.resolve(tables);
+      console.log('API: Fetching tables...');
+      return Promise.resolve(mockTables);
   }
+  async saveTables(tables: Table[]): Promise<void> {
+      console.log('API: Saving tables...');
+      mockTables = tables;
+      return Promise.resolve();
+  }
+
+  // Customers
+    async getCustomers(): Promise<Customer[]> {
+        console.log('API: Fetching customers...');
+        return Promise.resolve(mockCustomers);
+    }
+    async saveCustomers(customers: Customer[]): Promise<void> {
+        console.log('API: Saving customers...');
+        mockCustomers = customers;
+        return Promise.resolve();
+    }
 }
 
 export const apiRepository = new ApiRepository();

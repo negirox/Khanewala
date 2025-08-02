@@ -37,6 +37,7 @@ const formSchema = z.object({
   appName: z.string().min(1, "App name is required"),
   theme: z.enum(["default", "ocean", "sunset", "mint", "plum"]),
   font: z.enum(["pt-sans", "roboto-slab"]),
+  dataSource: z.enum(["csv", "api"]),
   enabledAdminSections: z.object({
     dashboard: z.boolean(),
     menu: z.boolean(),
@@ -70,6 +71,7 @@ export function SuperAdminSettings() {
       appName: appConfig.title,
       theme: "default",
       font: "pt-sans",
+      dataSource: appConfig.dataSource,
       enabledAdminSections: appConfig.enabledAdminSections,
       gstNumber: appConfig.gstNumber || "",
       currency: appConfig.currency,
@@ -214,54 +216,83 @@ export function SuperAdminSettings() {
               <Separator />
 
               <div>
-                <h3 className="text-lg font-medium mb-4">Financial Settings</h3>
-                <div className="space-y-4">
-                     <FormField
-                        control={form.control}
-                        name="gstNumber"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>GST Number</FormLabel>
-                            <FormControl>
-                                <Input placeholder="e.g. 27ABCDE1234F1Z5" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="currency"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Currency Symbol</FormLabel>
-                            <FormControl>
-                                <Input placeholder="e.g. Rs." {...field} />
-                            </FormControl>
-                             <FormDescription>
-                                The currency symbol to be used across the application (e.g. $, €, Rs.).
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="maxDiscount"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Maximum Discount (%)</FormLabel>
-                            <FormControl>
-                                <Input type="number" placeholder="e.g. 25" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                                The highest discount percentage that can be applied to an order.
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                </div>
+                  <h3 className="text-lg font-medium mb-4">Data &amp; Financials</h3>
+                  <div className="space-y-4">
+                      <FormField
+                          control={form.control}
+                          name="dataSource"
+                          render={({ field }) => (
+                              <FormItem className="space-y-3">
+                                  <FormLabel>Data Source</FormLabel>
+                                  <FormControl>
+                                      <RadioGroup
+                                          onValueChange={field.onChange}
+                                          defaultValue={field.value}
+                                          className="flex flex-col space-y-1"
+                                      >
+                                          <FormItem className="flex items-center space-x-3 space-y-0">
+                                              <FormControl><RadioGroupItem value="csv" /></FormControl>
+                                              <FormLabel className="font-normal">CSV Files (Local)</FormLabel>
+                                          </FormItem>
+                                          <FormItem className="flex items-center space-x-3 space-y-0">
+                                              <FormControl><RadioGroupItem value="api" /></FormControl>
+                                              <FormLabel className="font-normal">Cloud API (Mock)</FormLabel>
+                                          </FormItem>
+                                      </RadioGroup>
+                                  </FormControl>
+                                  <FormDescription>
+                                      Choose where the application data is stored.
+                                  </FormDescription>
+                                  <FormMessage />
+                              </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="gstNumber"
+                          render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>GST Number</FormLabel>
+                                  <FormControl>
+                                      <Input placeholder="e.g. 27ABCDE1234F1Z5" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                              </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="currency"
+                          render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>Currency Symbol</FormLabel>
+                                  <FormControl>
+                                      <Input placeholder="e.g. Rs." {...field} />
+                                  </FormControl>
+                                  <FormDescription>
+                                      The currency symbol to be used across the application (e.g. $, €, Rs.).
+                                  </FormDescription>
+                                  <FormMessage />
+                              </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="maxDiscount"
+                          render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>Maximum Discount (%)</FormLabel>
+                                  <FormControl>
+                                      <Input type="number" placeholder="e.g. 25" {...field} />
+                                  </FormControl>
+                                  <FormDescription>
+                                      The highest discount percentage that can be applied to an order.
+                                  </FormDescription>
+                                  <FormMessage />
+                              </FormItem>
+                          )}
+                      />
+                  </div>
               </div>
 
               <Separator />

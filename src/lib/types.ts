@@ -67,6 +67,7 @@ export type Customer = {
 
 export type AppTheme = 'default' | 'ocean' | 'sunset' | 'mint' | 'plum';
 export type AppFont = 'pt-sans' | 'roboto-slab';
+export type AppDataSource = 'csv' | 'api';
 
 export type StaffTransactionType = "Advance" | "Daily Wage" | "Bonus" | "Salary";
 export type PaymentMode = "Cash" | "Online";
