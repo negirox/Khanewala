@@ -18,10 +18,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Order, MenuItem } from "@/lib/types";
-import { format, subDays, startOfDay, getYear, getMonth, set } from "date-fns";
-import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart, ArrowUpDown, ChevronLeft, ChevronRight, Clock, Utensils } from "lucide-react";
+import { format, subDays, startOfDay, getYear, getMonth, set, startOfWeek, endOfWeek } from "date-fns";
+import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart, ArrowUpDown, ChevronLeft, ChevronRight, Clock, Utensils, LineChart } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Legend } from "recharts";
+import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Legend, Line as RechartsLine, LineChart as RechartsLineChart } from "recharts";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useAppData } from "@/hooks/use-app-data";
@@ -104,6 +104,20 @@ export function Dashboard() {
         date: format(new Date(date), "MMM d"),
         total,
     }));
+  }, [filteredOrders]);
+
+  const weeklyRevenue = React.useMemo(() => {
+    const dataMap: { [key: string]: number } = {};
+    filteredOrders.forEach(order => {
+      const weekStart = format(startOfWeek(new Date(order.createdAt)), "yyyy-MM-dd");
+      dataMap[weekStart] = (dataMap[weekStart] || 0) + order.total;
+    });
+    return Object.entries(dataMap)
+      .map(([week, total]) => ({
+        week: `Week of ${format(new Date(week), "MMM d")}`,
+        total,
+      }))
+      .sort((a, b) => new Date(a.week.replace('Week of ', '')).getTime() - new Date(b.week.replace('Week of ', '')).getTime());
   }, [filteredOrders]);
   
   const salesByCategory = React.useMemo(() => {
@@ -307,6 +321,32 @@ export function Dashboard() {
                 </ChartContainer>
             </CardContent>
         </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <LineChart className="h-5 w-5 text-muted-foreground" />
+              Weekly Revenue
+            </CardTitle>
+            <CardDescription>
+              Total revenue for each week in the selected month.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={{}} className="h-[250px] w-full">
+              <RechartsLineChart data={weeklyRevenue}>
+                <XAxis dataKey="week" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value.replace('Week of ', '')} />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickFormatter={(value) => `${appConfig.currency}${value}`}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <RechartsLine type="monotone" dataKey="total" stroke={chartColors[1]} strokeWidth={2} dot={false} />
+              </RechartsLineChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
          <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><PieChart className="h-5 w-5 text-muted-foreground"/>Sales by Category</CardTitle>
@@ -468,5 +508,7 @@ export function Dashboard() {
       </Card>
     </div>
   );
+
+    
 
     
