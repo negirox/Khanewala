@@ -8,9 +8,9 @@ import Papa from 'papaparse';
 import fs from 'fs/promises';
 import path from 'path';
 import { firebaseRepository } from '@/services/firebase-repository';
-import { defaultAppConfig } from '@/lib/config';
 import { brevoService } from '@/services/brevo-service';
-import { saveAppConfig, type AppConfigData } from '@/services/config-service';
+import { saveAppConfig, type AppConfigData, getAppConfig } from '@/services/config-service';
+import { revalidatePath } from 'next/cache';
 
 const dataRepository = firebaseRepository;
 
@@ -227,6 +227,8 @@ export async function validateSuperAdminLogin(credentials: {username: string, pa
 export async function saveAppSettings(settings: AppConfigData): Promise<{ success: boolean, error?: string }> {
     try {
         await saveAppConfig(settings);
+        // Revalidate the cache for the entire site
+        revalidatePath('/', 'layout');
         return { success: true };
     } catch (error: any) {
         console.error("Error saving app settings:", error);
