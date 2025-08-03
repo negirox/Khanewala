@@ -72,8 +72,6 @@ export function SuperAdminSettings() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: async () => {
-      // This async defaultValues correctly fetches data on the client
-      // without trying to bundle server code.
       return getAppConfig();
     }
   });
@@ -89,7 +87,6 @@ export function SuperAdminSettings() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSaving(true);
-    // Construct the AppConfigData object from form values
     const settingsToSave: AppConfigData = {
         ...values,
         archiveFileLimit: (await getAppConfig()).archiveFileLimit, 
@@ -101,10 +98,11 @@ export function SuperAdminSettings() {
     if (result.success) {
       toast({
         title: "Settings Saved!",
-        description: "Your changes have been saved and will be applied.",
+        description: "Your changes have been saved. Redirecting to dashboard...",
       });
-      // Force a refresh to re-fetch the new config in the layout
-      router.refresh();
+      // Redirect to a page within the main app layout to force a reload
+      // of the AppDataProvider with the new config.
+      router.push('/dashboard');
     } else {
       toast({
         variant: "destructive",

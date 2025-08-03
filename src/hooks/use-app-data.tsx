@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { getActiveOrders, getArchivedOrders, getCustomers, getMenuItems, getStaff, getStaffTransactions, getTables } from "@/app/actions";
+import { getActiveOrders, getArchivedOrders, getCustomers, getMenuItems, getStaff, getStaffTransactions, getTables, getAppConfig } from "@/app/actions";
 import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction, AppConfigData } from "@/lib/types";
 
 interface InitialData {
@@ -64,6 +64,7 @@ export function AppDataProvider({
                 staff,
                 tables,
                 staffTransactions,
+                config,
             ] = await Promise.all([
                 getActiveOrders(),
                 getArchivedOrders(),
@@ -72,6 +73,7 @@ export function AppDataProvider({
                 getStaff(),
                 getTables(),
                 getStaffTransactions(),
+                getAppConfig(), // Also re-fetch the config
             ]);
 
             setActiveOrders(active.map(o => ({ ...o, createdAt: new Date(o.createdAt) })));
@@ -81,6 +83,7 @@ export function AppDataProvider({
             setAllStaff(staff);
             setAllTables(tables);
             setAllStaffTransactions(staffTransactions.map(tx => ({...tx, date: new Date(tx.date)})));
+            setAppConfig(config); // Update the app config in the state
             
         } catch (error) {
             console.error("Failed to fetch app data:", error);
