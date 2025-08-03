@@ -1,6 +1,4 @@
 
-'use server';
-
 import fs from 'fs/promises';
 import path from 'path';
 import type { AppTheme, AppFont, AppDataSource } from '@/lib/types';

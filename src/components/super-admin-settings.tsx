@@ -30,8 +30,8 @@ import { useRouter } from "next/navigation";
 import { Separator } from "./ui/separator";
 import { Upload } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { getAppConfig, type AppConfigData } from "@/services/config-service";
 import { saveAppSettings, uploadLogo } from "@/app/actions";
+import { getAppConfig, type AppConfigData } from "@/services/config-service";
 
 const formSchema = z.object({
   title: z.string().min(1, "App name is required"),
@@ -66,9 +66,10 @@ export function SuperAdminSettings() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: async () => {
-      const config = await getAppConfig();
-      // Map title from config to form's appName
-      return { ...config, title: config.title };
+      // Fetching on the server side during initial load is fine
+      // But direct import for client-side usage is not.
+      // This async defaultValues pattern correctly handles this.
+      return getAppConfig();
     }
   });
 
