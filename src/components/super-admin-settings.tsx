@@ -52,6 +52,7 @@ const formSchema = z.object({
     settings: z.boolean(),
   }),
   gstNumber: z.string().optional(),
+  fssaiLicense: z.string().optional(),
   currency: z.string().min(1, "Currency symbol is required"),
   maxDiscount: z.coerce.number().min(0, "Max discount cannot be negative.").max(100, "Max discount cannot be over 100."),
   loyalty: z.object({
@@ -376,6 +377,19 @@ export function SuperAdminSettings() {
                                   <FormLabel>GST Number</FormLabel>
                                   <FormControl>
                                       <Input placeholder="e.g. 27ABCDE1234F1Z5" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                              </FormItem>
+                          )}
+                      />
+                       <FormField
+                          control={form.control}
+                          name="fssaiLicense"
+                          render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>FSSAI License</FormLabel>
+                                  <FormControl>
+                                      <Input placeholder="e.g. 10012345678901" {...field} />
                                   </FormControl>
                                   <FormMessage />
                               </FormItem>

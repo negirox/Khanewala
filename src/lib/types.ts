@@ -90,6 +90,7 @@ export const defaultAppConfig: AppConfigData = {
     dataSource: "firebase" as const,
     currency: "Rs.",
     gstNumber: "27ABCDE1234F1Z5",
+    fssaiLicense: "12345678901234",
     maxDiscount: 25,
     ownerName: "Admin",
     phone: "9876543210",
@@ -126,6 +127,7 @@ export interface AppConfigData {
       settings: boolean;
   };
   gstNumber?: string;
+  fssaiLicense?: string;
   currency: string;
   maxDiscount: number;
   loyalty: {

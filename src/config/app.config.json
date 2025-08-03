@@ -22,5 +22,6 @@
   "archiveFileLimit": 5242880,
   "ownerName": "John Doe",
   "phone": "123-456-7890",
-  "address": "123 Spice Street, Flavor Town, 110001"
+  "address": "123 Spice Street, Flavor Town, 110001",
+  "fssaiLicense": "10012345678901"
 }

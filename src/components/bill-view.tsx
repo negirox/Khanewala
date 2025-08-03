@@ -33,9 +33,10 @@ export function BillView({ order, appConfig }: { order: Order, appConfig: AppCon
         <div id="bill-content" className="p-4 bg-white text-black font-mono text-sm">
             <div className="text-center mb-4">
                 <h2 className="text-xl font-bold">{appConfig.title}</h2>
-                {appConfig.gstNumber && <p className="text-xs">GSTIN: {appConfig.gstNumber}</p>}
                 <p className="text-xs">{appConfig.address}</p>
                 <p className="text-xs">Tel: {appConfig.phone}</p>
+                {appConfig.gstNumber && <p className="text-xs">GSTIN: {appConfig.gstNumber}</p>}
+                {appConfig.fssaiLicense && <p className="text-xs">FSSAI Lic: {appConfig.fssaiLicense}</p>}
             </div>
             {tokenNumber && (
                 <div className="text-center my-4">
