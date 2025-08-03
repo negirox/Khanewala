@@ -1,4 +1,3 @@
-
 {
   "title": "Wow Foods",
   "logo": "/logo.png",
@@ -18,12 +17,12 @@
   "gstNumber": "27ABCDE1234F1Z5",
   "fssaiLicense": "10012345678901",
   "upiId": "mukeshsingh.negi007@okicici",
+  "enableUpiQrOnBill": false,
   "currency": "Rs.",
   "maxDiscount": 25,
   "loyalty": {
     "pointsPerCurrencyUnit": 0.01,
     "currencyUnitPerPoint": 1
   },
-  "archiveFileLimit": 5242880,
-  "enableUpiQrOnBill": true
+  "archiveFileLimit": 5242880
 }

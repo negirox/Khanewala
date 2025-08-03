@@ -16,7 +16,7 @@ import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign, Upload, HandCoins, Download, History, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { saveStaff, addStaffTransaction, generateStaffTransactionReport } from "@/app/actions";
+import { saveStaff, addStaffTransaction, generateStaffTransactionReport, uploadAvatar } from "@/app/actions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -217,6 +217,10 @@ const formSchema = z.object({
 });
 
 export function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, staffMember: StaffMember | null, onSave: (data: StaffMember) => void}) {
+    const { toast } = useToast();
+    const [isUploading, setIsUploading] = React.useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: staffMember || emptyStaffMember,
@@ -230,6 +234,35 @@ export function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: {
     function onSubmit(values: z.infer<typeof formSchema>) {
         onSave({...values, carryForwardBalance: values.carryForwardBalance || 0});
     }
+
+    const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !staffMember) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('avatar', file);
+        formData.append('type', 'staff');
+        formData.append('id', staffMember.id);
+
+        const result = await uploadAvatar(formData);
+        setIsUploading(false);
+
+        if (result.success && result.filePath) {
+            form.setValue('avatar', result.filePath);
+            toast({
+                title: "Avatar Uploaded!",
+                description: "The new avatar has been uploaded. Save changes to apply it.",
+            });
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Upload Failed",
+                description: result.error,
+            });
+        }
+    };
+
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -263,9 +296,27 @@ export function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: {
                         <FormItem>
                             <FormLabel>Upload Image</FormLabel>
                             <div className="flex items-center gap-2">
-                                <Input type="file" className="flex-1" disabled/><Button variant="outline" type="button" disabled><Upload className="mr-2 h-4 w-4" />Upload</Button>
+                                <Input 
+                                  type="file" 
+                                  className="hidden" 
+                                  ref={fileInputRef} 
+                                  onChange={handleAvatarUpload}
+                                  accept="image/png, image/jpeg"
+                                  disabled={!staffMember || isUploading}
+                                />
+                                <Button 
+                                  variant="outline" 
+                                  type="button" 
+                                  onClick={() => fileInputRef.current?.click()}
+                                  disabled={!staffMember || isUploading}
+                                >
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    {isUploading ? "Uploading..." : "Upload"}
+                                </Button>
                             </div>
-                            <p className="text-xs text-muted-foreground">Image uploads are not implemented in this demo.</p>
+                            <p className="text-xs text-muted-foreground">
+                                {staffMember ? "Upload an image for this staff member." : "Save the staff member first to enable image uploads."}
+                            </p>
                         </FormItem>
                          <FormField control={form.control} name="salary" render={({ field }) => (
                             <FormItem><FormLabel>Salary</FormLabel><FormControl><Input type="number" step="0.01" placeholder="30000.00" {...field} /></FormControl><FormMessage /></FormItem>

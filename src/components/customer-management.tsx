@@ -13,10 +13,11 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Mail, Phone, PlusCircle, Edit, Trash2, Star, Upload } from "lucide-react";
-import { addNewCustomer, saveCustomers } from "@/app/actions";
+import { addNewCustomer, saveCustomers, uploadAvatar } from "@/app/actions";
 import { cn } from "@/lib/utils";
 import { useAppData } from "@/hooks/use-app-data";
 import { Skeleton } from "./ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 
 const emptyCustomer: Omit<Customer, 'id' | 'loyaltyPoints'> = { name: "", email: "", phone: "", avatar: "" };
@@ -183,6 +184,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, customer: Customer | null, onSave: (data: any) => void}) {
+    const { toast } = useToast();
+    const [isUploading, setIsUploading] = React.useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: customer ? { ...customer } : { ...emptyCustomer, loyaltyPoints: 0 },
@@ -200,6 +205,35 @@ function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen
             onSave(newCustomerData);
         }
     }
+    
+    const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !customer) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('avatar', file);
+        formData.append('type', 'customer');
+        formData.append('id', customer.id);
+
+        const result = await uploadAvatar(formData);
+        setIsUploading(false);
+
+        if (result.success && result.filePath) {
+            form.setValue('avatar', result.filePath);
+            toast({
+                title: "Avatar Uploaded!",
+                description: "The new avatar has been uploaded. Save changes to apply it.",
+            });
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Upload Failed",
+                description: result.error,
+            });
+        }
+    };
+
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -243,13 +277,27 @@ function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen
                         <FormItem>
                             <FormLabel>Upload Image</FormLabel>
                             <div className="flex items-center gap-2">
-                                <Input type="file" className="flex-1" disabled/>
-                                <Button variant="outline" type="button" disabled>
+                                <Input 
+                                  type="file" 
+                                  className="hidden" 
+                                  ref={fileInputRef} 
+                                  onChange={handleAvatarUpload}
+                                  accept="image/png, image/jpeg"
+                                  disabled={!customer || isUploading}
+                                />
+                                <Button 
+                                  variant="outline" 
+                                  type="button" 
+                                  onClick={() => fileInputRef.current?.click()}
+                                  disabled={!customer || isUploading}
+                                >
                                     <Upload className="mr-2 h-4 w-4" />
-                                    Upload
+                                    {isUploading ? "Uploading..." : "Upload"}
                                 </Button>
                             </div>
-                            <p className="text-xs text-muted-foreground">Image uploads are not implemented in this demo.</p>
+                            <p className="text-xs text-muted-foreground">
+                                {customer ? "Upload an image for this customer." : "Save the customer first to enable image uploads."}
+                            </p>
                         </FormItem>
                         {customer && <FormField control={form.control} name="loyaltyPoints" render={({ field }) => (
                             <FormItem>

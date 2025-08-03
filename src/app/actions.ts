@@ -274,3 +274,25 @@ export async function uploadLogo(formData: FormData): Promise<{ success: boolean
         return { success: false, error: 'Failed to save logo.' };
     }
 }
+
+export async function uploadAvatar(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
+    const { saveAvatar } = await import('@/services/file-system-service');
+    const file = formData.get('avatar') as File;
+    const type = formData.get('type') as 'staff' | 'customer';
+    const id = formData.get('id') as string;
+
+    if (!file || !type || !id) {
+        return { success: false, error: 'Missing required fields for avatar upload.' };
+    }
+
+    try {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const fileExtension = file.name.split('.').pop() || 'png';
+        const filename = `${type}-${id}-${Date.now()}.${fileExtension}`;
+        const filePath = await saveAvatar(buffer, filename);
+        return { success: true, filePath: `${filePath}?v=${Date.now()}` }; // Add version query to bust cache
+    } catch (error: any) {
+        console.error('Error uploading avatar:', error);
+        return { success: false, error: 'Failed to save avatar.' };
+    }
+}

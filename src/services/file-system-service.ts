@@ -45,3 +45,14 @@ export async function saveUploadedLogo(buffer: Buffer): Promise<string> {
     // The URL path will be relative to the public folder
     return `/${filename}`;
 }
+
+export async function saveAvatar(buffer: Buffer, filename: string): Promise<string> {
+    const avatarsDir = path.join(process.cwd(), 'public', 'avatars');
+    // Ensure the directory exists
+    await fs.mkdir(avatarsDir, { recursive: true });
+    
+    const filePath = path.join(avatarsDir, filename);
+    await fs.writeFile(filePath, buffer);
+    // The URL path will be relative to the public folder
+    return `/avatars/${filename}`;
+}

@@ -1,3 +1,0 @@
-items,tableNumber,status,subtotal,discount,total,customerId,customerName,pointsRedeemed,redeemedValue,pointsEarned,id,createdAt
-"[{""quantity"":1,""menuItem"":{""id"":""ITEM002""}},{""quantity"":1,""menuItem"":{""id"":""ITEM003""}}]",1,received,700,0,700,CUST02,Jane Smith,0,0,7,ORD-1754206840720-203,2025-08-03T07:40:40.720Z
-"[{""quantity"":1,""menuItem"":{""id"":""ITEM001""}},{""quantity"":1,""menuItem"":{""id"":""ITEM002""}}]",,received,400,0,400,CUST02,Jane Smith,0,0,4,ORD-1754140767779-126,2025-08-02T13:19:27.779Z
