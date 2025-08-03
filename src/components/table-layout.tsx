@@ -63,7 +63,7 @@ function TableLayoutLoading() {
 }
 
 export function TableLayout() {
-  const { allTables, activeOrders, setAllTables, loading } = useAppData();
+  const { allTables, activeOrders, setAllTables, loading, appConfig } = useAppData();
   const [viewingOrder, setViewingOrder] = React.useState<Order | null>(null);
   const [isAddTableDialogOpen, setAddTableDialogOpen] = React.useState(false);
   const [newTableCapacity, setNewTableCapacity] = React.useState<number>(4);
@@ -124,7 +124,7 @@ export function TableLayout() {
 
   }, [newTableCapacity, allTables, toast, setAllTables]);
 
-  if (loading) {
+  if (loading || !appConfig) {
       return <TableLayoutLoading />;
   }
 
@@ -183,7 +183,7 @@ export function TableLayout() {
           <DialogHeader>
             <DialogTitle>Order Details</DialogTitle>
           </DialogHeader>
-          {viewingOrder && <BillView order={viewingOrder} />}
+          {viewingOrder && <BillView order={viewingOrder} appConfig={appConfig} />}
         </DialogContent>
       </Dialog>
       
@@ -216,7 +216,3 @@ export function TableLayout() {
     </div>
   );
 }
-
-
-
-    

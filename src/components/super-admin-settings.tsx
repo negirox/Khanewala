@@ -33,6 +33,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { saveAppSettings, uploadLogo, getAppConfig } from "@/app/actions";
 import type { AppConfigData } from "@/lib/types";
 import { Skeleton } from "./ui/skeleton";
+import { Textarea } from "./ui/textarea";
 
 const formSchema = z.object({
   title: z.string().min(1, "App name is required"),
@@ -40,6 +41,9 @@ const formSchema = z.object({
   theme: z.enum(["default", "ocean", "sunset", "mint", "plum"]),
   font: z.enum(["pt-sans", "roboto-slab"]),
   dataSource: z.enum(["csv", "firebase"]),
+  ownerName: z.string().min(1, "Owner name is required"),
+  phone: z.string().min(1, "Phone number is required"),
+  address: z.string().min(1, "Address is required"),
   enabledAdminSections: z.object({
     dashboard: z.boolean(),
     menu: z.boolean(),
@@ -281,6 +285,54 @@ export function SuperAdminSettings() {
                     />
                 </div>
               </div>
+              
+              <Separator />
+
+              <div>
+                <h3 className="text-lg font-medium mb-4">Restaurant Details</h3>
+                <div className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="ownerName"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Owner Name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g. John Doe" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Contact Phone</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g. 9876543210" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="address"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Address</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="e.g. 123 Spice Street, Flavor Town, 110001" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </div>
+              </div>
+
 
               <Separator />
 

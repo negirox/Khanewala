@@ -31,10 +31,10 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import type { MenuItem, OrderItem, Order, Customer, Table } from "@/lib/types";
 import Image from "next/image";
-import { appConfig } from "@/lib/config";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Input } from "./ui/input";
+import { useAppData } from "@/hooks/use-app-data";
 
 interface OrderFormProps {
   allMenuItems: MenuItem[];
@@ -45,6 +45,7 @@ interface OrderFormProps {
 }
 
 export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onCancel }: OrderFormProps) {
+  const { appConfig } = useAppData();
   const [orderItems, setOrderItems] = React.useState<OrderItem[]>([]);
   const [tableNumber, setTableNumber] = React.useState<string>("takeaway");
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
@@ -140,13 +141,14 @@ export function OrderForm({ allMenuItems, allCustomers, allTables, onSubmit, onC
   };
   
   const handleRedeem = () => {
-    if (!selectedCustomer) return;
+    if (!selectedCustomer || !appConfig) return;
     const redeemablePoints = Math.min(pointsToRedeem, selectedCustomer.loyaltyPoints);
     const value = redeemablePoints * appConfig.loyalty.currencyUnitPerPoint;
     setRedeemedValue(value);
     setRedeemDialogOpen(false);
   }
 
+  if (!appConfig) return null;
 
   return (
     <>

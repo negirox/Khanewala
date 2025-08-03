@@ -15,7 +15,6 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { saveAllOrders, saveTables, saveCustomers } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
-import { appConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { loyaltyService } from "@/services/loyalty-service";
@@ -40,6 +39,7 @@ export function OrderKanban() {
     archivedOrders, 
     allTables, 
     allCustomers, 
+    appConfig,
     setActiveOrders, 
     setArchivedOrders, 
     setAllTables, 
@@ -111,7 +111,7 @@ export function OrderKanban() {
 
 
   const handleApplyDiscount = React.useCallback(async () => {
-    if (!discountOrder) return;
+    if (!discountOrder || !appConfig) return;
 
     const discountValue = Math.max(0, Math.min(appConfig.maxDiscount, discountPercentage));
     if (discountPercentage > appConfig.maxDiscount) {
@@ -142,10 +142,10 @@ export function OrderKanban() {
 
     setDiscountOrder(null);
     setDiscountPercentage(0);
-}, [discountOrder, discountPercentage, activeOrders, archivedOrders, toast, setActiveOrders]);
+}, [discountOrder, discountPercentage, activeOrders, archivedOrders, toast, setActiveOrders, appConfig]);
 
   const handleRedeemPoints = React.useCallback(async () => {
-    if (!redeemOrder || !redeemOrder.customerId) return;
+    if (!redeemOrder || !redeemOrder.customerId || !appConfig) return;
     
     const customer = allCustomers.find(c => c.id === redeemOrder.customerId);
     if (!customer) {
@@ -153,7 +153,7 @@ export function OrderKanban() {
         return;
     }
 
-    const { updatedCustomer, redeemedValue, pointsRedeemed } = loyaltyService.redeemPoints(customer, pointsToRedeem);
+    const { updatedCustomer, redeemedValue, pointsRedeemed } = loyaltyService.redeemPoints(customer, pointsToRedeem, appConfig.loyalty);
     
     if (pointsRedeemed > 0) {
       const newCustomers = allCustomers.map(c => c.id === updatedCustomer.id ? updatedCustomer : c);
@@ -186,7 +186,7 @@ export function OrderKanban() {
     setRedeemOrder(null);
     setPointsToRedeem(0);
 
-  }, [redeemOrder, pointsToRedeem, activeOrders, archivedOrders, allCustomers, toast, setActiveOrders, setAllCustomers]);
+  }, [redeemOrder, pointsToRedeem, activeOrders, archivedOrders, allCustomers, toast, setActiveOrders, setAllCustomers, appConfig]);
   
   const handleRevertRedemption = React.useCallback(async (orderToUpdate: Order) => {
     if (!orderToUpdate.customerId || !orderToUpdate.pointsRedeemed) return;
@@ -232,6 +232,8 @@ export function OrderKanban() {
       return acc;
     }, {} as Record<OrderStatus, Order[]>);
   }, [activeOrders]);
+
+  if (!appConfig) return null;
 
 
   return (
@@ -393,7 +395,7 @@ export function OrderKanban() {
           <DialogHeader>
             <DialogTitlePrimitive>Print Bill</DialogTitlePrimitive>
           </DialogHeader>
-          {printingOrder && <BillView order={printingOrder} />}
+          {printingOrder && <BillView order={printingOrder} appConfig={appConfig} />}
         </DialogContent>
       </Dialog>
       

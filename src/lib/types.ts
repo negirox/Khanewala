@@ -82,7 +82,7 @@ export type StaffTransaction = {
     notes?: string;
 };
 
-export const defaultAppConfig = {
+export const defaultAppConfig: AppConfigData = {
     title: "KhaneWala",
     logo: "/logo.png",
     theme: 'default' as const,
@@ -91,6 +91,9 @@ export const defaultAppConfig = {
     currency: "Rs.",
     gstNumber: "27ABCDE1234F1Z5",
     maxDiscount: 25,
+    ownerName: "Admin",
+    phone: "9876543210",
+    address: "123 Spice Street, Flavor Town",
     enabledAdminSections: {
         dashboard: true,
         menu: true,
@@ -112,6 +115,9 @@ export interface AppConfigData {
   theme: AppTheme;
   font: AppFont;
   dataSource: AppDataSource;
+  ownerName: string;
+  phone: string;
+  address: string;
   enabledAdminSections: {
       dashboard: boolean;
       menu: boolean;

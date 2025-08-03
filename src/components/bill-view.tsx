@@ -3,12 +3,11 @@
 "use client";
 
 import * as React from 'react';
-import type { Order } from '@/lib/types';
+import type { Order, AppConfigData } from '@/lib/types';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
-import { appConfig } from '@/lib/config';
 
-export function BillView({ order }: { order: Order }) {
+export function BillView({ order, appConfig }: { order: Order, appConfig: AppConfigData }) {
   const [tokenNumber, setTokenNumber] = React.useState<number | null>(null);
 
   React.useEffect(() => {
@@ -35,8 +34,8 @@ export function BillView({ order }: { order: Order }) {
             <div className="text-center mb-4">
                 <h2 className="text-xl font-bold">{appConfig.title}</h2>
                 {appConfig.gstNumber && <p className="text-xs">GSTIN: {appConfig.gstNumber}</p>}
-                <p className="text-xs">123 Spice Street, Flavor Town</p>
-                <p className="text-xs">Tel: (123) 456-7890</p>
+                <p className="text-xs">{appConfig.address}</p>
+                <p className="text-xs">Tel: {appConfig.phone}</p>
             </div>
             {tokenNumber && (
                 <div className="text-center my-4">

@@ -227,11 +227,9 @@ export function ArchiveDashboard() {
           <DialogHeader>
             <DialogTitlePrimitive>Print Bill</DialogTitlePrimitive>
           </DialogHeader>
-          {printingOrder && <BillView order={printingOrder} />}
+          {printingOrder && <BillView order={printingOrder} appConfig={appConfig} />}
         </DialogContent>
       </Dialog>
     </div>
   );
 }
-
-    
