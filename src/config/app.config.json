@@ -1,0 +1,26 @@
+{
+  "title": "Wow Foods",
+  "logo": "/logo.png",
+  "theme": "default",
+  "font": "roboto-slab",
+  "dataSource": "csv",
+  "ownerName": "Abhishek",
+  "phone": "9044366078",
+  "address": "MD-1 375 LDA Colony Kanpur Road Lucknow",
+  "enabledAdminSections": {
+    "dashboard": true,
+    "menu": true,
+    "staff": true,
+    "customers": true,
+    "settings": false
+  },
+  "gstNumber": "27ABCDE1234F1Z5",
+  "fssaiLicense": "10012345678901",
+  "currency": "Rs.",
+  "maxDiscount": 25,
+  "loyalty": {
+    "pointsPerCurrencyUnit": 0.01,
+    "currencyUnitPerPoint": 1
+  },
+  "archiveFileLimit": 5242880
+}

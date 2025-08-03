@@ -1,12 +1,10 @@
 
-
 "use client";
 
 import * as React from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { appConfig } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,12 +30,20 @@ import { useRouter } from "next/navigation";
 import { Separator } from "./ui/separator";
 import { Upload } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { saveAppSettings, uploadLogo, getAppConfig } from "@/app/actions";
+import type { AppConfigData } from "@/lib/types";
+import { Skeleton } from "./ui/skeleton";
+import { Textarea } from "./ui/textarea";
 
 const formSchema = z.object({
-  appName: z.string().min(1, "App name is required"),
+  title: z.string().min(1, "App name is required"),
+  logo: z.string().optional(),
   theme: z.enum(["default", "ocean", "sunset", "mint", "plum"]),
   font: z.enum(["pt-sans", "roboto-slab"]),
-  dataSource: z.enum(["csv", "api"]),
+  dataSource: z.enum(["csv", "firebase"]),
+  ownerName: z.string().min(1, "Owner name is required"),
+  phone: z.string().min(1, "Phone number is required"),
+  address: z.string().min(1, "Address is required"),
   enabledAdminSections: z.object({
     dashboard: z.boolean(),
     menu: z.boolean(),
@@ -46,6 +52,7 @@ const formSchema = z.object({
     settings: z.boolean(),
   }),
   gstNumber: z.string().optional(),
+  fssaiLicense: z.string().optional(),
   currency: z.string().min(1, "Currency symbol is required"),
   maxDiscount: z.coerce.number().min(0, "Max discount cannot be negative.").max(100, "Max discount cannot be over 100."),
   loyalty: z.object({
@@ -54,9 +61,22 @@ const formSchema = z.object({
   }),
 });
 
+
 export function SuperAdminSettings() {
   const { toast } = useToast();
   const router = useRouter();
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [isUploading, setIsUploading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: async () => {
+      return getAppConfig();
+    }
+  });
+
+  const { formState } = form;
 
   React.useEffect(() => {
     const isLoggedIn = localStorage.getItem("superAdminLoggedIn");
@@ -65,37 +85,87 @@ export function SuperAdminSettings() {
     }
   }, [router]);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      appName: appConfig.title,
-      theme: "default",
-      font: "pt-sans",
-      dataSource: appConfig.dataSource,
-      enabledAdminSections: appConfig.enabledAdminSections,
-      gstNumber: appConfig.gstNumber || "",
-      currency: appConfig.currency,
-      maxDiscount: appConfig.maxDiscount,
-      loyalty: appConfig.loyalty,
-    },
-  });
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSaving(true);
+    const settingsToSave: AppConfigData = {
+        ...values,
+        archiveFileLimit: (await getAppConfig()).archiveFileLimit, 
+    };
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    toast({
-      title: "Settings Saved!",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(values, null, 2)}</code>
-        </pre>
-      ),
-    });
-    console.log("Simulating save for:", values);
+    const result = await saveAppSettings(settingsToSave);
+    setIsSaving(false);
+
+    if (result.success) {
+      toast({
+        title: "Settings Saved!",
+        description: "Your changes have been saved. Redirecting to dashboard...",
+      });
+      // Redirect to a page within the main app layout to force a reload
+      // of the AppDataProvider with the new config.
+      router.push('/dashboard');
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: result.error,
+      });
+    }
   }
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    const result = await uploadLogo(formData);
+    setIsUploading(false);
+
+    if (result.success && result.filePath) {
+      form.setValue('logo', result.filePath);
+      toast({
+        title: "Logo Uploaded!",
+        description: "The new logo has been uploaded. Save settings to apply it.",
+      });
+      router.refresh();
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: result.error,
+      });
+    }
+  };
+
 
   const handleLogout = () => {
     localStorage.removeItem("superAdminLoggedIn");
     router.replace("/super-admin/login");
   };
+
+  if (formState.isLoading) {
+    return (
+        <div className="max-w-4xl mx-auto">
+            <h1 className="text-3xl font-bold font-headline mb-4">Super Admin Panel</h1>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Global Application Configuration</CardTitle>
+                    <CardDescription>Loading settings...</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                       <Skeleton className="h-10 w-full" />
+                       <Skeleton className="h-20 w-full" />
+                       <Skeleton className="h-20 w-full" />
+                       <Skeleton className="h-20 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -107,11 +177,7 @@ export function SuperAdminSettings() {
         <CardHeader>
           <CardTitle>Global Application Configuration</CardTitle>
           <CardDescription>
-            These settings affect the entire application. Changes saved here will be reflected globally.
-            <br />
-            <span className="text-xs text-destructive">
-              Note: This is a UI demonstration. Changes are not persisted across restarts.
-            </span>
+            These settings affect the entire application. Changes saved here will be reflected globally after a page refresh.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -123,7 +189,7 @@ export function SuperAdminSettings() {
                 <div className="space-y-4">
                     <FormField
                         control={form.control}
-                        name="appName"
+                        name="title"
                         render={({ field }) => (
                         <FormItem>
                             <FormLabel>Restaurant Name</FormLabel>
@@ -138,13 +204,19 @@ export function SuperAdminSettings() {
                     <FormItem>
                         <FormLabel>Logo</FormLabel>
                         <div className="flex items-center gap-2">
-                            <Input type="file" className="flex-1" disabled/>
-                            <Button variant="outline" type="button" disabled>
+                            <Input
+                              type="file"
+                              className="hidden"
+                              ref={fileInputRef}
+                              onChange={handleLogoUpload}
+                              accept="image/png, image/jpeg, image/svg+xml"
+                            />
+                            <Button variant="outline" type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                                 <Upload className="mr-2 h-4 w-4" />
-                                Upload
+                                {isUploading ? "Uploading..." : "Upload"}
                             </Button>
                         </div>
-                        <FormDescription>Upload a logo for your restaurant. Image uploads are not implemented in this demo.</FormDescription>
+                        <FormDescription>Upload a logo for your restaurant. Recommended size: 128x128px.</FormDescription>
                     </FormItem>
 
                     <FormField
@@ -212,11 +284,72 @@ export function SuperAdminSettings() {
                     />
                 </div>
               </div>
+              
+              <Separator />
+
+              <div>
+                <h3 className="text-lg font-medium mb-4">Restaurant Details</h3>
+                <div className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="ownerName"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Owner Name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g. John Doe" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Contact Phone</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g. 9876543210" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="address"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Address</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="e.g. 123 Spice Street, Flavor Town, 110001" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="fssaiLicense"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>FSSAI License</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g. 10012345678901" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+              </div>
+
 
               <Separator />
 
               <div>
-                  <h3 className="text-lg font-medium mb-4">Data &amp; Financials</h3>
+                  <h3 className="text-lg font-medium mb-4">Data & Financials</h3>
                   <div className="space-y-4">
                       <FormField
                           control={form.control}
@@ -232,16 +365,16 @@ export function SuperAdminSettings() {
                                       >
                                           <FormItem className="flex items-center space-x-3 space-y-0">
                                               <FormControl><RadioGroupItem value="csv" /></FormControl>
-                                              <FormLabel className="font-normal">CSV Files (Local)</FormLabel>
+                                              <FormLabel className="font-normal">CSV Files (Local Development Only)</FormLabel>
                                           </FormItem>
                                           <FormItem className="flex items-center space-x-3 space-y-0">
-                                              <FormControl><RadioGroupItem value="api" /></FormControl>
-                                              <FormLabel className="font-normal">Cloud API (Mock)</FormLabel>
+                                              <FormControl><RadioGroupItem value="firebase" /></FormControl>
+                                              <FormLabel className="font-normal">Firebase (Cloud)</FormLabel>
                                           </FormItem>
                                       </RadioGroup>
                                   </FormControl>
                                   <FormDescription>
-                                      Choose where the application data is stored.
+                                      Choose where the application data is stored. Firebase is required for deployed environments.
                                   </FormDescription>
                                   <FormMessage />
                               </FormItem>
@@ -326,7 +459,7 @@ export function SuperAdminSettings() {
                                 <Input type="number" step="0.01" {...field} />
                             </FormControl>
                             <FormDescription>
-                                How much is one loyalty point worth when redeemed? (e.g., 1 for Rs. 1 per point).
+                                How much is one loyalty point when redeemed? (e.g., 1 for Rs. 1 per point).
                             </FormDescription>
                             <FormMessage />
                         </FormItem>
@@ -340,11 +473,11 @@ export function SuperAdminSettings() {
               <div>
                 <h3 className="text-lg font-medium mb-4">Admin Menu Sections</h3>
                 <div className="space-y-4 p-4 border rounded-lg">
-                  {Object.keys(appConfig.enabledAdminSections).map((key) => (
+                  {Object.keys(form.getValues('enabledAdminSections')).map((key) => (
                     <FormField
                       key={key}
                       control={form.control}
-                      name={`enabledAdminSections.${key as keyof typeof appConfig.enabledAdminSections}`}
+                      name={`enabledAdminSections.${key as keyof AppConfigData['enabledAdminSections']}`}
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                           <div className="space-y-0.5">
@@ -367,7 +500,9 @@ export function SuperAdminSettings() {
               </div>
 
 
-              <Button type="submit">Save All Settings</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save All Settings"}
+              </Button>
             </form>
           </Form>
         </CardContent>

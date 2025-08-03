@@ -6,7 +6,6 @@
  */
 
 import type { Customer, Order } from '@/lib/types';
-import { appConfig } from '@/lib/config';
 
 class LoyaltyService {
   /**
@@ -15,10 +14,11 @@ class LoyaltyService {
    *
    * @param customer The customer object.
    * @param orderTotal The total amount of the order (after discounts).
+   * @param loyaltyConfig The loyalty-specific configuration.
    * @returns An object containing the updated customer and the points earned.
    */
-  addPointsForOrder(customer: Customer, orderTotal: number): { updatedCustomer: Customer; pointsEarned: number } {
-    const pointsEarned = Math.floor(orderTotal * appConfig.loyalty.pointsPerCurrencyUnit);
+  addPointsForOrder(customer: Customer, orderTotal: number, loyaltyConfig: { pointsPerCurrencyUnit: number, currencyUnitPerPoint: number }): { updatedCustomer: Customer; pointsEarned: number } {
+    const pointsEarned = Math.floor(orderTotal * loyaltyConfig.pointsPerCurrencyUnit);
     
     if (pointsEarned <= 0) {
       return { updatedCustomer: customer, pointsEarned: 0 };
@@ -39,9 +39,10 @@ class LoyaltyService {
    *
    * @param customer The customer redeeming points.
    * @param pointsToRedeem The number of points to redeem.
+   * @param loyaltyConfig The loyalty-specific configuration.
    * @returns An object with the updated customer, the value of the redeemed points, and the points redeemed.
    */
-  redeemPoints(customer: Customer, pointsToRedeem: number): { updatedCustomer: Customer; redeemedValue: number; pointsRedeemed: number } {
+  redeemPoints(customer: Customer, pointsToRedeem: number, loyaltyConfig: { pointsPerCurrencyUnit: number, currencyUnitPerPoint: number }): { updatedCustomer: Customer; redeemedValue: number; pointsRedeemed: number } {
     const availablePoints = customer.loyaltyPoints;
     const redeemablePoints = Math.min(pointsToRedeem, availablePoints);
     
@@ -49,7 +50,7 @@ class LoyaltyService {
       return { updatedCustomer: customer, redeemedValue: 0, pointsRedeemed: 0 };
     }
 
-    const redeemedValue = redeemablePoints * appConfig.loyalty.currencyUnitPerPoint;
+    const redeemedValue = redeemablePoints * loyaltyConfig.currencyUnitPerPoint;
 
     const updatedCustomer: Customer = {
       ...customer,

@@ -3,18 +3,35 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { getMenuItems } from "@/app/actions";
-import { appConfig } from "@/lib/config";
-import type { MenuItem } from "@/lib/types";
+import { getMenuItems, getAppConfig } from "@/app/actions";
+import type { MenuItem, AppConfigData } from "@/lib/types";
 import { Button } from "./ui/button";
-import { Printer } from "lucide-react";
+import { Printer, UtensilsCrossed } from "lucide-react";
 import { Separator } from "./ui/separator";
+import { Skeleton } from "./ui/skeleton";
 
 export function PrintableMenu() {
   const [menuItems, setMenuItems] = React.useState<MenuItem[]>([]);
+  const [appConfig, setAppConfig] = React.useState<AppConfigData | null>(null);
+  const [loading, setLoading] = React.useState(true);
   
   React.useEffect(() => {
-    getMenuItems().then(setMenuItems);
+    async function fetchData() {
+        setLoading(true);
+        try {
+            const [menuData, configData] = await Promise.all([
+                getMenuItems(),
+                getAppConfig()
+            ]);
+            setMenuItems(menuData);
+            setAppConfig(configData);
+        } catch (error) {
+            console.error("Failed to fetch menu data:", error);
+        } finally {
+            setLoading(false);
+        }
+    }
+    fetchData();
   }, []);
 
   const menuByCategory = React.useMemo(() => {
@@ -35,6 +52,26 @@ export function PrintableMenu() {
     if (printButton) printButton.style.display = 'block';
   }, []);
 
+  if (loading || !appConfig) {
+      return (
+          <div className="max-w-4xl mx-auto p-4 sm:p-8">
+              <Skeleton className="h-32 w-full mb-8" />
+              <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
+                  <div className="space-y-4">
+                      <Skeleton className="h-10 w-1/3" />
+                      <Skeleton className="h-24 w-full" />
+                      <Skeleton className="h-24 w-full" />
+                  </div>
+                   <div className="space-y-4">
+                      <Skeleton className="h-10 w-1/3" />
+                      <Skeleton className="h-24 w-full" />
+                      <Skeleton className="h-24 w-full" />
+                  </div>
+              </div>
+          </div>
+      )
+  }
+
 
   return (
     <div className="bg-background text-foreground font-body">
@@ -43,13 +80,13 @@ export function PrintableMenu() {
                 {/* Header */}
                 <header className="text-center mb-8 border-b-4 border-primary pb-4">
                     <div className="flex justify-center items-center gap-4 mb-2">
-                        <appConfig.logo className="h-16 w-16 text-primary" />
+                        <UtensilsCrossed className="h-16 w-16 text-primary" />
                         <div>
                             <h1 className="text-5xl font-bold font-headline text-primary">{appConfig.title}</h1>
                             <p className="text-lg text-muted-foreground">Authentic Indian Cuisine</p>
                         </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">123 Spice Street, Flavor Town | Tel: (123) 456-7890</p>
+                    <p className="text-sm text-muted-foreground">{appConfig.address} | Tel: {appConfig.phone}</p>
                 </header>
                 
                 {/* Menu Body */}

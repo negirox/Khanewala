@@ -1,45 +1,26 @@
 
-import { UtensilsCrossed } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { UtensilsCrossed } from 'lucide-react';
+import type { AppConfigData } from '@/lib/types';
+import { getAppConfig } from '@/app/actions';
 
-type AppConfig = {
-    title: string;
-    logo: LucideIcon;
-    currency: string;
-    gstNumber?: string;
-    dataSource: 'csv' | 'api';
-    maxDiscount: number;
-    enabledAdminSections: {
-        dashboard: boolean;
-        menu: boolean;
-        staff: boolean;
-        customers: boolean;
-        settings: boolean;
-    },
-    loyalty: {
-        pointsPerCurrencyUnit: number; // e.g., 0.01 means 1 point per 100 currency units
-        currencyUnitPerPoint: number; // e.g., 1 means 1 currency unit (e.g. Rs. 1) per point
-    },
-    archiveFileLimit: number; // in bytes
+// This will be dynamically generated on each server-side render
+async function loadConfig() {
+    const configData = await getAppConfig();
+    return configData;
 }
 
-export const appConfig: AppConfig = {
-    title: "KhaneWala",
-    logo: UtensilsCrossed,
-    currency: "Rs.",
-    gstNumber: "27ABCDE1234F1Z5",
-    dataSource: "csv",
-    maxDiscount: 25,
-    enabledAdminSections: {
-        dashboard: true,
-        menu: true,
-        staff: true,
-        customers: true,
-        settings: true,
-    },
-    loyalty: {
-        pointsPerCurrencyUnit: 0.01,
-        currencyUnitPerPoint: 1,
-    },
-    archiveFileLimit: 5 * 1024 * 1024, // 5MB
-};
+// We export a promise that resolves to the config
+export const appConfigPromise = loadConfig();
+
+// For client-side components that can't be async, we need a way to get the config.
+// This is a simplified approach. In a complex app, you might use a client-side store.
+let appConfig: AppConfigData;
+
+appConfigPromise.then(config => {
+    appConfig = config;
+});
+
+// We can export the resolved config for immediate use in client components if they
+// don't need the absolute latest server config on first render.
+export { appConfig };

@@ -16,6 +16,7 @@ import {
   Shield,
   Settings,
   PlusCircle,
+  UtensilsCrossed,
 } from "lucide-react";
 
 import {
@@ -34,7 +35,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "./ui/collapsible";
 import { cn } from "@/lib/utils";
-import { appConfig } from "@/lib/config";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 import { Button } from "./ui/button";
@@ -43,6 +43,7 @@ import { createNewOrder, saveTables } from "@/app/actions";
 import type { Order } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useAppData } from "@/hooks/use-app-data";
+import Image from "next/image";
 
 const operationalNavItems = [
   { href: "/orders", icon: ClipboardList, label: "Orders" },
@@ -61,10 +62,11 @@ const allAdminNavItems = [
 function AdminMenu() {
     const pathname = usePathname();
     const { state } = useSidebar();
+    const { appConfig } = useAppData();
     
     // Filter admin items based on config
     const adminNavItems = allAdminNavItems.filter(item => 
-      appConfig.enabledAdminSections[item.configKey as keyof typeof appConfig.enabledAdminSections]
+      appConfig?.enabledAdminSections[item.configKey as keyof typeof appConfig.enabledAdminSections]
     );
 
     const isAnyAdminItemActive = adminNavItems.some(item => pathname.startsWith(item.href));
@@ -177,6 +179,7 @@ function NewOrderDialog() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { appConfig } = useAppData();
 
   // Hide shell on super admin pages
   if (pathname.startsWith('/super-admin')) {
@@ -184,11 +187,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const adminNavItems = allAdminNavItems.filter(item => 
-    appConfig.enabledAdminSections[item.configKey as keyof typeof appConfig.enabledAdminSections]
+    appConfig?.enabledAdminSections[item.configKey as keyof typeof appConfig.enabledAdminSections]
   );
   const allNavItems = [...operationalNavItems, ...adminNavItems];
   
   const isOrdersPage = pathname.startsWith('/orders');
+
+  if (!appConfig) {
+      return <div>Loading...</div>
+  }
 
   return (
     <SidebarProvider>
@@ -196,7 +203,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar collapsible="icon" className="border-r bg-sidebar">
           <SidebarHeader>
             <div className="flex h-14 items-center gap-2 p-2 justify-start group-data-[collapsible=icon]:justify-center">
-              <appConfig.logo className="h-8 w-8 text-primary shrink-0" />
+              {appConfig.logo && appConfig.logo !== '/logo.png' ? 
+                <Image src={appConfig.logo} alt="Logo" width={32} height={32} className="shrink-0" />
+                : <UtensilsCrossed className="h-8 w-8 text-primary shrink-0" />
+              }
               <h1 className="text-xl font-bold font-headline group-data-[collapsible=icon]:hidden whitespace-nowrap">
                 {appConfig.title}
               </h1>

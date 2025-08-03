@@ -67,7 +67,7 @@ export type Customer = {
 
 export type AppTheme = 'default' | 'ocean' | 'sunset' | 'mint' | 'plum';
 export type AppFont = 'pt-sans' | 'roboto-slab';
-export type AppDataSource = 'csv' | 'api';
+export type AppDataSource = 'csv' | 'firebase';
 
 export type StaffTransactionType = "Advance" | "Daily Wage" | "Bonus" | "Salary";
 export type PaymentMode = "Cash" | "Online";
@@ -81,3 +81,58 @@ export type StaffTransaction = {
     paymentMode: PaymentMode;
     notes?: string;
 };
+
+export const defaultAppConfig: AppConfigData = {
+    title: "KhaneWala",
+    logo: "/logo.png",
+    theme: 'default' as const,
+    font: 'pt-sans' as const,
+    dataSource: "firebase" as const,
+    currency: "Rs.",
+    gstNumber: "27ABCDE1234F1Z5",
+    fssaiLicense: "12345678901234",
+    maxDiscount: 25,
+    ownerName: "Admin",
+    phone: "9876543210",
+    address: "123 Spice Street, Flavor Town",
+    enabledAdminSections: {
+        dashboard: true,
+        menu: true,
+        staff: true,
+        customers: true,
+        settings: true,
+    },
+    loyalty: {
+        pointsPerCurrencyUnit: 0.01,
+        currencyUnitPerPoint: 1,
+    },
+    archiveFileLimit: 5 * 1024 * 1024, // 5MB
+};
+
+
+export interface AppConfigData {
+  title: string;
+  logo: string;
+  theme: AppTheme;
+  font: AppFont;
+  dataSource: AppDataSource;
+  ownerName: string;
+  phone: string;
+  address: string;
+  enabledAdminSections: {
+      dashboard: boolean;
+      menu: boolean;
+      staff: boolean;
+      customers: boolean;
+      settings: boolean;
+  };
+  gstNumber?: string;
+  fssaiLicense?: string;
+  currency: string;
+  maxDiscount: number;
+  loyalty: {
+      pointsPerCurrencyUnit: number;
+      currencyUnitPerPoint: number;
+  };
+  archiveFileLimit: number;
+}

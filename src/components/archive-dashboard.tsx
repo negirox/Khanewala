@@ -22,72 +22,41 @@ import { format } from "date-fns";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { appConfig } from "@/lib/config";
-import { getArchivedOrders, getArchiveFileSize } from "@/app/actions";
-import { ArrowUpDown, ChevronLeft, ChevronRight, AlertTriangle, Archive, Printer } from "lucide-react";
-import { Progress } from "./ui/progress";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { ArrowUpDown, ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle as DialogTitlePrimitive } from "./ui/dialog";
 import { BillView } from "./bill-view";
+import { useAppData } from "@/hooks/use-app-data";
+import { Skeleton } from "./ui/skeleton";
 
 const ITEMS_PER_PAGE = 10;
 
-function ArchiveCapacityIndicator() {
-  const [fileStats, setFileStats] = React.useState<{size: number; limit: number} | null>(null);
-
-  React.useEffect(() => {
-    getArchiveFileSize().then(setFileStats);
-  }, []);
-
-  if (!fileStats || appConfig.dataSource !== 'csv') {
-    return null; // Don't show indicator if not using CSV or stats not loaded
-  }
-
-  const percentage = (fileStats.size / fileStats.limit) * 100;
-  const sizeInMB = (fileStats.size / (1024 * 1024)).toFixed(2);
-  const limitInMB = (fileStats.limit / (1024 * 1024)).toFixed(2);
-  
-  return (
-    <Card className="mb-6">
-       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg"><Archive className="h-5 w-5"/> Archive Storage</CardTitle>
-       </CardHeader>
-       <CardContent>
-          <div className="space-y-2">
-            <Progress value={percentage} />
-            <div className="flex justify-between text-sm text-muted-foreground">
-                <span>
-                    Using {sizeInMB} MB / {limitInMB} MB
-                </span>
-                <span>{percentage.toFixed(2)}% Full</span>
-            </div>
-          </div>
-          {percentage > 90 && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Warning: Archive Capacity Approaching Limit</AlertTitle>
-              <AlertDescription>
-                The current archive file is nearly full. It will be automatically rotated into a new file soon.
-              </AlertDescription>
-            </Alert>
-          )}
-       </CardContent>
-    </Card>
-  )
-
+function ArchiveDashboardLoading() {
+    return (
+        <div className="flex flex-col gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Archived Orders</CardTitle>
+                    <CardDescription>
+                        A complete history of all served orders.
+                    </CardDescription>
+                    <div className="pt-4">
+                        <Skeleton className="h-10 w-full max-w-sm" />
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-96 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    )
 }
 
-
 export function ArchiveDashboard() {
-  const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
+  const { archivedOrders, loading, appConfig } = useAppData();
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof Order; direction: 'ascending' | 'descending' } | null>({ key: 'createdAt', direction: 'descending' });
   const [currentPage, setCurrentPage] = React.useState(1);
   const [printingOrder, setPrintingOrder] = React.useState<Order | null>(null);
-
-  React.useEffect(() => {
-    getArchivedOrders().then(orders => setArchivedOrders(orders.map(o => ({ ...o, createdAt: new Date(o.createdAt) }))));
-  }, []);
 
   const requestSort = React.useCallback((key: keyof Order) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -146,9 +115,12 @@ export function ArchiveDashboard() {
     setCurrentPage(1);
   }, [searchTerm]);
 
+  if (loading || !appConfig) {
+      return <ArchiveDashboardLoading />;
+  }
+
   return (
     <div className="flex flex-col gap-6">
-       <ArchiveCapacityIndicator />
       <Card>
         <CardHeader>
           <CardTitle>Archived Orders</CardTitle>
@@ -255,7 +227,7 @@ export function ArchiveDashboard() {
           <DialogHeader>
             <DialogTitlePrimitive>Print Bill</DialogTitlePrimitive>
           </DialogHeader>
-          {printingOrder && <BillView order={printingOrder} />}
+          {printingOrder && <BillView order={printingOrder} appConfig={appConfig} />}
         </DialogContent>
       </Dialog>
     </div>

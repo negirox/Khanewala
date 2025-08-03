@@ -32,22 +32,41 @@ import {
 import type { MenuItem } from "@/lib/types";
 import { PlusCircle, Edit, Trash2, Upload, Download, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Textarea } from "./ui/textarea";
-import { getMenuItems, saveMenuItems } from "@/app/actions";
-import { appConfig } from "@/lib/config";
+import { saveMenuItems } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Card } from "./ui/card";
+import { useAppData } from "@/hooks/use-app-data";
+import { Skeleton } from "./ui/skeleton";
 
 const emptyMenuItem: MenuItem = { id: "", name: "", price: 0, category: "Main Courses", description: "" };
 const menuCategories = ["Appetizers", "Main Courses", "Desserts", "Beverages", "Breads", "Rice & Biryani", "Indian Chinese"];
 
 const ITEMS_PER_PAGE = 10;
 
+function MenuEditorLoading() {
+    return (
+        <div className="flex flex-col">
+            <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-2">
+                <Skeleton className="h-10 w-full max-w-sm" />
+                <div className="flex flex-wrap gap-2">
+                    <Skeleton className="h-10 w-40" />
+                    <Skeleton className="h-10 w-40" />
+                    <Skeleton className="h-10 w-40" />
+                </div>
+            </div>
+            <Card className="p-0">
+                 <Skeleton className="h-96 w-full" />
+            </Card>
+        </div>
+    )
+}
+
 export function MenuEditor() {
-  const [menuItems, setMenuItems] = React.useState<MenuItem[]>([]);
+  const { allMenuItems, refreshData, loading, appConfig } = useAppData();
   const [isDialogOpen, setDialogOpen] = React.useState(false);
   const [editingItem, setEditingItem] = React.useState<MenuItem | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -57,10 +76,6 @@ export function MenuEditor() {
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof MenuItem; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending' });
   const [currentPage, setCurrentPage] = React.useState(1);
 
-
-  React.useEffect(() => {
-    getMenuItems().then(setMenuItems);
-  }, []);
 
   const handleEdit = React.useCallback((item: MenuItem) => {
     setEditingItem(item);
@@ -72,28 +87,24 @@ export function MenuEditor() {
     setDialogOpen(true);
   }, []);
   
-  const handleDelete = React.useCallback((itemId: string) => {
-    setMenuItems(prevItems => {
-        const updatedItems = prevItems.filter(item => item.id !== itemId);
-        saveMenuItems(updatedItems);
-        return updatedItems;
-    });
-  }, []);
+  const handleDelete = React.useCallback(async (itemId: string) => {
+    const updatedItems = allMenuItems.filter(item => item.id !== itemId);
+    await saveMenuItems(updatedItems);
+    await refreshData();
+  }, [allMenuItems, refreshData]);
 
-  const handleSave = React.useCallback((itemData: MenuItem) => {
-    setMenuItems(prevItems => {
-        let updatedItems;
-        if (editingItem) {
-          updatedItems = prevItems.map(item => item.id === itemData.id ? itemData : item)
-        } else {
-          updatedItems = [...prevItems, { ...itemData, id: `ITEM${Date.now()}` }];
-        }
-        saveMenuItems(updatedItems);
-        return updatedItems;
-    });
+  const handleSave = React.useCallback(async (itemData: MenuItem) => {
+    let updatedItems;
+    if (editingItem) {
+      updatedItems = allMenuItems.map(item => item.id === itemData.id ? itemData : item)
+    } else {
+      updatedItems = [...allMenuItems, { ...itemData, id: `ITEM${Date.now()}` }];
+    }
+    await saveMenuItems(updatedItems);
+    await refreshData();
     setDialogOpen(false);
     setEditingItem(null);
-  }, [editingItem]);
+  }, [editingItem, allMenuItems, refreshData]);
   
   const handleFileUpload = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -101,7 +112,7 @@ export function MenuEditor() {
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
-        complete: (results) => {
+        complete: async (results) => {
           const newItems = results.data.map((row: any) => ({
             id: `ITEM${Date.now()}_${Math.random()}`,
             name: row.name || "Unnamed Item",
@@ -111,11 +122,9 @@ export function MenuEditor() {
             image: row.image || "https://placehold.co/600x400.png",
           })) as MenuItem[];
 
-          setMenuItems(prevItems => {
-              const updatedMenuItems = [...prevItems, ...newItems];
-              saveMenuItems(updatedMenuItems);
-              return updatedMenuItems;
-          });
+          const updatedMenuItems = [...allMenuItems, ...newItems];
+          await saveMenuItems(updatedMenuItems);
+          await refreshData();
           
           toast({
             title: "Menu Imported",
@@ -131,7 +140,7 @@ export function MenuEditor() {
         }
       });
     }
-  }, [toast]);
+  }, [toast, allMenuItems, refreshData]);
 
   const triggerFileUpload = React.useCallback(() => {
     fileInputRef.current?.click();
@@ -171,7 +180,7 @@ export function MenuEditor() {
   }, [sortConfig]);
 
   const sortedAndFilteredItems = React.useMemo(() => {
-    let sortableItems = [...menuItems];
+    let sortableItems = [...allMenuItems];
     if (searchTerm) {
       sortableItems = sortableItems.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -190,7 +199,7 @@ export function MenuEditor() {
       });
     }
     return sortableItems;
-  }, [menuItems, searchTerm, sortConfig]);
+  }, [allMenuItems, searchTerm, sortConfig]);
 
   const totalPages = Math.ceil(sortedAndFilteredItems.length / ITEMS_PER_PAGE);
   const paginatedItems = React.useMemo(() => {
@@ -201,6 +210,10 @@ export function MenuEditor() {
   React.useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
+
+  if (loading || !appConfig) {
+      return <MenuEditorLoading />;
+  }
 
   return (
     <div className="flex flex-col">
@@ -429,5 +442,7 @@ function EditItemDialog({ isOpen, onOpenChange, item, onSave }: { isOpen: boolea
       </Dialog>
   );
 }
+
+    
 
     
