@@ -101,9 +101,9 @@ export function SuperAdminSettings() {
     if (result.success) {
       toast({
         title: "Settings Saved!",
-        description: "Your changes have been saved. They will be applied on the next page load.",
+        description: "Your changes have been saved and will be applied.",
       });
-      // Optionally, force a reload to see changes immediately
+      // Force a refresh to re-fetch the new config in the layout
       router.refresh();
     } else {
       toast({
@@ -331,6 +331,19 @@ export function SuperAdminSettings() {
                         </FormItem>
                         )}
                     />
+                     <FormField
+                        control={form.control}
+                        name="fssaiLicense"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>FSSAI License</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g. 10012345678901" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                 </div>
               </div>
 
@@ -377,19 +390,6 @@ export function SuperAdminSettings() {
                                   <FormLabel>GST Number</FormLabel>
                                   <FormControl>
                                       <Input placeholder="e.g. 27ABCDE1234F1Z5" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                              </FormItem>
-                          )}
-                      />
-                       <FormField
-                          control={form.control}
-                          name="fssaiLicense"
-                          render={({ field }) => (
-                              <FormItem>
-                                  <FormLabel>FSSAI License</FormLabel>
-                                  <FormControl>
-                                      <Input placeholder="e.g. 10012345678901" {...field} />
                                   </FormControl>
                                   <FormMessage />
                               </FormItem>
