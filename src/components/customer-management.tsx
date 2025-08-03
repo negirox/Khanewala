@@ -13,21 +13,57 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Mail, Phone, PlusCircle, Edit, Trash2, Star, Upload } from "lucide-react";
-import { getCustomers, saveCustomers } from "@/app/actions";
+import { addNewCustomer, saveCustomers } from "@/app/actions";
 import { cn } from "@/lib/utils";
+import { useAppData } from "@/hooks/use-app-data";
+import { Skeleton } from "./ui/skeleton";
 
 
-const emptyCustomer: Customer = { id: "", name: "", email: "", phone: "", avatar: "", loyaltyPoints: 0 };
+const emptyCustomer: Omit<Customer, 'id' | 'loyaltyPoints'> = { name: "", email: "", phone: "", avatar: "" };
+
+function CustomerManagementLoading() {
+    return (
+        <div className="flex flex-col">
+            <div className="flex items-center justify-between mb-4 gap-4">
+                <h1 className="text-2xl font-bold font-headline">Customer Management</h1>
+                <Skeleton className="h-10 w-48" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[...Array(4)].map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader className="items-center text-center">
+                            <Skeleton className="h-20 w-20 rounded-full" />
+                            <div className="flex-1 pt-2 w-full space-y-2">
+                                <Skeleton className="h-6 w-3/4 mx-auto" />
+                                <Skeleton className="h-4 w-1/2 mx-auto" />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            <div className="flex items-center gap-3">
+                                <Skeleton className="h-4 w-4 rounded" />
+                                <Skeleton className="h-4 w-full" />
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <Skeleton className="h-4 w-4 rounded" />
+                                <Skeleton className="h-4 w-full" />
+                            </div>
+                        </CardContent>
+                        <div className="flex justify-end p-2 border-t">
+                            <Skeleton className="h-8 w-8" />
+                            <Skeleton className="h-8 w-8 ml-2" />
+                        </div>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    )
+}
 
 export function CustomerManagement() {
-  const [customers, setCustomers] = React.useState<Customer[]>([]);
+  const { allCustomers, setAllCustomers, loading, refreshData } = useAppData();
   const [isDialogOpen, setDialogOpen] = React.useState(false);
   const [editingCustomer, setEditingCustomer] = React.useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
-
-  React.useEffect(() => {
-    getCustomers().then(setCustomers);
-  }, []);
 
   const handleEdit = React.useCallback((customer: Customer) => {
     setEditingCustomer(customer);
@@ -39,36 +75,36 @@ export function CustomerManagement() {
     setDialogOpen(true);
   }, []);
   
-  const handleDelete = React.useCallback((customerId: string) => {
-    setCustomers(prevCustomers => {
-      const updatedCustomers = prevCustomers.filter(customer => customer.id !== customerId);
-      saveCustomers(updatedCustomers);
-      return updatedCustomers;
-    });
-  }, []);
+  const handleDelete = React.useCallback(async (customerId: string) => {
+    const updatedCustomers = allCustomers.filter(customer => customer.id !== customerId);
+    setAllCustomers(updatedCustomers);
+    await saveCustomers(updatedCustomers);
+  }, [allCustomers, setAllCustomers]);
 
-  const handleSave = React.useCallback((customerData: Customer) => {
-    setCustomers(prevCustomers => {
-        let updatedCustomers;
-        if (editingCustomer) {
-          updatedCustomers = prevCustomers.map(customer => customer.id === customerData.id ? customerData : customer);
-        } else {
-          updatedCustomers = [...prevCustomers, { ...customerData, id: `CUST${prevCustomers.length + 1}` }];
-        }
-        saveCustomers(updatedCustomers);
-        return updatedCustomers;
-    });
+  const handleSave = React.useCallback(async (customerData: Customer | Omit<Customer, 'id'|'loyaltyPoints'>) => {
+    if ('id' in customerData) { // Editing existing customer
+        const updatedCustomers = allCustomers.map(customer => customer.id === customerData.id ? customerData : customer);
+        setAllCustomers(updatedCustomers);
+        await saveCustomers(updatedCustomers);
+    } else { // Adding new customer
+        await addNewCustomer(customerData);
+        await refreshData();
+    }
     setDialogOpen(false);
     setEditingCustomer(null);
-  }, [editingCustomer]);
+  }, [allCustomers, setAllCustomers, refreshData]);
 
   const filteredCustomers = React.useMemo(() => {
-    return customers.filter(customer =>
+    return allCustomers.filter(customer =>
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.phone.includes(searchTerm)
     );
-  }, [customers, searchTerm]);
+  }, [allCustomers, searchTerm]);
+
+  if (loading) {
+      return <CustomerManagementLoading />
+  }
 
   return (
     <div className="flex flex-col">
@@ -136,26 +172,33 @@ export function CustomerManagement() {
 
 
 const formSchema = z.object({
-    id: z.string(),
+    id: z.string().optional(),
     name: z.string().min(2, "Name is required"),
     email: z.string().email("Invalid email address"),
     phone: z.string().min(10, "Invalid phone number"),
     avatar: z.string().url().optional().or(z.literal('')),
-    loyaltyPoints: z.coerce.number().min(0, "Loyalty points cannot be negative."),
+    loyaltyPoints: z.coerce.number().min(0, "Loyalty points cannot be negative.").optional(),
 });
 
-function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, customer: Customer | null, onSave: (data: Customer) => void}) {
-    const form = useForm<z.infer<typeof formSchema>>({
+type FormValues = z.infer<typeof formSchema>;
+
+function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, customer: Customer | null, onSave: (data: any) => void}) {
+    const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: customer || emptyCustomer,
+        defaultValues: customer ? { ...customer } : { ...emptyCustomer, loyaltyPoints: 0 },
     });
 
     React.useEffect(() => {
-        form.reset(customer || emptyCustomer);
+        form.reset(customer ? { ...customer } : { ...emptyCustomer, loyaltyPoints: 0 });
     }, [customer, form]);
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        onSave(values);
+    function onSubmit(values: FormValues) {
+        if(customer) { // Editing
+            onSave(values as Customer);
+        } else { // Creating
+            const { id, loyaltyPoints, ...newCustomerData } = values;
+            onSave(newCustomerData);
+        }
     }
 
     return (
@@ -208,13 +251,13 @@ function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen
                             </div>
                             <p className="text-xs text-muted-foreground">Image uploads are not implemented in this demo.</p>
                         </FormItem>
-                        <FormField control={form.control} name="loyaltyPoints" render={({ field }) => (
+                        {customer && <FormField control={form.control} name="loyaltyPoints" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Loyalty Points</FormLabel>
-                                <FormControl><Input type="number" placeholder="0" {...field} /></FormControl>
+                                <FormControl><Input type="number" placeholder="0" {...field} value={field.value || 0} /></FormControl>
                                 <FormMessage />
                             </FormItem>
-                        )} />
+                        )} />}
                         <DialogFooter>
                             <Button type="submit">Save Changes</Button>
                         </DialogFooter>
@@ -224,3 +267,5 @@ function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen
         </Dialog>
     );
 }
+
+    

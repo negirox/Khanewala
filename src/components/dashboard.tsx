@@ -21,26 +21,48 @@ import { Badge } from "@/components/ui/badge";
 import type { Order, MenuItem } from "@/lib/types";
 import { format, subDays, startOfDay } from "date-fns";
 import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { appConfig } from "@/lib/config";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { getArchivedOrders } from "@/app/actions";
+import { useAppData } from "@/hooks/use-app-data";
+import { Skeleton } from "./ui/skeleton";
 
 const chartColors = ["#2563eb", "#f97316", "#22c55e", "#ef4444", "#8b5cf6", "#14b8a6", "#d946ef"];
 const ITEMS_PER_PAGE = 10;
 
+function DashboardLoading() {
+    return (
+        <div className="flex flex-col gap-6">
+            <h1 className="text-2xl font-bold font-headline">Today's Dashboard</h1>
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-4 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-4 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-4 w-40 mt-2" /></CardContent></Card>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2">
+                <Card><CardHeader><Skeleton className="h-5 w-48" /></CardHeader><CardContent><Skeleton className="h-[250px] w-full" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-5 w-48" /></CardHeader><CardContent><Skeleton className="h-[250px] w-full" /></CardContent></Card>
+            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Recent Orders</CardTitle>
+                    <CardDescription>A list of the most recent orders completed today.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-48 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+
 export function Dashboard() {
-  const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
+  const { archivedOrders, loading, appConfig } = useAppData();
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof Order; direction: 'ascending' | 'descending' } | null>({ key: 'createdAt', direction: 'descending' });
   const [currentPage, setCurrentPage] = React.useState(1);
-
-  React.useEffect(() => {
-    getArchivedOrders().then(orders => setArchivedOrders(orders.map(o => ({...o, createdAt: new Date(o.createdAt)}))));
-  }, []);
-
+  
   const stats = React.useMemo(() => {
     const totalSales = archivedOrders.reduce((sum, order) => sum + order.total, 0);
     const totalOrders = archivedOrders.length;
@@ -141,6 +163,10 @@ export function Dashboard() {
   React.useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
+
+  if (loading || !appConfig) {
+      return <DashboardLoading />
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -337,3 +363,5 @@ export function Dashboard() {
     </div>
   );
 }
+
+    

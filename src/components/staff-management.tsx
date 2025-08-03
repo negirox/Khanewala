@@ -16,8 +16,7 @@ import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Mail, Phone, Clock, PlusCircle, Edit, Trash2, DollarSign, Upload, HandCoins, Download, History, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getStaff, saveStaff, getStaffTransactions, addStaffTransaction, generateStaffTransactionReport } from "@/app/actions";
-import { appConfig } from "@/lib/config";
+import { saveStaff, addStaffTransaction, generateStaffTransactionReport } from "@/app/actions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +24,8 @@ import { Separator } from "./ui/separator";
 import { DateRange } from "react-day-picker";
 import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { useAppData } from "@/hooks/use-app-data";
+import { Skeleton } from "./ui/skeleton";
 
 const roleColors: Record<StaffMember['role'], string> = {
     Manager: "bg-red-500 text-white",
@@ -35,18 +36,50 @@ const roleColors: Record<StaffMember['role'], string> = {
 
 const emptyStaffMember: StaffMember = { id: "", name: "", role: "Waiter", email: "", phone: "", shift: "Morning", avatar: "", salary: 0, aadharCard: "", panCard: "", voterId: "", carryForwardBalance: 0 };
 
+function StaffManagementLoading() {
+    return (
+        <div className="flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+                <h1 className="text-2xl font-bold font-headline">Staff Management</h1>
+                <Skeleton className="h-10 w-36" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                 {[...Array(4)].map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader className="items-center text-center">
+                            <Skeleton className="h-20 w-20 rounded-full" />
+                            <div className="flex-1 pt-2 w-full space-y-2">
+                                <Skeleton className="h-6 w-3/4 mx-auto" />
+                                <Skeleton className="h-5 w-1/4 mx-auto" />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            <Skeleton className="h-5 w-full" />
+                            <Skeleton className="h-5 w-full" />
+                            <Skeleton className="h-5 w-full" />
+                            <Skeleton className="h-5 w-full" />
+                        </CardContent>
+                        <CardFooter className="flex flex-col gap-2 border-t pt-2">
+                            <Skeleton className="h-9 w-full" />
+                             <div className="flex justify-end w-full">
+                                <Skeleton className="h-8 w-8" />
+                                <Skeleton className="h-8 w-8 ml-2" />
+                            </div>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    )
+}
+
 export function StaffManagement() {
-  const [staff, setStaff] = React.useState<StaffMember[]>([]);
-  const [transactions, setTransactions] = React.useState<StaffTransaction[]>([]);
+  const { allStaff, allStaffTransactions, refreshData, loading, appConfig } = useAppData();
   const [isFormDialogOpen, setFormDialogOpen] = React.useState(false);
   const [isTransactionDialogOpen, setTransactionDialogOpen] = React.useState(false);
   const [editingStaff, setEditingStaff] = React.useState<StaffMember | null>(null);
   const [viewingStaff, setViewingStaff] = React.useState<StaffMember | null>(null);
 
-  React.useEffect(() => {
-    getStaff().then(setStaff);
-    getStaffTransactions().then(setTransactions);
-  }, []);
 
   const handleEdit = React.useCallback((member: StaffMember) => {
     setEditingStaff(member);
@@ -58,28 +91,25 @@ export function StaffManagement() {
     setFormDialogOpen(true);
   }, []);
   
-  const handleDelete = React.useCallback((staffId: string) => {
-    setStaff(prevStaff => {
-        const updatedStaff = prevStaff.filter(member => member.id !== staffId);
-        saveStaff(updatedStaff);
-        return updatedStaff;
-    });
-  }, []);
+  const handleDelete = React.useCallback(async (staffId: string) => {
+    const updatedStaff = allStaff.filter(member => member.id !== staffId);
+    await saveStaff(updatedStaff);
+    await refreshData();
+  }, [allStaff, refreshData]);
 
-  const handleSave = React.useCallback((staffData: StaffMember) => {
-    setStaff(prevStaff => {
-        let updatedStaff;
-        if (editingStaff) {
-          updatedStaff = prevStaff.map(member => member.id === staffData.id ? staffData : member);
-        } else {
-          updatedStaff = [...prevStaff, { ...staffData, id: `STAFF${prevStaff.length + 1}`, carryForwardBalance: 0 }];
-        }
-        saveStaff(updatedStaff);
-        return updatedStaff;
-    });
+  const handleSave = React.useCallback(async (staffData: StaffMember) => {
+    let updatedStaff;
+    if (editingStaff) {
+      updatedStaff = allStaff.map(member => member.id === staffData.id ? staffData : member);
+    } else {
+      updatedStaff = [...allStaff, { ...staffData, id: `STAFF${Date.now()}`, carryForwardBalance: 0 }];
+    }
+    await saveStaff(updatedStaff);
+    await refreshData();
+    
     setFormDialogOpen(false);
     setEditingStaff(null);
-  }, [editingStaff]);
+  }, [editingStaff, allStaff, refreshData]);
 
   const handleViewTransactions = React.useCallback((member: StaffMember) => {
     setViewingStaff(member);
@@ -87,10 +117,13 @@ export function StaffManagement() {
   }, []);
 
   const handleAddTransaction = React.useCallback(async ({ newTransaction, updatedStaffMember }: { newTransaction: StaffTransaction, updatedStaffMember: StaffMember }) => {
-    setTransactions(prev => [...prev, newTransaction]);
-    setStaff(prev => prev.map(s => s.id === updatedStaffMember.id ? updatedStaffMember : s));
+    await refreshData();
     setViewingStaff(updatedStaffMember); // Update the currently viewed staff member
-  }, []);
+  }, [refreshData]);
+
+  if (loading || !appConfig) {
+      return <StaffManagementLoading />
+  }
 
   return (
     <div className="flex flex-col">
@@ -102,7 +135,7 @@ export function StaffManagement() {
         </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {staff.map((member) => (
+        {allStaff.map((member) => (
           <Card key={member.id} className="flex flex-col">
             <CardHeader className="items-center text-center">
                 <Avatar className="h-20 w-20">
@@ -160,7 +193,7 @@ export function StaffManagement() {
         isOpen={isTransactionDialogOpen}
         onOpenChange={setTransactionDialogOpen}
         staffMember={viewingStaff}
-        transactions={transactions.filter(t => t.staffId === viewingStaff?.id)}
+        transactions={allStaffTransactions.filter(t => t.staffId === viewingStaff?.id)}
         onAddTransaction={handleAddTransaction}
       />}
     </div>
@@ -276,6 +309,7 @@ export function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, tran
     onAddTransaction: (data: {newTransaction: StaffTransaction, updatedStaffMember: StaffMember}) => void;
 }) {
     const { toast } = useToast();
+    const { appConfig } = useAppData();
     const form = useForm<z.infer<typeof transactionFormSchema>>({
         resolver: zodResolver(transactionFormSchema),
         defaultValues: { amount: 0, type: "Advance", paymentMode: "Cash", notes: "" },
@@ -304,7 +338,7 @@ export function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, tran
     }, [transactions, staffMember]);
 
     async function onSubmit(values: z.infer<typeof transactionFormSchema>) {
-        if (!staffMember) return;
+        if (!staffMember || !appConfig) return;
         
         const result = await addStaffTransaction({ ...values, staffId: staffMember.id }, staffMember, monthlyReport.netPayable);
         onAddTransaction(result);
@@ -316,7 +350,7 @@ export function StaffTransactionDialog({ isOpen, onOpenChange, staffMember, tran
         form.reset();
     }
     
-    if (!staffMember) return null;
+    if (!staffMember || !appConfig) return null;
 
     return (
         <>
@@ -410,6 +444,7 @@ function TransactionHistoryDialog({
         netPayable: number
     }
 }) {
+    const { appConfig } = useAppData();
     const today = new Date();
     const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
         from: startOfMonth(today),
@@ -494,7 +529,7 @@ function TransactionHistoryDialog({
         document.body.removeChild(link);
     };
 
-    if (!staffMember) return null;
+    if (!staffMember || !appConfig) return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -587,5 +622,7 @@ function TransactionHistoryDialog({
         </Dialog>
     );
 }
+
+    
 
     

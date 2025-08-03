@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import type { Table as TableType, Order } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { User, Check, Ban, PlusCircle } from "lucide-react";
-import { getTables, saveTables, getActiveOrders } from "@/app/actions";
+import { saveTables } from "@/app/actions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { BillView } from "./bill-view";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAppData } from "@/hooks/use-app-data";
+import { Skeleton } from "./ui/skeleton";
 
 const statusConfig = {
   available: {
@@ -32,34 +34,54 @@ const statusConfig = {
   },
 };
 
+function TableLayoutLoading() {
+    return (
+        <div className="flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+                <h1 className="text-2xl font-bold font-headline">Table Management</h1>
+                <Skeleton className="h-10 w-36" />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+                {[...Array(6)].map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+                             <Skeleton className="h-8 w-10" />
+                             <Skeleton className="h-6 w-6" />
+                        </CardHeader>
+                        <CardContent className="text-center">
+                            <Skeleton className="h-5 w-20 mx-auto mb-1" />
+                            <Skeleton className="h-5 w-24 mx-auto" />
+                        </CardContent>
+                        <CardFooter>
+                            <Skeleton className="h-9 w-full" />
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    )
+}
+
 export function TableLayout() {
-  const [tables, setTables] = React.useState<TableType[]>([]);
-  const [activeOrders, setActiveOrders] = React.useState<Order[]>([]);
+  const { allTables, activeOrders, setAllTables, loading } = useAppData();
   const [viewingOrder, setViewingOrder] = React.useState<Order | null>(null);
   const [isAddTableDialogOpen, setAddTableDialogOpen] = React.useState(false);
   const [newTableCapacity, setNewTableCapacity] = React.useState<number>(4);
   const { toast } = useToast();
 
-  React.useEffect(() => {
-    getTables().then(setTables);
-    getActiveOrders().then(orders => setActiveOrders(orders.map(o => ({...o, createdAt: new Date(o.createdAt)}))));
-  }, []);
-
-  const toggleStatus = React.useCallback((tableId: number) => {
-    setTables(prevTables => {
-        const updatedTables = prevTables.map(table => {
-          if (table.id === tableId) {
-            const statuses: TableType['status'][] = ['available', 'occupied', 'reserved'];
-            const currentIndex = statuses.indexOf(table.status);
-            const nextIndex = (currentIndex + 1) % statuses.length;
-            return { ...table, status: statuses[nextIndex], orderId: statuses[nextIndex] === 'available' ? undefined : table.orderId };
-          }
-          return table;
-        });
-        saveTables(updatedTables);
-        return updatedTables;
+  const toggleStatus = React.useCallback(async (tableId: number) => {
+    const updatedTables = allTables.map(table => {
+        if (table.id === tableId) {
+        const statuses: TableType['status'][] = ['available', 'occupied', 'reserved'];
+        const currentIndex = statuses.indexOf(table.status);
+        const nextIndex = (currentIndex + 1) % statuses.length;
+        return { ...table, status: statuses[nextIndex], orderId: statuses[nextIndex] === 'available' ? undefined : table.orderId };
+        }
+        return table;
     });
-  }, []);
+    setAllTables(updatedTables);
+    await saveTables(updatedTables);
+  }, [allTables, setAllTables]);
 
   const handleViewOrder = React.useCallback((orderId?: string) => {
     if (!orderId) return;
@@ -85,14 +107,14 @@ export function TableLayout() {
         return;
     }
     const newTable: TableType = {
-        id: tables.length > 0 ? Math.max(...tables.map(t => t.id)) + 1 : 1,
+        id: allTables.length > 0 ? Math.max(...allTables.map(t => t.id)) + 1 : 1,
         capacity: newTableCapacity,
         status: 'available'
     };
 
-    const updatedTables = [...tables, newTable];
+    const updatedTables = [...allTables, newTable];
     await saveTables(updatedTables);
-    setTables(updatedTables);
+    setAllTables(updatedTables);
     toast({
         title: "Table Added",
         description: `Table ${newTable.id} with capacity ${newTable.capacity} has been added.`
@@ -100,7 +122,11 @@ export function TableLayout() {
     setAddTableDialogOpen(false);
     setNewTableCapacity(4);
 
-  }, [newTableCapacity, tables, toast]);
+  }, [newTableCapacity, allTables, toast, setAllTables]);
+
+  if (loading) {
+      return <TableLayoutLoading />;
+  }
 
   return (
     <div className="flex flex-col">
@@ -112,7 +138,7 @@ export function TableLayout() {
         </Button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-        {tables.map((table) => {
+        {allTables.map((table) => {
           const config = statusConfig[table.status];
           const Icon = config.icon;
           return (
@@ -191,3 +217,6 @@ export function TableLayout() {
   );
 }
 
+
+
+    
