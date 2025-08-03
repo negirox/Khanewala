@@ -1,7 +1,7 @@
 {
-  "title": "WowFoods",
+  "title": "Wow Foods",
   "logo": "/logo.png",
-  "theme": "mint",
+  "theme": "sunset",
   "font": "pt-sans",
   "dataSource": "firebase",
   "enabledAdminSections": {
