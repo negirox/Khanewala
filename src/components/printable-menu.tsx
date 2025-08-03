@@ -7,7 +7,7 @@ import { getMenuItems } from "@/app/actions";
 import { appConfig } from "@/lib/config";
 import type { MenuItem } from "@/lib/types";
 import { Button } from "./ui/button";
-import { Printer } from "lucide-react";
+import { Printer, UtensilsCrossed } from "lucide-react";
 import { Separator } from "./ui/separator";
 
 export function PrintableMenu() {
@@ -43,7 +43,7 @@ export function PrintableMenu() {
                 {/* Header */}
                 <header className="text-center mb-8 border-b-4 border-primary pb-4">
                     <div className="flex justify-center items-center gap-4 mb-2">
-                        <appConfig.logo className="h-16 w-16 text-primary" />
+                        <UtensilsCrossed className="h-16 w-16 text-primary" />
                         <div>
                             <h1 className="text-5xl font-bold font-headline text-primary">{appConfig.title}</h1>
                             <p className="text-lg text-muted-foreground">Authentic Indian Cuisine</p>

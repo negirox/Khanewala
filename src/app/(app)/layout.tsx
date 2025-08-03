@@ -1,9 +1,12 @@
+
 import { AppShell } from '@/components/app-shell';
 import { AppDataProvider } from '@/hooks/use-app-data';
+import { appConfigPromise } from '@/lib/config';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const appConfig = await appConfigPromise;
   return (
-    <AppDataProvider>
+    <AppDataProvider initialConfig={appConfig}>
       <AppShell>{children}</AppShell>
     </AppDataProvider>
   );

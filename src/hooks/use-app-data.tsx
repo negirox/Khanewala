@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { getActiveOrders, getArchivedOrders, getCustomers, getMenuItems, getStaff, getStaffTransactions, getTables, getAppConfig } from "@/app/actions";
+import { getActiveOrders, getArchivedOrders, getCustomers, getMenuItems, getStaff, getStaffTransactions, getTables } from "@/app/actions";
 import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction, AppConfigData } from "@/lib/types";
 import type { LucideIcon } from "lucide-react";
 
@@ -14,7 +14,7 @@ interface AppDataContextType {
     allStaff: StaffMember[];
     allTables: Table[];
     allStaffTransactions: StaffTransaction[];
-    appConfig: (AppConfigData & { logoIcon: LucideIcon }) | null;
+    appConfig: AppConfigData | null;
     loading: boolean;
     refreshData: () => Promise<void>;
     setActiveOrders: React.Dispatch<React.SetStateAction<Order[]>>;
@@ -25,7 +25,13 @@ interface AppDataContextType {
 
 const AppDataContext = React.createContext<AppDataContextType | undefined>(undefined);
 
-export function AppDataProvider({ children }: { children: React.ReactNode }) {
+export function AppDataProvider({ 
+    children, 
+    initialConfig 
+}: { 
+    children: React.ReactNode, 
+    initialConfig: AppConfigData
+}) {
     const [loading, setLoading] = React.useState(true);
     const [activeOrders, setActiveOrders] = React.useState<Order[]>([]);
     const [archivedOrders, setArchivedOrders] = React.useState<Order[]>([]);
@@ -34,7 +40,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     const [allStaff, setAllStaff] = React.useState<StaffMember[]>([]);
     const [allTables, setAllTables] = React.useState<Table[]>([]);
     const [allStaffTransactions, setAllStaffTransactions] = React.useState<StaffTransaction[]>([]);
-    const [appConfig, setAppConfig] = React.useState<(AppConfigData & { logoIcon: LucideIcon }) | null>(null);
+    const [appConfig, setAppConfig] = React.useState<AppConfigData | null>(initialConfig);
 
     const fetchData = React.useCallback(async () => {
         setLoading(true);
@@ -47,7 +53,6 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
                 staff,
                 tables,
                 staffTransactions,
-                config,
             ] = await Promise.all([
                 getActiveOrders(),
                 getArchivedOrders(),
@@ -56,7 +61,6 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
                 getStaff(),
                 getTables(),
                 getStaffTransactions(),
-                getAppConfig(),
             ]);
 
             setActiveOrders(active.map(o => ({ ...o, createdAt: new Date(o.createdAt) })));
@@ -67,10 +71,6 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
             setAllTables(tables);
             setAllStaffTransactions(staffTransactions);
             
-            // This is a bit of a hack as we can't import the icon on the server
-            const { UtensilsCrossed } = await import('lucide-react');
-            setAppConfig({ ...config, logoIcon: UtensilsCrossed });
-
         } catch (error) {
             console.error("Failed to fetch app data:", error);
             // Handle error appropriately, maybe show a toast
