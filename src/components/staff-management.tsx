@@ -206,9 +206,9 @@ const formSchema = z.object({
     name: z.string().min(2, "Name is required"),
     role: z.enum(["Manager", "Chef", "Waiter", "Busboy"]),
     email: z.string().email("Invalid email address"),
-    phone: z.string().min(10, "Invalid phone number"),
+    phone: z.string().min(1, "Phone number is required"),
     shift: z.enum(["Morning", "Afternoon", "Night"]),
-    avatar: z.string().optional(),
+    avatar: z.string().url("Invalid URL").optional().or(z.literal('')),
     salary: z.coerce.number().min(0, "Salary cannot be negative.").optional(),
     aadharCard: z.string().optional(),
     panCard: z.string().optional(),
@@ -671,3 +671,5 @@ function TransactionHistoryDialog({
         </Dialog>
     );
 }
+
+    

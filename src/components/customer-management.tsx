@@ -177,8 +177,8 @@ const formSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(2, "Name is required"),
     email: z.string().email("Invalid email address"),
-    phone: z.string().min(10, "Invalid phone number"),
-    avatar: z.string().optional(),
+    phone: z.string().min(1, "Phone number is required"),
+    avatar: z.string().url("Invalid URL").optional().or(z.literal('')),
     loyaltyPoints: z.coerce.number().min(0, "Loyalty points cannot be negative.").optional(),
 });
 
@@ -315,3 +315,5 @@ function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen
         </Dialog>
     );
 }
+
+    

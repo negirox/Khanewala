@@ -1,6 +1,6 @@
 id,name,role,email,phone,shift,avatar,salary,aadharCard,panCard,voterId,carryForwardBalance
-STAFF1,Rajesh Kumar,Manager,"rajesh.kumar@example.com","9876543210","Morning","https://placehold.co/100x100.png",50000,"111122223333","ABCDE1234F","VOTERID111",0
-STAFF2,Sunita Sharma,Chef,"sunita.sharma@example.com","9876543211","Morning","https://placehold.co/100x100.png",40000,"444455556666","FGHIJ5678G","VOTERID222",-150.50
-STAFF3,Amit Patel,Waiter,"amit.patel@example.com","9876543212","Afternoon","https://placehold.co/100x100.png",25000,"777788889999","KLMNO9012H","VOTERID333",0
-STAFF4,Priya Singh,Waiter,"priya.singh@example.com","9876543213","Afternoon","https://placehold.co/100x100.png",25000,"123412341234","PQRST3456I","VOTERID444",200
-STAFF5,Deepak Verma,Busboy,"deepak.verma@example.com","9876543214","Night","https://placehold.co/100x100.png",20000,"567856785678","UVWXY7890J","VOTERID555",0
+STAFF1,Rajesh Kumar,Manager,rajesh.kumar@example.com,9876543210,Morning,/avatars/staff-STAFF1-1754217278357.png?v=1754217278362,50000,11112222333,ABCDE1234F,VOTERID111,0
+STAFF2,Sunita Sharma,Chef,sunita.sharma@example.com,9876543211,Morning,https://placehold.co/100x100.png,40000,444455556666,FGHIJ5678G,VOTERID222,-150.5
+STAFF3,Amit Patel,Waiter,amit.patel@example.com,9876543212,Afternoon,https://placehold.co/100x100.png,25000,777788889999,KLMNO9012H,VOTERID333,0
+STAFF4,Priya Singh,Waiter,priya.singh@example.com,9876543213,Afternoon,https://placehold.co/100x100.png,25000,123412341234,PQRST3456I,VOTERID444,200
+STAFF5,Deepak Verma,Busboy,deepak.verma@example.com,9876543214,Night,https://placehold.co/100x100.png,20000,567856785678,UVWXY7890J,VOTERID555,0
