@@ -87,6 +87,7 @@ export function CustomerManagement() {
         const updatedCustomers = allCustomers.map(customer => customer.id === customerData.id ? customerData : customer);
         setAllCustomers(updatedCustomers);
         await saveCustomers(updatedCustomers);
+        await refreshData();
     } else { // Adding new customer
         await addNewCustomer(customerData);
         await refreshData();
@@ -177,7 +178,7 @@ const formSchema = z.object({
     name: z.string().min(2, "Name is required"),
     email: z.string().email("Invalid email address"),
     phone: z.string().min(10, "Invalid phone number"),
-    avatar: z.string().url().optional().or(z.literal('')),
+    avatar: z.string().optional(),
     loyaltyPoints: z.coerce.number().min(0, "Loyalty points cannot be negative.").optional(),
 });
 
@@ -208,13 +209,15 @@ function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen
     
     const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (!file || !customer) return;
+        if (!file) return;
 
         setIsUploading(true);
+        const customerId = customer?.id || `new-${Date.now()}`;
+        
         const formData = new FormData();
         formData.append('avatar', file);
         formData.append('type', 'customer');
-        formData.append('id', customer.id);
+        formData.append('id', customerId);
 
         const result = await uploadAvatar(formData);
         setIsUploading(false);
@@ -270,7 +273,7 @@ function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen
                          <FormField control={form.control} name="avatar" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Avatar URL</FormLabel>
-                                <FormControl><Input placeholder="https://placehold.co/100x100.png" {...field} /></FormControl>
+                                <FormControl><Input placeholder="https://placehold.co/100x100.png" {...field} value={field.value || ''} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -283,21 +286,18 @@ function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen
                                   ref={fileInputRef} 
                                   onChange={handleAvatarUpload}
                                   accept="image/png, image/jpeg"
-                                  disabled={!customer || isUploading}
+                                  disabled={isUploading}
                                 />
                                 <Button 
                                   variant="outline" 
                                   type="button" 
                                   onClick={() => fileInputRef.current?.click()}
-                                  disabled={!customer || isUploading}
+                                  disabled={isUploading}
                                 >
                                     <Upload className="mr-2 h-4 w-4" />
                                     {isUploading ? "Uploading..." : "Upload"}
                                 </Button>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                {customer ? "Upload an image for this customer." : "Save the customer first to enable image uploads."}
-                            </p>
                         </FormItem>
                         {customer && <FormField control={form.control} name="loyaltyPoints" render={({ field }) => (
                             <FormItem>
@@ -315,5 +315,3 @@ function EditCustomerDialog({ isOpen, onOpenChange, customer, onSave }: { isOpen
         </Dialog>
     );
 }
-
-    

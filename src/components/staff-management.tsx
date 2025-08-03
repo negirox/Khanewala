@@ -208,7 +208,7 @@ const formSchema = z.object({
     email: z.string().email("Invalid email address"),
     phone: z.string().min(10, "Invalid phone number"),
     shift: z.enum(["Morning", "Afternoon", "Night"]),
-    avatar: z.string().url().optional().or(z.literal('')),
+    avatar: z.string().optional(),
     salary: z.coerce.number().min(0, "Salary cannot be negative.").optional(),
     aadharCard: z.string().optional(),
     panCard: z.string().optional(),
@@ -237,13 +237,14 @@ export function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: {
 
     const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (!file || !staffMember) return;
+        if (!file) return;
 
         setIsUploading(true);
+        const staffId = staffMember?.id || `new-${Date.now()}`;
         const formData = new FormData();
         formData.append('avatar', file);
         formData.append('type', 'staff');
-        formData.append('id', staffMember.id);
+        formData.append('id', staffId);
 
         const result = await uploadAvatar(formData);
         setIsUploading(false);
@@ -291,7 +292,7 @@ export function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: {
                             <FormItem><FormLabel>Shift</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a shift" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Morning">Morning</SelectItem><SelectItem value="Afternoon">Afternoon</SelectItem><SelectItem value="Night">Night</SelectItem></SelectContent></Select><FormMessage /></FormItem>
                         )} />
                          <FormField control={form.control} name="avatar" render={({ field }) => (
-                            <FormItem><FormLabel>Avatar URL</FormLabel><FormControl><Input placeholder="https://placehold.co/100x100.png" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Avatar URL</FormLabel><FormControl><Input placeholder="https://placehold.co/100x100.png" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormItem>
                             <FormLabel>Upload Image</FormLabel>
@@ -302,21 +303,18 @@ export function EditStaffDialog({ isOpen, onOpenChange, staffMember, onSave }: {
                                   ref={fileInputRef} 
                                   onChange={handleAvatarUpload}
                                   accept="image/png, image/jpeg"
-                                  disabled={!staffMember || isUploading}
+                                  disabled={isUploading}
                                 />
                                 <Button 
                                   variant="outline" 
                                   type="button" 
                                   onClick={() => fileInputRef.current?.click()}
-                                  disabled={!staffMember || isUploading}
+                                  disabled={isUploading}
                                 >
                                     <Upload className="mr-2 h-4 w-4" />
                                     {isUploading ? "Uploading..." : "Upload"}
                                 </Button>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                {staffMember ? "Upload an image for this staff member." : "Save the staff member first to enable image uploads."}
-                            </p>
                         </FormItem>
                          <FormField control={form.control} name="salary" render={({ field }) => (
                             <FormItem><FormLabel>Salary</FormLabel><FormControl><Input type="number" step="0.01" placeholder="30000.00" {...field} /></FormControl><FormMessage /></FormItem>
@@ -673,7 +671,3 @@ function TransactionHistoryDialog({
         </Dialog>
     );
 }
-
-    
-
-    
