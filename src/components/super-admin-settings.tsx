@@ -30,14 +30,15 @@ import { useRouter } from "next/navigation";
 import { Separator } from "./ui/separator";
 import { Upload } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { getAppConfig, saveAppConfig, uploadLogo, AppConfigData } from "@/services/config-service";
+import { getAppConfig, type AppConfigData } from "@/services/config-service";
+import { saveAppSettings, uploadLogo } from "@/app/actions";
 
 const formSchema = z.object({
   title: z.string().min(1, "App name is required"),
   logo: z.string().optional(),
   theme: z.enum(["default", "ocean", "sunset", "mint", "plum"]),
   font: z.enum(["pt-sans", "roboto-slab"]),
-  dataSource: z.enum(["csv", "api", "firebase"]),
+  dataSource: z.enum(["csv", "firebase"]),
   enabledAdminSections: z.object({
     dashboard: z.boolean(),
     menu: z.boolean(),
@@ -87,7 +88,7 @@ export function SuperAdminSettings() {
         archiveFileLimit: (await getAppConfig()).archiveFileLimit, 
     };
 
-    const result = await saveAppConfig(settingsToSave);
+    const result = await saveAppSettings(settingsToSave);
     setIsSaving(false);
 
     if (result.success) {
@@ -178,7 +179,7 @@ export function SuperAdminSettings() {
                         <div className="flex items-center gap-2">
                             <Input
                               type="file"
-                              className="flex-1"
+                              className="hidden"
                               ref={fileInputRef}
                               onChange={handleLogoUpload}
                               accept="image/png, image/jpeg, image/svg+xml"
@@ -421,3 +422,5 @@ export function SuperAdminSettings() {
     </div>
   );
 }
+
+    
