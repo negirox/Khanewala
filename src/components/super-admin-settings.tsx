@@ -72,6 +72,8 @@ export function SuperAdminSettings() {
     }
   });
 
+  const { formState } = form;
+
   React.useEffect(() => {
     const isLoggedIn = localStorage.getItem("superAdminLoggedIn");
     if (isLoggedIn !== "true") {
@@ -139,6 +141,27 @@ export function SuperAdminSettings() {
     localStorage.removeItem("superAdminLoggedIn");
     router.replace("/super-admin/login");
   };
+
+  if (formState.isLoading) {
+    return (
+        <div className="max-w-4xl mx-auto">
+            <h1 className="text-3xl font-bold font-headline mb-4">Super Admin Panel</h1>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Global Application Configuration</CardTitle>
+                    <CardDescription>Loading settings...</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        <div className="h-10 bg-muted rounded-md animate-pulse" />
+                        <div className="h-24 bg-muted rounded-md animate-pulse" />
+                        <div className="h-24 bg-muted rounded-md animate-pulse" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -422,5 +445,3 @@ export function SuperAdminSettings() {
     </div>
   );
 }
-
-    
