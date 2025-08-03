@@ -77,6 +77,9 @@ export function Dashboard() {
   const [selectedYear, setSelectedYear] = React.useState<string>(String(getYear(new Date())));
   
   const filteredOrders = React.useMemo(() => {
+    if (selectedMonth === 'today') {
+        return archivedOrders.filter(order => format(new Date(order.createdAt), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd"));
+    }
     return archivedOrders.filter(order => {
         const orderDate = new Date(order.createdAt);
         return getMonth(orderDate).toString() === selectedMonth && getYear(orderDate).toString() === selectedYear;
@@ -235,12 +238,13 @@ export function Dashboard() {
                     <SelectValue placeholder="Select Month" />
                 </SelectTrigger>
                 <SelectContent>
+                    <SelectItem value="today">Today's Orders</SelectItem>
                     {months.map((month, index) => (
                         <SelectItem key={month} value={String(index)}>{month}</SelectItem>
                     ))}
                 </SelectContent>
             </Select>
-             <Select value={selectedYear} onValueChange={setSelectedYear}>
+             <Select value={selectedYear} onValueChange={setSelectedYear} disabled={selectedMonth === 'today'}>
                 <SelectTrigger className="w-[120px]">
                     <SelectValue placeholder="Select Year" />
                 </SelectTrigger>
@@ -333,7 +337,7 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <ChartContainer config={{}} className="h-[250px] w-full">
-              <RechartsLineChart data={weeklyRevenue}>
+              <RechartsLineChart data={weeklyRevenue} margin={{ left: 12, right: 12 }}>
                 <XAxis dataKey="week" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value.replace('Week of ', '')} />
                 <YAxis
                   tickLine={false}
@@ -394,7 +398,7 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={{}} className="h-[250px] w-full">
-                     <RechartsBarChart data={topSellingItems} layout="vertical">
+                     <RechartsBarChart data={topSellingItems} layout="vertical" margin={{ left: 30 }}>
                         <XAxis type="number" hide />
                         <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} width={120} tick={{fontSize: 12}} />
                         <ChartTooltip content={<ChartTooltipContent />} />
