@@ -54,6 +54,7 @@ const formSchema = z.object({
   gstNumber: z.string().optional(),
   fssaiLicense: z.string().optional(),
   upiId: z.string().optional(),
+  enableUpiQrOnBill: z.boolean(),
   currency: z.string().min(1, "Currency symbol is required"),
   maxDiscount: z.coerce.number().min(0, "Max discount cannot be negative.").max(100, "Max discount cannot be over 100."),
   loyalty: z.object({
@@ -111,7 +112,6 @@ export function SuperAdminSettings() {
       // Redirect to a page within the main app layout to force a reload
       // of the AppDataProvider with the new config.
       router.push('/dashboard');
-      router.refresh(); // Force a refresh to fetch new config
     } else {
       toast({
         variant: "destructive",
@@ -420,6 +420,26 @@ export function SuperAdminSettings() {
                                   <FormMessage />
                               </FormItem>
                           )}
+                      />
+                       <FormField
+                        control={form.control}
+                        name="enableUpiQrOnBill"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                            <div className="space-y-0.5">
+                              <FormLabel>Enable UPI QR on Bill</FormLabel>
+                              <FormDescription>
+                                Show a dynamic payment QR code on the printed bill.
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
                       />
                       <FormField
                           control={form.control}

@@ -92,6 +92,7 @@ export const defaultAppConfig: AppConfigData = {
     gstNumber: "27ABCDE1234F1Z5",
     fssaiLicense: "12345678901234",
     upiId: "",
+    enableUpiQrOnBill: true,
     maxDiscount: 25,
     ownerName: "Admin",
     phone: "9876543210",
@@ -130,6 +131,7 @@ export interface AppConfigData {
   gstNumber?: string;
   fssaiLicense?: string;
   upiId?: string;
+  enableUpiQrOnBill: boolean;
   currency: string;
   maxDiscount: number;
   loyalty: {

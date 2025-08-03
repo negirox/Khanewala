@@ -17,6 +17,7 @@
   },
   "gstNumber": "27ABCDE1234F1Z5",
   "fssaiLicense": "10012345678901",
+  "upiId": "mukeshsingh.negi007@okicici",
   "currency": "Rs.",
   "maxDiscount": 25,
   "loyalty": {
@@ -24,5 +25,5 @@
     "currencyUnitPerPoint": 1
   },
   "archiveFileLimit": 5242880,
-  "upiId": "your-upi-id@okhdfcbank"
+  "enableUpiQrOnBill": true
 }
