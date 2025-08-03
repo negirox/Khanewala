@@ -17,24 +17,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import type { Order, MenuItem } from "@/lib/types";
-import { format, subDays, startOfDay } from "date-fns";
-import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { format, subDays, startOfDay, getYear, getMonth, set } from "date-fns";
+import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart, ArrowUpDown, ChevronLeft, ChevronRight, Clock, Utensils } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
+import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Legend } from "recharts";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useAppData } from "@/hooks/use-app-data";
 import { Skeleton } from "./ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+
 
 const chartColors = ["#2563eb", "#f97316", "#22c55e", "#ef4444", "#8b5cf6", "#14b8a6", "#d946ef"];
 const ITEMS_PER_PAGE = 10;
+const currentYear = getYear(new Date());
+const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+const months = [
+    "January", "February", "March", "April", "May", "June", 
+    "July", "August", "September", "October", "November", "December"
+];
 
 function DashboardLoading() {
     return (
         <div className="flex flex-col gap-6">
-            <h1 className="text-2xl font-bold font-headline">Today's Dashboard</h1>
+            <h1 className="text-2xl font-bold font-headline">Dashboard</h1>
             <div className="grid gap-4 md:grid-cols-3">
                 <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-4 w-40 mt-2" /></CardContent></Card>
                 <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-4 w-40 mt-2" /></CardContent></Card>
@@ -44,10 +51,14 @@ function DashboardLoading() {
                 <Card><CardHeader><Skeleton className="h-5 w-48" /></CardHeader><CardContent><Skeleton className="h-[250px] w-full" /></CardContent></Card>
                 <Card><CardHeader><Skeleton className="h-5 w-48" /></CardHeader><CardContent><Skeleton className="h-[250px] w-full" /></CardContent></Card>
             </div>
+             <div className="grid gap-6 md:grid-cols-2">
+                <Card><CardHeader><Skeleton className="h-5 w-48" /></CardHeader><CardContent><Skeleton className="h-[250px] w-full" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-5 w-48" /></CardHeader><CardContent><Skeleton className="h-[250px] w-full" /></CardContent></Card>
+            </div>
             <Card>
                 <CardHeader>
                     <CardTitle>Recent Orders</CardTitle>
-                    <CardDescription>A list of the most recent orders completed today.</CardDescription>
+                    <CardDescription>A list of the most recent orders completed.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Skeleton className="h-48 w-full" />
@@ -62,38 +73,42 @@ export function Dashboard() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof Order; direction: 'ascending' | 'descending' } | null>({ key: 'createdAt', direction: 'descending' });
   const [currentPage, setCurrentPage] = React.useState(1);
+  const [selectedMonth, setSelectedMonth] = React.useState<string>(String(getMonth(new Date())));
+  const [selectedYear, setSelectedYear] = React.useState<string>(String(getYear(new Date())));
+  
+  const filteredOrders = React.useMemo(() => {
+    return archivedOrders.filter(order => {
+        const orderDate = new Date(order.createdAt);
+        return getMonth(orderDate).toString() === selectedMonth && getYear(orderDate).toString() === selectedYear;
+    });
+  }, [archivedOrders, selectedMonth, selectedYear]);
   
   const stats = React.useMemo(() => {
-    const totalSales = archivedOrders.reduce((sum, order) => sum + order.total, 0);
-    const totalOrders = archivedOrders.length;
+    const totalSales = filteredOrders.reduce((sum, order) => sum + order.total, 0);
+    const totalOrders = filteredOrders.length;
     const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
     return {
       totalSales,
       totalOrders,
       avgOrderValue,
     };
-  }, [archivedOrders]);
+  }, [filteredOrders]);
 
   const dailyRevenue = React.useMemo(() => {
-    const data: { date: string, total: number }[] = [];
-    for (let i = 6; i >= 0; i--) {
-        const date = subDays(new Date(), i);
-        const dayStart = startOfDay(date);
-        
-        const dayString = format(dayStart, "MMM d");
-        
-        const total = archivedOrders
-            .filter(order => format(new Date(order.createdAt), "MMM d") === dayString)
-            .reduce((sum, order) => sum + order.total, 0);
-
-        data.push({ date: format(dayStart, "eee"), total });
-    }
-    return data;
-  }, [archivedOrders]);
+    const dataMap: { [key: string]: number } = {};
+    filteredOrders.forEach(order => {
+        const day = format(new Date(order.createdAt), "yyyy-MM-dd");
+        dataMap[day] = (dataMap[day] || 0) + order.total;
+    });
+    return Object.entries(dataMap).map(([date, total]) => ({
+        date: format(new Date(date), "MMM d"),
+        total,
+    }));
+  }, [filteredOrders]);
   
   const salesByCategory = React.useMemo(() => {
     const categoryMap: { [key: string]: number } = {};
-    archivedOrders.forEach(order => {
+    filteredOrders.forEach(order => {
         order.items.forEach(item => {
             const category = item.menuItem.category;
             const itemTotal = item.menuItem.price * item.quantity;
@@ -105,8 +120,39 @@ export function Dashboard() {
         value,
         fill: chartColors[index % chartColors.length]
     })).sort((a,b) => b.value - a.value);
+  }, [filteredOrders]);
 
-  }, [archivedOrders]);
+   const salesByHour = React.useMemo(() => {
+    const data: { hour: string, sales: number }[] = Array.from({length: 24}, (_, i) => ({
+        hour: `${String(i).padStart(2, '0')}:00`,
+        sales: 0
+    }));
+
+    filteredOrders.forEach(order => {
+        const hour = new Date(order.createdAt).getHours();
+        data[hour].sales += order.total;
+    });
+
+    return data.filter(d => d.sales > 0);
+  }, [filteredOrders]);
+
+  const topSellingItems = React.useMemo(() => {
+    const itemMap: { [key: string]: { name: string, quantity: number, revenue: number } } = {};
+    
+    filteredOrders.forEach(order => {
+        order.items.forEach(item => {
+            if (!itemMap[item.menuItem.id]) {
+                itemMap[item.menuItem.id] = { name: item.menuItem.name, quantity: 0, revenue: 0 };
+            }
+            itemMap[item.menuItem.id].quantity += item.quantity;
+            itemMap[item.menuItem.id].revenue += item.menuItem.price * item.quantity;
+        });
+    });
+
+    return Object.values(itemMap)
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 10);
+  }, [filteredOrders]);
 
   const requestSort = React.useCallback((key: keyof Order) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -117,8 +163,8 @@ export function Dashboard() {
     setCurrentPage(1);
   }, [sortConfig]);
 
-  const sortedAndFilteredOrders = React.useMemo(() => {
-    let sortableItems = [...archivedOrders];
+  const sortedAndFilteredOrdersTable = React.useMemo(() => {
+    let sortableItems = [...filteredOrders];
 
     if (searchTerm) {
       sortableItems = sortableItems.filter(order =>
@@ -142,27 +188,24 @@ export function Dashboard() {
     }
 
     return sortableItems;
-  }, [archivedOrders, searchTerm, sortConfig]);
+  }, [filteredOrders, searchTerm, sortConfig]);
 
-  const totalPages = Math.ceil(sortedAndFilteredOrders.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(sortedAndFilteredOrdersTable.length / ITEMS_PER_PAGE);
   const paginatedOrders = React.useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return sortedAndFilteredOrders.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [sortedAndFilteredOrders, currentPage]);
+    return sortedAndFilteredOrdersTable.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [sortedAndFilteredOrdersTable, currentPage]);
 
   const getSortIcon = React.useCallback((key: keyof Order) => {
     if (!sortConfig || sortConfig.key !== key) {
       return <ArrowUpDown className="h-4 w-4" />;
-    }
-    if (sortConfig.direction === 'ascending') {
-      return <ArrowUpDown className="h-4 w-4 text-primary" />;
     }
     return <ArrowUpDown className="h-4 w-4 text-primary" />;
   }, [sortConfig]);
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, selectedMonth, selectedYear]);
 
   if (loading || !appConfig) {
       return <DashboardLoading />
@@ -170,7 +213,31 @@ export function Dashboard() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold font-headline">Today's Dashboard</h1>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h1 className="text-2xl font-bold font-headline">Dashboard</h1>
+        <div className="flex items-center gap-2">
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select Month" />
+                </SelectTrigger>
+                <SelectContent>
+                    {months.map((month, index) => (
+                        <SelectItem key={month} value={String(index)}>{month}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+             <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Select Year" />
+                </SelectTrigger>
+                <SelectContent>
+                     {years.map(year => (
+                        <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -184,7 +251,7 @@ export function Dashboard() {
               {appConfig.currency}{stats.totalSales.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              from {stats.totalOrders} orders
+              for selected period
             </p>
           </CardContent>
         </Card>
@@ -198,7 +265,7 @@ export function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">+{stats.totalOrders}</div>
             <p className="text-xs text-muted-foreground">
-              orders served today
+              orders in selected period
             </p>
           </CardContent>
         </Card>
@@ -222,7 +289,8 @@ export function Dashboard() {
       <div className="grid gap-6 md:grid-cols-2">
          <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><BarChart className="h-5 w-5 text-muted-foreground"/>Revenue (Last 7 Days)</CardTitle>
+                <CardTitle className="flex items-center gap-2"><BarChart className="h-5 w-5 text-muted-foreground"/>Daily Revenue</CardTitle>
+                 <CardDescription>Total revenue for each day in the selected month.</CardDescription>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={{}} className="h-[250px] w-full">
@@ -242,6 +310,7 @@ export function Dashboard() {
          <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><PieChart className="h-5 w-5 text-muted-foreground"/>Sales by Category</CardTitle>
+                 <CardDescription>Revenue distribution across different menu categories.</CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
                  <ChartContainer config={{}} className="h-[250px] w-full">
@@ -257,7 +326,44 @@ export function Dashboard() {
                                 </text>
                             );
                         }}/>
+                        <Legend/>
                     </RechartsPieChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+         <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-muted-foreground"/>Hourly Sales Performance</CardTitle>
+                 <CardDescription>Revenue generated during each hour of the day.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={{}} className="h-[250px] w-full">
+                    <RechartsBarChart data={salesByHour}>
+                        <XAxis dataKey="hour" tickLine={false} axisLine={false} tickMargin={8} />
+                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `${appConfig.currency}${value}`} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="sales" radius={4} fill={chartColors[0]}/>
+                    </RechartsBarChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+         <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Utensils className="h-5 w-5 text-muted-foreground"/>Top Selling Items</CardTitle>
+                <CardDescription>Top 10 menu items by quantity sold.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={{}} className="h-[250px] w-full">
+                     <RechartsBarChart data={topSellingItems} layout="vertical">
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} width={120} tick={{fontSize: 12}} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="quantity" radius={4} fill={chartColors[1]}>
+                             {topSellingItems.map((_entry, index) => (
+                                <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                            ))}
+                        </Bar>
+                    </RechartsBarChart>
                 </ChartContainer>
             </CardContent>
         </Card>
@@ -266,9 +372,9 @@ export function Dashboard() {
       {/* Completed Orders Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Orders</CardTitle>
+          <CardTitle>Orders in Period</CardTitle>
           <CardDescription>
-            A list of the most recent orders completed today.
+            A list of all orders completed in the selected month and year.
           </CardDescription>
           <div className="pt-4">
              <Input 
@@ -296,7 +402,7 @@ export function Dashboard() {
                   </TableHead>
                   <TableHead>
                       <Button variant="ghost" onClick={() => requestSort('createdAt')}>
-                          Time {getSortIcon('createdAt')}
+                          Date {getSortIcon('createdAt')}
                       </Button>
                   </TableHead>
                   <TableHead>Items</TableHead>
@@ -314,7 +420,7 @@ export function Dashboard() {
                       <TableCell className="font-medium">{order.id}</TableCell>
                       <TableCell>{order.tableNumber || 'N/A'}</TableCell>
                       <TableCell>
-                        {format(new Date(order.createdAt), "HH:mm")}
+                        {format(new Date(order.createdAt), "dd MMM, HH:mm")}
                       </TableCell>
                       <TableCell>
                         {order.items.map(i => i.quantity).reduce((a, b) => a + b, 0)}
@@ -362,6 +468,5 @@ export function Dashboard() {
       </Card>
     </div>
   );
-}
 
     
