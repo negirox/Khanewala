@@ -1,1 +1,22 @@
-{}
+{
+  "title": "WowFoods",
+  "logo": "/logo.png",
+  "theme": "mint",
+  "font": "pt-sans",
+  "dataSource": "firebase",
+  "enabledAdminSections": {
+    "dashboard": true,
+    "menu": true,
+    "staff": true,
+    "customers": true,
+    "settings": false
+  },
+  "gstNumber": "27ABCDE1234F1Z5",
+  "currency": "Rs.",
+  "maxDiscount": 25,
+  "loyalty": {
+    "pointsPerCurrencyUnit": 0.01,
+    "currencyUnitPerPoint": 1
+  },
+  "archiveFileLimit": 5242880
+}
