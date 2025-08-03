@@ -38,7 +38,7 @@ import { Textarea } from "./ui/textarea";
 const formSchema = z.object({
   title: z.string().min(1, "App name is required"),
   logo: z.string().optional(),
-  theme: z.enum(["default", "ocean", "sunset", "mint", "plum"]),
+  theme: z.enum(["default", "ocean", "sunset", "mint", "plum", "dark"]),
   font: z.enum(["pt-sans", "roboto-slab"]),
   dataSource: z.enum(["csv", "firebase"]),
   ownerName: z.string().min(1, "Owner name is required"),
@@ -53,6 +53,7 @@ const formSchema = z.object({
   }),
   gstNumber: z.string().optional(),
   fssaiLicense: z.string().optional(),
+  upiId: z.string().optional(),
   currency: z.string().min(1, "Currency symbol is required"),
   maxDiscount: z.coerce.number().min(0, "Max discount cannot be negative.").max(100, "Max discount cannot be over 100."),
   loyalty: z.object({
@@ -76,7 +77,7 @@ export function SuperAdminSettings() {
     }
   });
 
-  const { formState } = form;
+  const { formState, reset } = form;
 
   React.useEffect(() => {
     const isLoggedIn = localStorage.getItem("superAdminLoggedIn");
@@ -84,6 +85,13 @@ export function SuperAdminSettings() {
       router.replace("/super-admin/login");
     }
   }, [router]);
+  
+  React.useEffect(() => {
+    getAppConfig().then(config => {
+      reset(config);
+    });
+  }, [reset]);
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSaving(true);
@@ -103,6 +111,7 @@ export function SuperAdminSettings() {
       // Redirect to a page within the main app layout to force a reload
       // of the AppDataProvider with the new config.
       router.push('/dashboard');
+      router.refresh(); // Force a refresh to fetch new config
     } else {
       toast({
         variant: "destructive",
@@ -129,7 +138,6 @@ export function SuperAdminSettings() {
         title: "Logo Uploaded!",
         description: "The new logo has been uploaded. Save settings to apply it.",
       });
-      router.refresh();
     } else {
       toast({
         variant: "destructive",
@@ -276,6 +284,10 @@ export function SuperAdminSettings() {
                                   <FormControl><RadioGroupItem value="plum" /></FormControl>
                                   <FormLabel className="font-normal">Royal Plum</FormLabel>
                                 </FormItem>
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                  <FormControl><RadioGroupItem value="dark" /></FormControl>
+                                  <FormLabel className="font-normal">Dark Mode</FormLabel>
+                                </FormItem>
                             </RadioGroup>
                             </FormControl>
                             <FormMessage />
@@ -389,6 +401,22 @@ export function SuperAdminSettings() {
                                   <FormControl>
                                       <Input placeholder="e.g. 27ABCDE1234F1Z5" {...field} />
                                   </FormControl>
+                                  <FormMessage />
+                              </FormItem>
+                          )}
+                      />
+                       <FormField
+                          control={form.control}
+                          name="upiId"
+                          render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>UPI ID</FormLabel>
+                                  <FormControl>
+                                      <Input placeholder="e.g. yourname@oksbi" {...field} />
+                                  </FormControl>
+                                   <FormDescription>
+                                      Enter your UPI ID to generate dynamic payment QR codes on bills.
+                                  </FormDescription>
                                   <FormMessage />
                               </FormItem>
                           )}

@@ -1,3 +1,4 @@
+
 {
   "title": "Wow Foods",
   "logo": "/logo.png",
@@ -22,5 +23,6 @@
     "pointsPerCurrencyUnit": 0.01,
     "currencyUnitPerPoint": 1
   },
-  "archiveFileLimit": 5242880
+  "archiveFileLimit": 5242880,
+  "upiId": "your-upi-id@okhdfcbank"
 }

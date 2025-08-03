@@ -1,20 +1,29 @@
 
-
 "use client";
 
 import * as React from 'react';
 import type { Order, AppConfigData } from '@/lib/types';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
+import QRCode from "react-qr-code";
+import Image from 'next/image';
 
 export function BillView({ order, appConfig }: { order: Order, appConfig: AppConfigData }) {
   const [tokenNumber, setTokenNumber] = React.useState<number | null>(null);
+  const [paymentQrValue, setPaymentQrValue] = React.useState<string>("");
 
   React.useEffect(() => {
     // Generate a random 3-digit token number only on the client-side after mount
     // to prevent hydration errors.
     setTokenNumber(Math.floor(100 + Math.random() * 900));
-  }, [order.id]);
+    
+    if(appConfig.upiId) {
+        // Construct UPI payment URL
+        const upiUrl = `upi://pay?pa=${appConfig.upiId}&pn=${encodeURIComponent(appConfig.title)}&am=${order.total.toFixed(2)}&tn=Order_${order.id}&cu=INR`;
+        setPaymentQrValue(upiUrl);
+    }
+
+  }, [order.id, order.total, appConfig]);
 
 
   const handlePrint = () => {
@@ -32,6 +41,9 @@ export function BillView({ order, appConfig }: { order: Order, appConfig: AppCon
     <div>
         <div id="bill-content" className="p-4 bg-white text-black font-mono text-sm">
             <div className="text-center mb-4">
+                {appConfig.logo && appConfig.logo !== '/logo.png' && (
+                  <Image src={appConfig.logo} alt="Logo" width={64} height={64} className="mx-auto mb-2" />
+                )}
                 <h2 className="text-xl font-bold">{appConfig.title}</h2>
                 <p className="text-xs">{appConfig.address}</p>
                 <p className="text-xs">Tel: {appConfig.phone}</p>
@@ -96,6 +108,14 @@ export function BillView({ order, appConfig }: { order: Order, appConfig: AppCon
                 </div>
             </div>
             <Separator className="my-2 border-dashed border-black" />
+             {paymentQrValue && (
+                <div className="text-center mt-4">
+                    <p className="text-xs font-bold mb-2">Scan to Pay</p>
+                    <div className="p-2 bg-white rounded-lg inline-block">
+                        <QRCode value={paymentQrValue} size={128} />
+                    </div>
+                </div>
+            )}
             <div className="text-center mt-4 text-xs">
                 <p>Thank you for dining with us!</p>
             </div>

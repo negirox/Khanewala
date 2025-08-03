@@ -65,7 +65,7 @@ export type Customer = {
   loyaltyPoints: number;
 };
 
-export type AppTheme = 'default' | 'ocean' | 'sunset' | 'mint' | 'plum';
+export type AppTheme = 'default' | 'ocean' | 'sunset' | 'mint' | 'plum' | 'dark';
 export type AppFont = 'pt-sans' | 'roboto-slab';
 export type AppDataSource = 'csv' | 'firebase';
 
@@ -91,6 +91,7 @@ export const defaultAppConfig: AppConfigData = {
     currency: "Rs.",
     gstNumber: "27ABCDE1234F1Z5",
     fssaiLicense: "12345678901234",
+    upiId: "",
     maxDiscount: 25,
     ownerName: "Admin",
     phone: "9876543210",
@@ -128,6 +129,7 @@ export interface AppConfigData {
   };
   gstNumber?: string;
   fssaiLicense?: string;
+  upiId?: string;
   currency: string;
   maxDiscount: number;
   loyalty: {
