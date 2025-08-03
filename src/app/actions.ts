@@ -4,10 +4,10 @@
 import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction, StaffTransactionType, AppConfigData } from '@/lib/types';
 import { defaultAppConfig } from '@/lib/types';
 import Papa from 'papaparse';
-import { firebaseRepository } from '@/services/firebase-repository';
+import { csvRepository } from '@/services/csv-repository';
 import { revalidatePath } from 'next/cache';
 
-const dataRepository = firebaseRepository;
+const dataRepository = csvRepository;
 
 
 // Menu Items
@@ -29,7 +29,9 @@ export async function getArchivedOrders(): Promise<Order[]> {
 }
 
 export async function saveAllOrders(activeOrders: Order[], archivedOrders: Order[]): Promise<void> {
-    return dataRepository.saveAllOrders(activeOrders, archivedOrders);
+    await dataRepository.saveAllOrders(activeOrders, archivedOrders);
+    // After saving, check if the archive needs to be rotated.
+    await csvRepository.checkAndRotateArchive();
 }
 
 export async function createNewOrder(newOrderData: Omit<Order, 'id' | 'createdAt'>, activeOrders: Order[], archivedOrders: Order[], allCustomers: Customer[]) {
