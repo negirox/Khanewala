@@ -1,34 +1,18 @@
 
 import { UtensilsCrossed } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import type { AppConfigData } from '@/services/config-service';
+import { getAppConfig } from '@/services/config-service';
 
-type AppConfig = {
-    title: string;
-    logo: LucideIcon;
-    currency: string;
-    gstNumber?: string;
-    dataSource: 'csv' | 'api';
-    maxDiscount: number;
-    enabledAdminSections: {
-        dashboard: boolean;
-        menu: boolean;
-        staff: boolean;
-        customers: boolean;
-        settings: boolean;
-    },
-    loyalty: {
-        pointsPerCurrencyUnit: number; // e.g., 0.01 means 1 point per 100 currency units
-        currencyUnitPerPoint: number; // e.g., 1 means 1 currency unit (e.g. Rs. 1) per point
-    },
-    archiveFileLimit: number; // in bytes
-}
-
-export const appConfig: AppConfig = {
+// Renamed from appConfig to defaultAppConfig
+export const defaultAppConfig = {
     title: "KhaneWala",
-    logo: UtensilsCrossed,
+    logo: "/logo.png", // Default logo path
+    theme: 'default' as const,
+    font: 'pt-sans' as const,
+    dataSource: "firebase" as const,
     currency: "Rs.",
     gstNumber: "27ABCDE1234F1Z5",
-    dataSource: "csv",
     maxDiscount: 25,
     enabledAdminSections: {
         dashboard: true,
@@ -43,3 +27,29 @@ export const appConfig: AppConfig = {
     },
     archiveFileLimit: 5 * 1024 * 1024, // 5MB
 };
+
+
+// This will be dynamically generated on each server-side render
+async function loadConfig() {
+    const configData = await getAppConfig();
+    return {
+        ...configData,
+        logoIcon: UtensilsCrossed, // Keep the icon component separate
+    };
+}
+
+// We export a promise that resolves to the config
+export const appConfigPromise = loadConfig();
+
+// For client-side components that can't be async, we need a way to get the config.
+// This is a simplified approach. In a complex app, you might use a client-side store.
+// Let's modify this later if needed. For now, we will make components async.
+let appConfig: AppConfigData & { logoIcon: LucideIcon };
+
+appConfigPromise.then(config => {
+    appConfig = config;
+});
+
+// We can export the resolved config for immediate use in client components if they
+// don't need the absolute latest server config on first render.
+export { appConfig };

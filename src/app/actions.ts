@@ -7,12 +7,12 @@ import { whatsappService } from '@/services/whatsapp-service';
 import Papa from 'papaparse';
 import fs from 'fs/promises';
 import path from 'path';
-import { csvRepository } from '@/services/csv-repository';
-import { apiRepository } from '@/services/api-repository';
-import { appConfig } from '@/lib/config';
+import { firebaseRepository } from '@/services/firebase-repository';
+import { defaultAppConfig } from '@/lib/config';
+import { brevoService } from '@/services/brevo-service';
+import { saveAppConfig, type AppConfigData } from '@/services/config-service';
 
-// Data Repository Switch
-const dataRepository = appConfig.dataSource === 'csv' ? csvRepository : apiRepository;
+const dataRepository = firebaseRepository;
 
 
 // Menu Items
@@ -34,28 +34,25 @@ export async function getArchivedOrders(): Promise<Order[]> {
 }
 
 export async function saveAllOrders(activeOrders: Order[], archivedOrders: Order[]): Promise<void> {
-    // Before saving, check if the CSV archive needs to be rotated.
-    if (appConfig.dataSource === 'csv') {
-        await csvRepository.checkAndRotateArchive();
-    }
     return dataRepository.saveAllOrders(activeOrders, archivedOrders);
 }
 
 export async function createNewOrder(newOrderData: Omit<Order, 'id' | 'createdAt'>, activeOrders: Order[], archivedOrders: Order[], allCustomers: Customer[]) {
     let finalOrderData = { ...newOrderData };
     let updatedCustomers = [...allCustomers];
+    const config = await getAppConfig();
     
     // Handle Loyalty Points Earning
     if (newOrderData.customerId) {
         const customer = allCustomers.find(c => c.id === newOrderData.customerId);
         if (customer) {
             // Earn points on the final total
-            const { updatedCustomer, pointsEarned } = loyaltyService.addPointsForOrder(customer, finalOrderData.total);
+            const { updatedCustomer, pointsEarned } = loyaltyService.addPointsForOrder(customer, finalOrderData.total, config.loyalty);
             finalOrderData.pointsEarned = pointsEarned;
             
             // Send WhatsApp confirmation
             const tempOrder = { ...finalOrderData, id: 'temp', createdAt: new Date() }
-            whatsappService.sendOrderConfirmation(updatedCustomer, tempOrder as Order);
+            whatsappService.sendOrderConfirmation(updatedCustomer, tempOrder as Order, config);
 
             // Update customer in state and save
             updatedCustomers = allCustomers.map(c => c.id === customer.id ? updatedCustomer : c);
@@ -178,7 +175,24 @@ export async function saveCustomers(customers: Customer[]): Promise<void> {
     return dataRepository.saveCustomers(customers);
 }
 
-// This was in the old actions file, keeping it here.
+export async function addNewCustomer(customerData: Omit<Customer, 'id' | 'loyaltyPoints'>) {
+    const customers = await getCustomers();
+    const newCustomer: Customer = {
+        ...customerData,
+        id: `CUST-${Date.now()}`,
+        loyaltyPoints: 0,
+    };
+    const updatedCustomers = [...customers, newCustomer];
+    await saveCustomers(updatedCustomers);
+    
+    // Send welcome email
+    await brevoService.sendWelcomeEmail(newCustomer);
+    
+    return newCustomer;
+}
+
+
+// AI Recommendations
 import { getMenuRecommendations as getMenuRecommendationsAI, type MenuRecommendationInput } from '@/ai/flows/menu-recommendation';
 
 export async function getMenuRecommendations(input: MenuRecommendationInput) {
@@ -208,21 +222,37 @@ export async function validateSuperAdminLogin(credentials: {username: string, pa
     }
 }
 
-// Archive File Size
-export async function getArchiveFileSize(): Promise<{size: number; limit: number}> {
-    if (appConfig.dataSource !== 'csv') {
-        return { size: 0, limit: appConfig.archiveFileLimit };
-    }
+
+// App Settings
+export async function saveAppSettings(settings: AppConfigData): Promise<{ success: boolean, error?: string }> {
     try {
-        const stats = await fs.stat(csvRepository.getArchivePath());
-        return { size: stats.size, limit: appConfig.archiveFileLimit };
+        await saveAppConfig(settings);
+        return { success: true };
     } catch (error: any) {
-        // If the file doesn't exist, its size is 0.
-        if (error.code === 'ENOENT') {
-            return { size: 0, limit: appConfig.archiveFileLimit };
-        }
-        console.error("Error getting archive file size:", error);
-        // Return a non-zero limit to avoid division by zero errors on the client.
-        return { size: 0, limit: appConfig.archiveFileLimit };
+        console.error("Error saving app settings:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function uploadLogo(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
+    const file = formData.get('logo') as File;
+
+    if (!file) {
+        return { success: false, error: 'No file uploaded.' };
+    }
+
+    try {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const filename = "logo.png"; // Always use the same name to overwrite
+        const publicPath = path.join(process.cwd(), 'public', filename);
+        await fs.writeFile(publicPath, buffer);
+        
+        // The URL path will be relative to the public folder
+        const filePath = `/${filename}`;
+        
+        return { success: true, filePath: `${filePath}?v=${Date.now()}` }; // Add version query to bust cache
+    } catch (error: any) {
+        console.error('Error uploading logo:', error);
+        return { success: false, error: 'Failed to save logo.' };
     }
 }

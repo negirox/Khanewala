@@ -6,7 +6,7 @@
  */
 
 import type { Customer, Order } from '@/lib/types';
-import { appConfig } from '@/lib/config';
+import type { AppConfigData } from './config-service';
 
 class LoyaltyService {
   /**
@@ -17,8 +17,8 @@ class LoyaltyService {
    * @param orderTotal The total amount of the order (after discounts).
    * @returns An object containing the updated customer and the points earned.
    */
-  addPointsForOrder(customer: Customer, orderTotal: number): { updatedCustomer: Customer; pointsEarned: number } {
-    const pointsEarned = Math.floor(orderTotal * appConfig.loyalty.pointsPerCurrencyUnit);
+  addPointsForOrder(customer: Customer, orderTotal: number, loyaltyConfig: AppConfigData['loyalty']): { updatedCustomer: Customer; pointsEarned: number } {
+    const pointsEarned = Math.floor(orderTotal * loyaltyConfig.pointsPerCurrencyUnit);
     
     if (pointsEarned <= 0) {
       return { updatedCustomer: customer, pointsEarned: 0 };
@@ -41,7 +41,7 @@ class LoyaltyService {
    * @param pointsToRedeem The number of points to redeem.
    * @returns An object with the updated customer, the value of the redeemed points, and the points redeemed.
    */
-  redeemPoints(customer: Customer, pointsToRedeem: number): { updatedCustomer: Customer; redeemedValue: number; pointsRedeemed: number } {
+  redeemPoints(customer: Customer, pointsToRedeem: number, loyaltyConfig: AppConfigData['loyalty']): { updatedCustomer: Customer; redeemedValue: number; pointsRedeemed: number } {
     const availablePoints = customer.loyaltyPoints;
     const redeemablePoints = Math.min(pointsToRedeem, availablePoints);
     
@@ -49,7 +49,7 @@ class LoyaltyService {
       return { updatedCustomer: customer, redeemedValue: 0, pointsRedeemed: 0 };
     }
 
-    const redeemedValue = redeemablePoints * appConfig.loyalty.currencyUnitPerPoint;
+    const redeemedValue = redeemablePoints * loyaltyConfig.currencyUnitPerPoint;
 
     const updatedCustomer: Customer = {
       ...customer,

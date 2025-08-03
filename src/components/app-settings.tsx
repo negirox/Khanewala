@@ -5,7 +5,6 @@ import * as React from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { appConfig } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { useAppData } from "@/hooks/use-app-data";
 
 const formSchema = z.object({
   appName: z.string().min(1, "App name is required"),
@@ -34,25 +34,40 @@ const formSchema = z.object({
 
 export function AppSettings() {
   const { toast } = useToast();
+  const { appConfig } = useAppData();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      appName: appConfig.title,
-      logoUrl: "", // Assuming logo is a component, so URL is for display only
-      theme: "default",
+      appName: appConfig?.title || "",
+      logoUrl: appConfig?.logo || "",
+      theme: appConfig?.theme || "default",
     },
   });
 
+  React.useEffect(() => {
+      if (appConfig) {
+          form.reset({
+            appName: appConfig.title,
+            logoUrl: appConfig.logo,
+            theme: appConfig.theme as any,
+          })
+      }
+  }, [appConfig, form])
+
   function onSubmit(values: z.infer<typeof formSchema>) {
     // In a real application, you would save these settings to a backend.
-    // For this demo, we'll just show a toast notification.
+    // For this demo, we'll just show a toast notification and log to console.
+    // This functionality is handled in the Super Admin panel.
     toast({
-      title: "Settings Saved!",
+      title: "Settings Changed (Demo)",
       description: (
+        <>
+        <p>These settings are for demonstration. To persist changes, use the Super Admin panel.</p>
         <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
           <code className="text-white">{JSON.stringify(values, null, 2)}</code>
         </pre>
+        </>
       ),
     });
     console.log("Simulating save for:", values);
@@ -68,7 +83,7 @@ export function AppSettings() {
             Change the name, logo, and color scheme of your application.
             <br />
             <span className="text-xs text-destructive">
-              Note: This is a UI demonstration. Changes are not persisted.
+              Note: Changes here are not saved. Use the Super Admin panel for persistent settings.
             </span>
           </CardDescription>
         </CardHeader>
@@ -149,7 +164,7 @@ export function AppSettings() {
                 )}
               />
 
-              <Button type="submit">Save Settings</Button>
+              <Button type="submit">Save Settings (Demo)</Button>
             </form>
           </Form>
         </CardContent>

@@ -9,8 +9,8 @@
  * You would replace this with a real WhatsApp API provider like Twilio.
  */
 
-import { appConfig } from '@/lib/config';
 import type { Customer, Order } from '@/lib/types';
+import type { AppConfigData } from './config-service';
 
 class WhatsappService {
   /**
@@ -19,7 +19,7 @@ class WhatsappService {
    * @param customer The customer who placed the order.
    * @param order The order details.
    */
-  sendOrderConfirmation(customer: Customer, order: Order): void {
+  sendOrderConfirmation(customer: Customer, order: Order, config: AppConfigData): void {
     if (!customer.phone) {
       console.log(`Cannot send WhatsApp message: Customer ${customer.name} has no phone number.`);
       return;
@@ -29,14 +29,14 @@ class WhatsappService {
 =================================================
 -- SIMULATING WHATSAPP MESSAGE --
 To: ${customer.phone}
-From: ${appConfig.title} Restaurant
+From: ${config.title} Restaurant
 
 Hello ${customer.name},
 
 Thank you for your order! This is a digital confirmation to help save paper.
 
 Order ID: ${order.id}
-Total: ${appConfig.currency}${order.total.toFixed(2)}
+Total: ${config.currency}${order.total.toFixed(2)}
 Points Earned: ${order.pointsEarned || 0}
 
 We've received your order and will have it ready for you shortly.
