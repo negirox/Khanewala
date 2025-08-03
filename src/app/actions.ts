@@ -1,7 +1,8 @@
 
 'use server';
 
-import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction, StaffTransactionType } from '@/lib/types';
+import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction, StaffTransactionType, AppConfigData } from '@/lib/types';
+import { defaultAppConfig } from '@/lib/types';
 import { loyaltyService } from '@/services/loyalty-service';
 import { whatsappService } from '@/services/whatsapp-service';
 import Papa from 'papaparse';
@@ -9,7 +10,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { firebaseRepository } from '@/services/firebase-repository';
 import { brevoService } from '@/services/brevo-service';
-import { saveAppConfig, type AppConfigData, getAppConfig } from '@/services/config-service';
+import { writeConfigFile, readConfigFile } from '@/services/config-service';
 import { revalidatePath } from 'next/cache';
 
 const dataRepository = firebaseRepository;
@@ -186,7 +187,8 @@ export async function addNewCustomer(customerData: Omit<Customer, 'id' | 'loyalt
     await saveCustomers(updatedCustomers);
     
     // Send welcome email
-    await brevoService.sendWelcomeEmail(newCustomer);
+    const appConfig = await getAppConfig();
+    await brevoService.sendWelcomeEmail(newCustomer, appConfig);
     
     return newCustomer;
 }
@@ -224,10 +226,28 @@ export async function validateSuperAdminLogin(credentials: {username: string, pa
 
 
 // App Settings
+export async function getAppConfig(): Promise<AppConfigData> {
+    const customConfig = await readConfigFile();
+    // Merge default and custom config
+    const mergedConfig = {
+      ...defaultAppConfig,
+      ...customConfig,
+      enabledAdminSections: {
+        ...defaultAppConfig.enabledAdminSections,
+        ...customConfig.enabledAdminSections,
+      },
+      loyalty: {
+          ...defaultAppConfig.loyalty,
+          ...customConfig.loyalty,
+      }
+    };
+    return mergedConfig;
+}
+
 export async function saveAppSettings(settings: AppConfigData): Promise<{ success: boolean, error?: string }> {
     try {
-        await saveAppConfig(settings);
-        // Revalidate the cache for the entire site
+        await writeConfigFile(settings);
+        // Revalidate the cache for the entire site to reflect changes
         revalidatePath('/', 'layout');
         return { success: true };
     } catch (error: any) {

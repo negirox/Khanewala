@@ -10,7 +10,7 @@
  */
 
 import type { Customer } from '@/lib/types';
-import { getAppConfig } from './config-service';
+import type { AppConfigData } from './config-service';
 
 // In a real app, you would install the Brevo SDK:
 // npm install @getbrevo/brevo
@@ -56,8 +56,7 @@ const mockBrevoClient = {
 };
 
 class BrevoService {
-  async sendWelcomeEmail(customer: Customer): Promise<void> {
-    const appConfig = await getAppConfig();
+  async sendWelcomeEmail(customer: Customer, appConfig: AppConfigData): Promise<void> {
 
     const emailContent = `
     <!DOCTYPE html>

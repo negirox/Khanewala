@@ -30,8 +30,9 @@ import { useRouter } from "next/navigation";
 import { Separator } from "./ui/separator";
 import { Upload } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { saveAppSettings, uploadLogo } from "@/app/actions";
-import { getAppConfig, type AppConfigData } from "@/services/config-service";
+import { saveAppSettings, uploadLogo, getAppConfig } from "@/app/actions";
+import type { AppConfigData } from "@/lib/types";
+import { Skeleton } from "./ui/skeleton";
 
 const formSchema = z.object({
   title: z.string().min(1, "App name is required"),
@@ -66,9 +67,8 @@ export function SuperAdminSettings() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: async () => {
-      // Fetching on the server side during initial load is fine
-      // But direct import for client-side usage is not.
-      // This async defaultValues pattern correctly handles this.
+      // This async defaultValues correctly fetches data on the client
+      // without trying to bundle server code.
       return getAppConfig();
     }
   });
@@ -87,7 +87,6 @@ export function SuperAdminSettings() {
     // Construct the AppConfigData object from form values
     const settingsToSave: AppConfigData = {
         ...values,
-        // Assuming some defaults for fields not in the form but in the type
         archiveFileLimit: (await getAppConfig()).archiveFileLimit, 
     };
 
@@ -154,9 +153,10 @@ export function SuperAdminSettings() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        <div className="h-10 bg-muted rounded-md animate-pulse" />
-                        <div className="h-24 bg-muted rounded-md animate-pulse" />
-                        <div className="h-24 bg-muted rounded-md animate-pulse" />
+                       <Skeleton className="h-10 w-full" />
+                       <Skeleton className="h-20 w-full" />
+                       <Skeleton className="h-20 w-full" />
+                       <Skeleton className="h-20 w-full" />
                     </div>
                 </CardContent>
             </Card>
@@ -285,7 +285,7 @@ export function SuperAdminSettings() {
               <Separator />
 
               <div>
-                  <h3 className="text-lg font-medium mb-4">Data &amp; Financials</h3>
+                  <h3 className="text-lg font-medium mb-4">Data & Financials</h3>
                   <div className="space-y-4">
                       <FormField
                           control={form.control}
@@ -395,7 +395,7 @@ export function SuperAdminSettings() {
                                 <Input type="number" step="0.01" {...field} />
                             </FormControl>
                             <FormDescription>
-                                How much is one loyalty point worth when redeemed? (e.g., 1 for Rs. 1 per point).
+                                How much is one loyalty point when redeemed? (e.g., 1 for Rs. 1 per point).
                             </FormDescription>
                             <FormMessage />
                         </FormItem>

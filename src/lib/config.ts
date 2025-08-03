@@ -1,8 +1,8 @@
 
-import { UtensilsCrossed } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import type { AppConfigData } from '@/services/config-service';
-import { getAppConfig } from '@/services/config-service';
+import { UtensilsCrossed } from 'lucide-react';
+import type { AppConfigData } from '@/lib/types';
+import { getAppConfig } from '@/app/actions';
 
 // This will be dynamically generated on each server-side render
 async function loadConfig() {
@@ -18,8 +18,7 @@ export const appConfigPromise = loadConfig();
 
 // For client-side components that can't be async, we need a way to get the config.
 // This is a simplified approach. In a complex app, you might use a client-side store.
-// Let's modify this later if needed. For now, we will make components async.
-let appConfig: AppConfigData & { logoIcon: LucideIcon };
+let appConfig: (AppConfigData & { logoIcon: LucideIcon });
 
 appConfigPromise.then(config => {
     appConfig = config;
@@ -28,3 +27,4 @@ appConfigPromise.then(config => {
 // We can export the resolved config for immediate use in client components if they
 // don't need the absolute latest server config on first render.
 export { appConfig };
+
