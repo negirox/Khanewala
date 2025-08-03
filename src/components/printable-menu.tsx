@@ -15,32 +15,6 @@ export function PrintableMenu() {
   const [appConfig, setAppConfig] = React.useState<AppConfigData | null>(null);
   const [loading, setLoading] = React.useState(true);
   
-  React.useEffect(() => {
-    async function fetchData() {
-        setLoading(true);
-        try {
-            const [menuData, configData] = await Promise.all([
-                getMenuItems(),
-                getAppConfig()
-            ]);
-            setMenuItems(menuData);
-            setAppConfig(configData);
-        } catch (error) {
-            console.error("Failed to fetch menu data:", error);
-        } finally {
-            setLoading(false);
-        }
-    }
-    fetchData();
-  }, []);
-
-  const menuByCategory = React.useMemo(() => {
-    return menuItems.reduce((acc, item) => {
-      (acc[item.category] = acc[item.category] || []).push(item);
-      return acc;
-    }, {} as Record<string, MenuItem[]>);
-  }, [menuItems]);
-
   const handlePrint = React.useCallback(() => {
     // Temporarily hide the print button for printing
     const printButton = document.getElementById('print-menu-button');
@@ -51,6 +25,39 @@ export function PrintableMenu() {
     // Restore the print button after printing
     if (printButton) printButton.style.display = 'block';
   }, []);
+
+  React.useEffect(() => {
+    async function fetchData() {
+        setLoading(true);
+        try {
+            const [menuData, configData] = await Promise.all([
+                getMenuItems(),
+                getAppConfig()
+            ]);
+            setMenuItems(menuData);
+            setAppConfig(configData);
+            
+            // Automatically trigger print dialog once data is loaded
+            // This is delayed slightly to ensure the page renders correctly before printing.
+            setTimeout(() => {
+                handlePrint();
+            }, 500);
+
+        } catch (error) {
+            console.error("Failed to fetch menu data:", error);
+        } finally {
+            setLoading(false);
+        }
+    }
+    fetchData();
+  }, [handlePrint]);
+
+  const menuByCategory = React.useMemo(() => {
+    return menuItems.reduce((acc, item) => {
+      (acc[item.category] = acc[item.category] || []).push(item);
+      return acc;
+    }, {} as Record<string, MenuItem[]>);
+  }, [menuItems]);
 
   if (loading || !appConfig) {
       return (
@@ -131,7 +138,7 @@ export function PrintableMenu() {
 
             <Button id="print-menu-button" onClick={handlePrint} className="w-full mt-8 print:hidden">
                 <Printer className="mr-2"/>
-                Print Menu
+                Print Menu Manually
             </Button>
        </div>
        <style jsx global>{`

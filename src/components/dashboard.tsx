@@ -18,10 +18,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Order, MenuItem } from "@/lib/types";
-import { format, subDays, startOfDay, getYear, getMonth, set } from "date-fns";
-import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart, ArrowUpDown, ChevronLeft, ChevronRight, Clock, Utensils } from "lucide-react";
+import { format, subDays, startOfDay, getYear, getMonth, set, startOfWeek, endOfWeek } from "date-fns";
+import { DollarSign, ShoppingBag, Receipt, BarChart, PieChart, ArrowUpDown, ChevronLeft, ChevronRight, Clock, Utensils, LineChart } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Legend } from "recharts";
+import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Legend, Line as RechartsLine, LineChart as RechartsLineChart } from "recharts";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useAppData } from "@/hooks/use-app-data";
@@ -77,6 +77,9 @@ export function Dashboard() {
   const [selectedYear, setSelectedYear] = React.useState<string>(String(getYear(new Date())));
   
   const filteredOrders = React.useMemo(() => {
+    if (selectedMonth === 'today') {
+        return archivedOrders.filter(order => format(new Date(order.createdAt), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd"));
+    }
     return archivedOrders.filter(order => {
         const orderDate = new Date(order.createdAt);
         return getMonth(orderDate).toString() === selectedMonth && getYear(orderDate).toString() === selectedYear;
@@ -104,6 +107,20 @@ export function Dashboard() {
         date: format(new Date(date), "MMM d"),
         total,
     }));
+  }, [filteredOrders]);
+
+  const weeklyRevenue = React.useMemo(() => {
+    const dataMap: { [key: string]: number } = {};
+    filteredOrders.forEach(order => {
+      const weekStart = format(startOfWeek(new Date(order.createdAt)), "yyyy-MM-dd");
+      dataMap[weekStart] = (dataMap[weekStart] || 0) + order.total;
+    });
+    return Object.entries(dataMap)
+      .map(([week, total]) => ({
+        week: `Week of ${format(new Date(week), "MMM d")}`,
+        total,
+      }))
+      .sort((a, b) => new Date(a.week.replace('Week of ', '')).getTime() - new Date(b.week.replace('Week of ', '')).getTime());
   }, [filteredOrders]);
   
   const salesByCategory = React.useMemo(() => {
@@ -221,12 +238,13 @@ export function Dashboard() {
                     <SelectValue placeholder="Select Month" />
                 </SelectTrigger>
                 <SelectContent>
+                    <SelectItem value="today">Today's Orders</SelectItem>
                     {months.map((month, index) => (
                         <SelectItem key={month} value={String(index)}>{month}</SelectItem>
                     ))}
                 </SelectContent>
             </Select>
-             <Select value={selectedYear} onValueChange={setSelectedYear}>
+             <Select value={selectedYear} onValueChange={setSelectedYear} disabled={selectedMonth === 'today'}>
                 <SelectTrigger className="w-[120px]">
                     <SelectValue placeholder="Select Year" />
                 </SelectTrigger>
@@ -307,6 +325,32 @@ export function Dashboard() {
                 </ChartContainer>
             </CardContent>
         </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <LineChart className="h-5 w-5 text-muted-foreground" />
+              Weekly Revenue
+            </CardTitle>
+            <CardDescription>
+              Total revenue for each week in the selected month.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={{}} className="h-[250px] w-full">
+              <RechartsLineChart data={weeklyRevenue} margin={{ left: 12, right: 12 }}>
+                <XAxis dataKey="week" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value.replace('Week of ', '')} />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickFormatter={(value) => `${appConfig.currency}${value}`}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <RechartsLine type="monotone" dataKey="total" stroke={chartColors[1]} strokeWidth={2} dot={false} />
+              </RechartsLineChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
          <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><PieChart className="h-5 w-5 text-muted-foreground"/>Sales by Category</CardTitle>
@@ -354,7 +398,7 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={{}} className="h-[250px] w-full">
-                     <RechartsBarChart data={topSellingItems} layout="vertical">
+                     <RechartsBarChart data={topSellingItems} layout="vertical" margin={{ left: 30 }}>
                         <XAxis type="number" hide />
                         <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} width={120} tick={{fontSize: 12}} />
                         <ChartTooltip content={<ChartTooltipContent />} />
@@ -468,5 +512,7 @@ export function Dashboard() {
       </Card>
     </div>
   );
+
+    
 
     
