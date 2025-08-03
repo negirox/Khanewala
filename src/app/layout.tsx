@@ -34,7 +34,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className={appConfig.theme}>
       <body className={`${appConfig.font === 'pt-sans' ? ptSans.variable : robotoSlab.variable} ${appConfig.font === 'pt-sans' ? 'font-body' : 'font-headline'} antialiased`} suppressHydrationWarning>
-        {children}
+        <main>{children}</main>
         <Toaster />
       </body>
     </html>
