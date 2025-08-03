@@ -2,9 +2,8 @@
 "use client";
 
 import * as React from "react";
-import { getActiveOrders, getArchivedOrders, getCustomers, getMenuItems, getStaff, getStaffTransactions, getTables } from "@/app/actions";
-import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction } from "@/lib/types";
-import { getAppConfig, type AppConfigData } from "@/services/config-service";
+import { getActiveOrders, getArchivedOrders, getCustomers, getMenuItems, getStaff, getStaffTransactions, getTables, getAppConfig } from "@/app/actions";
+import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction, AppConfigData } from "@/lib/types";
 import type { LucideIcon } from "lucide-react";
 
 interface AppDataContextType {

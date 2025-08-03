@@ -27,4 +27,3 @@ appConfigPromise.then(config => {
 // We can export the resolved config for immediate use in client components if they
 // don't need the absolute latest server config on first render.
 export { appConfig };
-

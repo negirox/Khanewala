@@ -3,14 +3,8 @@
 
 import type { Order, MenuItem, Customer, StaffMember, Table, StaffTransaction, StaffTransactionType, AppConfigData } from '@/lib/types';
 import { defaultAppConfig } from '@/lib/types';
-import { loyaltyService } from '@/services/loyalty-service';
-import { whatsappService } from '@/services/whatsapp-service';
 import Papa from 'papaparse';
-import fs from 'fs/promises';
-import path from 'path';
 import { firebaseRepository } from '@/services/firebase-repository';
-import { brevoService } from '@/services/brevo-service';
-import { writeConfigFile, readConfigFile } from '@/services/config-service';
 import { revalidatePath } from 'next/cache';
 
 const dataRepository = firebaseRepository;
@@ -39,6 +33,10 @@ export async function saveAllOrders(activeOrders: Order[], archivedOrders: Order
 }
 
 export async function createNewOrder(newOrderData: Omit<Order, 'id' | 'createdAt'>, activeOrders: Order[], archivedOrders: Order[], allCustomers: Customer[]) {
+    // Lazy load services to avoid bundling server-only code where it's not needed.
+    const { loyaltyService } = await import('@/services/loyalty-service');
+    const { whatsappService } = await import('@/services/whatsapp-service');
+    
     let finalOrderData = { ...newOrderData };
     let updatedCustomers = [...allCustomers];
     const config = await getAppConfig();
@@ -177,6 +175,7 @@ export async function saveCustomers(customers: Customer[]): Promise<void> {
 }
 
 export async function addNewCustomer(customerData: Omit<Customer, 'id' | 'loyaltyPoints'>) {
+    const { brevoService } = await import('@/services/brevo-service');
     const customers = await getCustomers();
     const newCustomer: Customer = {
         ...customerData,
@@ -209,11 +208,9 @@ export async function getMenuRecommendations(input: MenuRecommendationInput) {
 
 // Super Admin Login
 export async function validateSuperAdminLogin(credentials: {username: string, password: string}): Promise<{success: boolean}> {
+    const { readAdminConfigFile } = await import('@/services/file-system-service');
     try {
-        const configPath = path.join(process.cwd(), 'adminconfig.json');
-        const configFile = await fs.readFile(configPath, 'utf8');
-        const adminConfig = JSON.parse(configFile);
-
+        const adminConfig = await readAdminConfigFile();
         if (credentials.username === adminConfig.username && credentials.password === adminConfig.password) {
             return { success: true };
         }
@@ -227,7 +224,8 @@ export async function validateSuperAdminLogin(credentials: {username: string, pa
 
 // App Settings
 export async function getAppConfig(): Promise<AppConfigData> {
-    const customConfig = await readConfigFile();
+    const { readAppConfigFile } = await import('@/services/file-system-service');
+    const customConfig = await readAppConfigFile();
     // Merge default and custom config
     const mergedConfig = {
       ...defaultAppConfig,
@@ -245,8 +243,9 @@ export async function getAppConfig(): Promise<AppConfigData> {
 }
 
 export async function saveAppSettings(settings: AppConfigData): Promise<{ success: boolean, error?: string }> {
+    const { writeAppConfigFile } = await import('@/services/file-system-service');
     try {
-        await writeConfigFile(settings);
+        await writeAppConfigFile(settings);
         // Revalidate the cache for the entire site to reflect changes
         revalidatePath('/', 'layout');
         return { success: true };
@@ -257,6 +256,7 @@ export async function saveAppSettings(settings: AppConfigData): Promise<{ succes
 }
 
 export async function uploadLogo(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
+    const { saveUploadedLogo } = await import('@/services/file-system-service');
     const file = formData.get('logo') as File;
 
     if (!file) {
@@ -265,13 +265,7 @@ export async function uploadLogo(formData: FormData): Promise<{ success: boolean
 
     try {
         const buffer = Buffer.from(await file.arrayBuffer());
-        const filename = "logo.png"; // Always use the same name to overwrite
-        const publicPath = path.join(process.cwd(), 'public', filename);
-        await fs.writeFile(publicPath, buffer);
-        
-        // The URL path will be relative to the public folder
-        const filePath = `/${filename}`;
-        
+        const filePath = await saveUploadedLogo(buffer);
         return { success: true, filePath: `${filePath}?v=${Date.now()}` }; // Add version query to bust cache
     } catch (error: any) {
         console.error('Error uploading logo:', error);
