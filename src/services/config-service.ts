@@ -4,7 +4,31 @@
 import fs from 'fs/promises';
 import path from 'path';
 import type { AppTheme, AppFont, AppDataSource } from '@/lib/types';
-import { defaultAppConfig } from '@/lib/config';
+
+// Moved from lib/config.ts to break circular dependency
+export const defaultAppConfig = {
+    title: "KhaneWala",
+    logo: "/logo.png", // Default logo path
+    theme: 'default' as const,
+    font: 'pt-sans' as const,
+    dataSource: "firebase" as const,
+    currency: "Rs.",
+    gstNumber: "27ABCDE1234F1Z5",
+    maxDiscount: 25,
+    enabledAdminSections: {
+        dashboard: true,
+        menu: true,
+        staff: true,
+        customers: true,
+        settings: true,
+    },
+    loyalty: {
+        pointsPerCurrencyUnit: 0.01,
+        currencyUnitPerPoint: 1,
+    },
+    archiveFileLimit: 5 * 1024 * 1024, // 5MB
+};
+
 
 export interface AppConfigData {
   title: string;

@@ -4,31 +4,6 @@ import type { LucideIcon } from 'lucide-react';
 import type { AppConfigData } from '@/services/config-service';
 import { getAppConfig } from '@/services/config-service';
 
-// Renamed from appConfig to defaultAppConfig
-export const defaultAppConfig = {
-    title: "KhaneWala",
-    logo: "/logo.png", // Default logo path
-    theme: 'default' as const,
-    font: 'pt-sans' as const,
-    dataSource: "firebase" as const,
-    currency: "Rs.",
-    gstNumber: "27ABCDE1234F1Z5",
-    maxDiscount: 25,
-    enabledAdminSections: {
-        dashboard: true,
-        menu: true,
-        staff: true,
-        customers: true,
-        settings: true,
-    },
-    loyalty: {
-        pointsPerCurrencyUnit: 0.01,
-        currencyUnitPerPoint: 1,
-    },
-    archiveFileLimit: 5 * 1024 * 1024, // 5MB
-};
-
-
 // This will be dynamically generated on each server-side render
 async function loadConfig() {
     const configData = await getAppConfig();
