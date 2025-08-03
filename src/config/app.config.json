@@ -1,7 +1,7 @@
 {
   "title": "Wow Foods",
   "logo": "/logo.png",
-  "theme": "mint",
+  "theme": "plum",
   "font": "roboto-slab",
   "dataSource": "csv",
   "ownerName": "Abhishek",
